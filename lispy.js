@@ -35,7 +35,7 @@ eq = (a, b) => a === b;
 slice = (a, n) => a.slice(n);
 is_string = (a) => typeof(a) == "string";
 is_null = (a) => a == null;
-
+println = (a) => console.log(a);
 
 
 const loopSym = sym("loop");
@@ -107,7 +107,7 @@ function lispCompile(code, n) {
   if(n > 10){
     throw new "errrrr";
   }
-    console.log("code:", code)
+    //console.log("code:", code)
     if( typeof(code)  == "number" ){
       return code
   }
@@ -198,11 +198,30 @@ function lispCompileFunc(code) {
 function evalLisp(code){
   fn = lispCompileFunc(code)
   return fn();
-
 }
+
+function LispEvalBlock(code) {
+  for(;;){
+    
+    const [ast, next] = parser.ParseLisp(code)
+    //console.log(">> ", next, ast);
+    if (next == null){
+     return;
+    }
+    code = next;
+    js = "return "+ lispCompile(ast)
+    //console.log("ast: ", ast)
+    //console.log("js: ", js)
+    let f = Function(js)
+    f();
+  }
+}
+
+
 lisp.lisp.eval = evalLisp
 module.exports = {
-  EvalLisp: evalLisp
+  EvalLisp: evalLisp,
+  LispEvalBlock: LispEvalBlock
 };
 
 if(evalLisp("(+ 1 2)") != 3){
@@ -275,8 +294,5 @@ x = 24
 console.log("- x: ", evalLisp("(- x)"))
 console.log("quoted: - x: ", evalLisp("'(- x)"))
 console.log("quoted: - x: ", evalLisp("'x"))
-
-//fcn1 = lispCompileFunc("(list '(1 2 3)) ")
-//console.log("quoted: ", fcn1())
 
 

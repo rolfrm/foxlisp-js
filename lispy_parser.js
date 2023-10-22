@@ -16,7 +16,7 @@ class ParserCondition {
   
   // Helper function to skip whitespace
   function skipWhitespace(input) {
-    while (input.length > 0 && /\s/.test(input[0])) {
+    while (input.length > 0 && /\s|\n|\t/.test(input[0])) {
       input = input.slice(1);
     }
     return input
@@ -100,11 +100,8 @@ class ParserCondition {
     while (true) {
       input = skipWhitespace(input);
       if (input.length === 0) {
-        if (stack !== null) {
-          const cond = new ParserCondition({ err: "Incomplete lisp code parsed." });
-          return cond;
-        }
-        return NothingParsed;
+        
+        return [NothingParsed, null];
       }
   
       switch (input[0]) {
@@ -121,13 +118,11 @@ class ParserCondition {
           let out = []
           for(;;){
             const [result,next] = ParseLisp(input)
-            console.log("result: ", result)
             if(next){
               input = next;
               out.push(result)
               input = skipWhitespace(input);
               if(input[0] == ')'){
-                console.log("parsed: ", out)
                 return [out, input.slice(1)];
               }
             }else{
@@ -138,7 +133,7 @@ class ParserCondition {
         case '\'':
           {
             // Parse quote
-            let value = "";
+            
             const [r, next] = ParseLisp(input.slice(1));
             return [[lisp.quote_sym, r], next]
           }
