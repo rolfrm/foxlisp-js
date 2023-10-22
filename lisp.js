@@ -3,9 +3,14 @@
 
 lisp = {symbolName: {}, symbols: []}
 
-function sym(str) {
+function sym(str, jsname) {
     if (!lisp.symbolName[str]) {
+        if(jsname == null){
+          jsname = str;
+        }
         const symbol = { type: "symbol", value: str, 
+          jsname: jsname,
+          macro: null,
            util : {inspect: function () {
             return this.value; 
           }}, };

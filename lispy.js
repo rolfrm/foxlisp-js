@@ -1,8 +1,8 @@
 const parser = require("./lispy_parser")
 const lisp = require("./lisp")
 
-function sym(x){
-    return lisp.sym(x)
+function sym(x, jsname){
+    return lisp.sym(x, jsname)
 }
 
 quotes = []
@@ -19,6 +19,8 @@ function setQuote(newQuote){
 
 car = (x) => x[0]
 cdr = (x) => x.slice(1)
+
+//add = (...x) => x.reduce((sum, num) => sum + num, 0);;
 add = (x, y) => x + y
 sub = (x, y) => x - y
 div = (x, y) => x / y
@@ -29,15 +31,21 @@ cddr = (x) => x.slice(2);
 len = (x) => x.length
 list = (...x) => x
 get_type = (x) => typeof x;
-eq = (a, b) => a == b;
+eq = (a, b) => a === b;
 slice = (a, n) => a.slice(n);
 is_string = (a) => typeof(a) == "string";
+is_null = (a) => a == null;
+
+
 
 const loopSym = sym("loop");
 const gtSym = sym("gt");
 const notSym = sym("not");
 const minusSym = sym("minus");
 const addSym = sym("add");
+sym("-", "sub");
+sym("*", "mul");
+sym("/", "div");
 const xSym = sym("x");
 const setSym = sym("set");
 const letSym = sym("let");
@@ -47,11 +55,25 @@ const quoteSym = lisp.quote_sym;
 const defvar = sym("defvar");
 const ySym = sym("y")
 
+function addMacro(operands){
+  let [first, ...rest] = operands;
+   if(first == null){
+      throw "not enough arguments for add"
+   }
+   for (let x of rest) {
+    first = [addSym, first, x]
+   }
+   return first;
+}
+
+add2 = sym("+")
+add2.macro = addMacro;
+
 loop_sym = sym("loop")
 code = [loopSym, [gtSym, xSym, 0], [setSym, xSym, [minusSym, xSym, 1]], [setSym, ySym, [addSym, ySym, 1]]]
 
 function lispCompile(code) {
-    console.log("code:", code, typeof(code))
+    //console.log("code:", code, typeof(code))
     if( typeof(code)  == "number" ){
       return code
   }
@@ -59,13 +81,11 @@ function lispCompile(code) {
     return `\"${code}\"`
   }
     if (code.type == "symbol"){
-        return code.value
+        return code.jsname
     }
 
-
-    
     const [operator, ...operands] = code;
-    console.log("op: ", operator)
+    //console.log("op: ", operator)
     switch (operator) {
       case loopSym:
         const [condition, ...update] = operands;
@@ -121,12 +141,15 @@ function lispCompile(code) {
       // Add more cases for other operators as needed
   
       default:
-        args = operands.map(op => lispCompile(op)).join(",")
-        if(operator.value == "quote" ){
-            id = setQuote(operands[0])
-            return `(getQuote(${id}))`;
-        }
-        return `${operator.value}(${args})`;
+        if (operator.macro != null) {
+          console.log("operator: ", operator)
+          newcode = operator.macro(operands)
+          console.log(">>>>>>>>>>newcode: ", newcode)
+          return lispCompile(newcode)
+        }  
+      args = operands.map(op => lispCompile(op)).join(",")
+        
+        return `${operator.jsname}(${args})`;
     }
   }
 
@@ -138,6 +161,21 @@ function lispCompileFunc(code) {
     console.log("js: ", js)
     return Function(js)
 }
+
+function evalLisp(code){
+  fn = lispCompileFunc(code)
+  return fn();
+
+}
+lisp.lisp.eval = evalLisp
+module.exports = {
+  EvalLisp: evalLisp
+};
+
+if(evalLisp("(+ 1 2)") != 3){
+  throw "ho no!"
+}
+
 console.log(code2)
 x = 10000000
 y = 0
@@ -186,7 +224,7 @@ fcn1 = lispCompileFunc("(eq 1 2)")
 console.log("eq: ", fcn1())
 
 
-fcn1 = lispCompileFunc("(let ((x 0)) (set x (add x 1)) (loop (not (gt x 1000000)) (set x (add x +1)) ))")
+fcn1 = lispCompileFunc("(let ((x 0)) (set x (add x 1)) (loop (not (gt x 1000000000)) (set x (+ x +1)) ))")
 console.log("l: ", fcn1())
 
 fcn1 = lispCompileFunc("(let ((x 0)) (mul 4 (add x 2)))")
@@ -195,17 +233,10 @@ console.log("l: ", fcn1())
 fcn1 = lispCompileFunc("(list (car \"asd123\"))")
 console.log("str: ", fcn1())
 
+fcn1 = lispCompileFunc("(+ 1 2 3 4 5 6 7)")
+console.log("manyadd: ", fcn1())
 
 //fcn1 = lispCompileFunc("(list '(1 2 3)) ")
 //console.log("quoted: ", fcn1())
 
 
-function evalLisp(code){
-    fn = lispCompileFunc(code)
-    return fn();
-
-}
-lisp.lisp.eval = evalLisp
-module.exports = {
-    EvalLisp: evalLisp
-  };
