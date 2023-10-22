@@ -1,5 +1,5 @@
 
-//const util = require('util');
+const util = require('util');
 
 lisp = {symbolName: {}, symbols: []}
 
@@ -14,9 +14,9 @@ function sym(str, jsname) {
            util : {inspect: function () {
             return this.value; 
           }}, };
-        //symbol[util.inspect.custom] = function(depth, options) {
-        //    return '\''+ symbol.value;
-        //  };
+        symbol[util.inspect.custom] = function(depth, options) {
+            return '\''+ symbol.value;
+          };
           
         lisp.symbolName[str] = symbol;
         lisp.symbols.push(symbol);

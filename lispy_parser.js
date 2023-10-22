@@ -95,8 +95,7 @@ class ParserCondition {
   
   // ParseLisp function
   function ParseLisp(input) {
-    let stack = [];
-  
+    
     // Parsing loop
     while (true) {
       input = skipWhitespace(input);
@@ -118,73 +117,56 @@ class ParserCondition {
           }
           continue;
         case '(':
-          // Opening parenthesis: push a new array to the stack
-          stack.push([]);
-          break;
-        case ')':
-          // Closing parenthesis: pop from stack and append to the parent array
-          const popped = stack.pop();
-          if (stack.length > 0) {
-            // Append the popped array to the parent array
-            stack[stack.length - 1].push(popped);
-          } else {
-            input = input.slice(1);
-            // The stack is empty; this is the root array
-            return popped;
+          input = skipWhitespace(input.slice(1));
+          let out = []
+          for(;;){
+            const [result,next] = ParseLisp(input)
+            console.log("result: ", result)
+            if(next){
+              input = next;
+              out.push(result)
+              input = skipWhitespace(input);
+              if(input[0] == ')'){
+                console.log("parsed: ", out)
+                return [out, input.slice(1)];
+              }
+            }else{
+              return [null, null]
+            }
           }
           break;
+        case '\'':
+          {
+            // Parse quote
+            let value = "";
+            const [r, next] = ParseLisp(input.slice(1));
+            return [[lisp.quote_sym, r], next]
+          }
+          case '"':
+              return parseString(input);
+
+  
         default:
           
           const [num, next] = parseNumber(input);
   
           if (next) {
-            input = next
-            if (stack === null) {
-              return num;
-            }
-            
-            stack[stack.length - 1].push(num);
-            continue;
+            return [num, next];
           }
-  
-
-          const [str, next2] = parseString(input);
-          if (next2) {
-            input = next2
-            if (stack === null) {
-              return str;
-            }
-            stack[stack.length - 1].push(str);
-            continue;
-          }
-  
-          // Parse symbol
-          let value = "";
-          const doquote = input[0] === '\'';
-          if(doquote){
-            input = input.slice(1);
-          }
-  
+          
+          // parse symbol
+          value = ""
           while (input.length > 0 && !/\s|\n|\t|\(|\)/.test(input[0])) {
             value += input[0];
             input = input.slice(1);
           }
-  
-          if (value !== "") {
-            let s = lisp.sym(value);
-            if (doquote) {
-              s = [lisp.quote_sym, s];
-            }
-            // Append the value to the current array on the stack
-            if (stack === null) {
-              return s;
-            }
-            stack[stack.length - 1].push(s);
+          if (value === ""){
+            return [null, null]
           }
-          continue;
+           
+          s = lisp.sym(value);
+          return [s, input]          
       }
-  
-      input = input.slice(1);
     }
   }
   

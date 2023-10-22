@@ -97,10 +97,17 @@ sub2.macro = subMacro;
 
 
 loop_sym = sym("loop")
-code = [loopSym, [gtSym, xSym, 0], [setSym, xSym, [subSym, xSym, 1]], [setSym, ySym, [addSym, ySym, 1]]]
 
-function lispCompile(code) {
-    //console.log("code:", code, typeof(code))
+function lispCompile(code, n) {
+  if(n == undefined){
+    n = 1;
+  }else {
+    n += 1;
+  }
+  if(n > 10){
+    throw new "errrrr";
+  }
+    console.log("code:", code)
     if( typeof(code)  == "number" ){
       return code
   }
@@ -112,32 +119,31 @@ function lispCompile(code) {
     }
 
     const [operator, ...operands] = code;
-    //console.log("op: ", operator)
     switch (operator) {
       case loopSym:
         const [condition, ...update] = operands;
         
-        const updateCode = update.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
+        const updateCode = update.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
 
         return `(() => {let tmp = null; for (;${lispCompile(condition)};) { ${updateCode} };return tmp})()`;
       case gtSym:
         const [left, right] = operands;
-        return `(${lispCompile(left)} > ${lispCompile(right)})`;
+        return `(${lispCompile(left, n)} > ${lispCompile(right, n)})`;
       case lambdaSym:
         {
             const [args, ...body] = operands;
             const argstr = args.map(arg => arg.value).join(",")
             if(body.length == 1) {
-                return `((${argstr}) => ${lispCompile(body[0])})`;
+                return `((${argstr}) => ${lispCompile(body[0], n)})`;
             }
-            const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
-            return `(${argstr}) => {let tmp = null; ${lispCompile(right)}; return tmp;})`;
+            const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
+            return `(${argstr}) => {let tmp = null; ${lispCompile(right, n)}; return tmp;})`;
 
         }
       case notSym:
         {
             const [left] = operands;
-            return `(!${lispCompile(left)})`;
+            return `(!${lispCompile(left, n)})`;
         }
       case quoteSym:
         {
@@ -148,41 +154,41 @@ function lispCompile(code) {
       case defvar:
         {
         const [sym, code] = operands;
-        eval(`${sym.value} = ${lispCompile(code)}`)
+        eval(`${sym.value} = ${lispCompile(code, n)}`)
         return `${sym.value}`
         }
       case setSym:
         const [variable, value] = operands;
-        return `${lispCompile(variable)} = ${lispCompile(value)}`;
+        return `${lispCompile(variable)} = ${lispCompile(value, n)}`;
       case letSym:
         const [variables, ...body] = operands;
         varCode = variables.map(updateExpr => {
             const [left, right] = updateExpr;
-            code = `${left.value} = (${lispCompile(right)})`
+            code = `${left.value} = (${lispCompile(right, n)})`
             return code;
         }).join(';');
         
-        const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
+        const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
         return `(() => {let tmp = null;${varCode};${bodyCode}; return tmp})()`
       
       // Add more cases for other operators as needed
   
       default:
         if (operator.macro != null) {
-          console.log("operator: ", operator)
           newcode = operator.macro(operands)
-          console.log(">>>>>>>>>>newcode: ", newcode)
-          return lispCompile(newcode)
+          return lispCompile(newcode, n)
         }  
-      args = operands.map(op => lispCompile(op)).join(",")
+        args = operands.map(op => lispCompile(op, n)).join(",")
         
         return `${operator.jsname}(${args})`;
     }
   }
 
-code2 = lispCompile(code)
 function lispCompileFunc(code) {
-    ast = parser.ParseLisp(code)
+    const [ast, next] = parser.ParseLisp(code)
+    if (next == null){
+      throw "unable to parse code"
+    }
     js = "return "+ lispCompile(ast)
     console.log("ast: ", ast)
     console.log("js: ", js)
@@ -203,10 +209,8 @@ if(evalLisp("(+ 1 2)") != 3){
   throw "ho no!"
 }
 
-console.log(code2)
 x = 10000000
 y = 0
-//eval(code2)
 
 code3 = `
 //function x1() {
@@ -231,6 +235,9 @@ code3 = `
 //console.log(parser)
 fcn1 = lispCompileFunc("(let ((x 0)) (set x (add x 1)) (loop (not (gt x 100)) (set x (add x +1)) ))")
 console.log("l: ", fcn1())
+if(fcn1() != 101){
+  throw "unexpected value"
+}
 
 eval("vartest = 10;")
 
@@ -266,6 +273,9 @@ console.log("/ 24 2 3: ", evalLisp("(/ 24 2 3)"))
 console.log("- 24 2 3: ", evalLisp("(- 24 2 3)"))
 x = 24
 console.log("- x: ", evalLisp("(- x)"))
+console.log("quoted: - x: ", evalLisp("'(- x)"))
+console.log("quoted: - x: ", evalLisp("'x"))
+
 //fcn1 = lispCompileFunc("(list '(1 2 3)) ")
 //console.log("quoted: ", fcn1())
 
