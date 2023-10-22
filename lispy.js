@@ -41,11 +41,10 @@ is_null = (a) => a == null;
 const loopSym = sym("loop");
 const gtSym = sym("gt");
 const notSym = sym("not");
-const minusSym = sym("minus");
+const subSym = sym("sub");
 const addSym = sym("add");
-sym("-", "sub");
-sym("*", "mul");
-sym("/", "div");
+const mulSym = sym("mul");
+const divSym = sym("div");
 const xSym = sym("x");
 const setSym = sym("set");
 const letSym = sym("let");
@@ -55,22 +54,50 @@ const quoteSym = lisp.quote_sym;
 const defvar = sym("defvar");
 const ySym = sym("y")
 
-function addMacro(operands){
+function mathMacro(sym){
+  function macro(operands){
+    let [first, ...rest] = operands;
+     if(first == null){
+        throw "not enough arguments for add"
+     }
+     for (let x of rest) {
+      first = [sym, first, x]
+     }
+     return first;
+  }
+  return macro;
+  
+}
+
+
+function subMacro(operands){
   let [first, ...rest] = operands;
    if(first == null){
       throw "not enough arguments for add"
    }
+   if(rest.length == 0) {
+    return [subSym, 0, first];
+   }
+
    for (let x of rest) {
-    first = [addSym, first, x]
+    first = [subSym, first, x]
    }
    return first;
 }
 
+
 add2 = sym("+")
-add2.macro = addMacro;
+add2.macro = mathMacro(addSym);
+mul2 = sym("*")
+mul2.macro = mathMacro(mulSym);
+div2 = sym("/")
+div2.macro = mathMacro(divSym);
+sub2 = sym("-")
+sub2.macro = subMacro;
+
 
 loop_sym = sym("loop")
-code = [loopSym, [gtSym, xSym, 0], [setSym, xSym, [minusSym, xSym, 1]], [setSym, ySym, [addSym, ySym, 1]]]
+code = [loopSym, [gtSym, xSym, 0], [setSym, xSym, [subSym, xSym, 1]], [setSym, ySym, [addSym, ySym, 1]]]
 
 function lispCompile(code) {
     //console.log("code:", code, typeof(code))
@@ -224,7 +251,7 @@ fcn1 = lispCompileFunc("(eq 1 2)")
 console.log("eq: ", fcn1())
 
 
-fcn1 = lispCompileFunc("(let ((x 0)) (set x (add x 1)) (loop (not (gt x 1000000000)) (set x (+ x +1)) ))")
+fcn1 = lispCompileFunc("(let ((x 0)) (set x (add x 1)) (loop (not (gt x 10000000)) (set x (+ x +1)) ))")
 console.log("l: ", fcn1())
 
 fcn1 = lispCompileFunc("(let ((x 0)) (mul 4 (add x 2)))")
@@ -235,7 +262,10 @@ console.log("str: ", fcn1())
 
 fcn1 = lispCompileFunc("(+ 1 2 3 4 5 6 7)")
 console.log("manyadd: ", fcn1())
-
+console.log("/ 24 2 3: ", evalLisp("(/ 24 2 3)"))
+console.log("- 24 2 3: ", evalLisp("(- 24 2 3)"))
+x = 24
+console.log("- x: ", evalLisp("(- x)"))
 //fcn1 = lispCompileFunc("(list '(1 2 3)) ")
 //console.log("quoted: ", fcn1())
 
