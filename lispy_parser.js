@@ -150,7 +150,7 @@ class ParserCondition {
 
           const [str, next2] = parseString(input);
           if (next2) {
-            input = next
+            input = next2
             if (stack === null) {
               return str;
             }

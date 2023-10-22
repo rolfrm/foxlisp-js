@@ -29,7 +29,9 @@ cddr = (x) => x.slice(2);
 len = (x) => x.length
 list = (...x) => x
 get_type = (x) => typeof x;
-eq = (a, b) => a == b
+eq = (a, b) => a == b;
+slice = (a, n) => a.slice(n);
+is_string = (a) => typeof(a) == "string";
 
 const loopSym = sym("loop");
 const gtSym = sym("gt");
@@ -50,13 +52,17 @@ code = [loopSym, [gtSym, xSym, 0], [setSym, xSym, [minusSym, xSym, 1]], [setSym,
 
 function lispCompile(code) {
     console.log("code:", code, typeof(code))
+    if( typeof(code)  == "number" ){
+      return code
+  }
+  if( typeof(code)  == "string" ){
+    return `\"${code}\"`
+  }
     if (code.type == "symbol"){
         return code.value
     }
-    if( typeof(code)  == "number" ){
-        return code
-    }
-    
+
+
     
     const [operator, ...operands] = code;
     console.log("op: ", operator)
@@ -185,6 +191,10 @@ console.log("l: ", fcn1())
 
 fcn1 = lispCompileFunc("(let ((x 0)) (mul 4 (add x 2)))")
 console.log("l: ", fcn1())
+
+fcn1 = lispCompileFunc("(list (car \"asd123\"))")
+console.log("str: ", fcn1())
+
 
 //fcn1 = lispCompileFunc("(list '(1 2 3)) ")
 //console.log("quoted: ", fcn1())
