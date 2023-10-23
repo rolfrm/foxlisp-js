@@ -68,6 +68,8 @@ const lambdaSym = sym("lambda");
 const defMacroSym = sym("defmacro");
 const orSym = sym("or");
 const andSym = sym("and");
+const blockSym = sym("block");
+const returnFromSym = sym("return-from")
 const quoteSym = lisp.quote_sym;
 
 const defvarSym = sym("defvar");
@@ -159,6 +161,18 @@ function lispCompile(code, n) {
           const combined = operands.map(op => lispCompile(op, n)).join("&&")
           return `(${combined})`
         }
+      case blockSym:{
+        const [sym, ...body] = operands;
+        const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
+            
+        return `(()=>{let tmp = null;const ${sym.jsname} = {};
+         try{${bodyCode}}catch(ex){if(ex.id === ${sym.jsname}){return ex.value;}else{throw ex;}} return tmp;})()`
+      }
+      case returnFromSym:{
+        const [sym, value] = operands;
+        
+        return `(()=> {throw {id:${sym.jsname}, value:${lispCompile(value)} }})()`;
+      }
       case lambdaSym:
         {
             const [args, ...body] = operands;
@@ -185,7 +199,7 @@ function lispCompile(code, n) {
         {
         const [sym, code] = operands;
         const valueCode = lispCompile(code, n);
-        //console.log("value code:", valueCode)
+        console.log("value code:", valueCode)
         eval(`${sym.jsname} = ${valueCode}`)
         return `${sym.jsname}`
         }
@@ -257,7 +271,7 @@ function LispEvalBlock(code) {
     }
     code = next;
     js = "return "+ lispCompile(ast)
-    //console.log("code: ", ast, "=>", js)
+    console.log("code: ", ast, "=>", js)
     //console.log("ast: ", ast)
     //console.log("js: ", js)
     let f = Function(js)
@@ -269,7 +283,8 @@ function LispEvalBlock(code) {
 lisp.lisp.eval = evalLisp
 module.exports = {
   EvalLisp: evalLisp,
-  LispEvalBlock: LispEvalBlock
+  LispEvalBlock: LispEvalBlock,
+  lispCompile: lispCompile
 };
 
 if(evalLisp("(+ 1 2)") != 3){

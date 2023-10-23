@@ -41,4 +41,6 @@
 
 asd"))
 
+(println (block a (+ 1 2 (return-from a 5))))
+
 ;(if  (println 'yes) (println 'no))
