@@ -45,9 +45,9 @@ const subSym = sym("sub");
 const addSym = sym("add");
 const mulSym = sym("mul");
 const divSym = sym("div");
-const xSym = sym("x");
 const setSym = sym("set");
 const letSym = sym("let");
+const ifSym = sym("if");
 const lambdaSym = sym("lambda");
 const defMacroSym = sym("defmacro");
 const quoteSym = lisp.quote_sym;
@@ -137,9 +137,9 @@ function lispCompile(code, n) {
             if(body.length == 1) {
                 return `((${argstr}) => ${lispCompile(body[0], n)})`;
             }
-            const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
-            return `(${argstr}) => {let tmp = null; ${lispCompile(right, n)}; return tmp;})`;
 
+            const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
+            return `((${argstr}) => {let tmp = null; ${bodyCode}; return tmp;})`;
         }
       case notSym:
         {
@@ -179,7 +179,14 @@ function lispCompile(code, n) {
         
         const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
         return `(() => {let tmp = null;${varCode};${bodyCode}; return tmp})()`
-      
+      case ifSym:
+        {
+          const [condition, thenClause, elseClause] = operands;
+          const conditionCode = lispCompile(condition);
+          const thenCode = lispCompile(thenClause);
+          const elseCode = elseClause == null ? "null" : lispCompile(elseClause);
+          return `(${conditionCode} ? ${thenCode} : ${elseCode})`
+        }
       // Add more cases for other operators as needed
   
       default:

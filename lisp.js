@@ -2,14 +2,20 @@
 const util = require('util');
 
 lisp = {symbolName: {}, symbols: []}
+const reserved = {"true" : true, "false":true, "null": true}
+
+
 nameid = 0;
 function sanitizeSymbolName(name) {
   const sanitized = name.replace(/[^a-zA-Z0-9_]/g, '_');
   nameid += 1;
-  if(sanitized == name)
+  isreserved = reserved[name];
+  
+  if(sanitized == name && !isreserved)
     return sanitized;
+  
   console.log(">>>>", name, sanitized)
-  return `${sanitized}symid${nameid}`;
+  return `_${sanitized}_${nameid}`;
 }
 
 function sym(str, jsname) {
