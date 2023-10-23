@@ -133,7 +133,7 @@ function lispCompile(code, n) {
       case lambdaSym:
         {
             const [args, ...body] = operands;
-            const argstr = args.map(arg => arg.value).join(",")
+            const argstr = args.map(arg => arg.jsname).join(",")
             if(body.length == 1) {
                 return `((${argstr}) => ${lispCompile(body[0], n)})`;
             }
@@ -155,8 +155,8 @@ function lispCompile(code, n) {
       case defvarSym:
         {
         const [sym, code] = operands;
-        eval(`${sym.value} = ${lispCompile(code, n)}`)
-        return `${sym.value}`
+        eval(`${sym.jsname} = ${lispCompile(code, n)}`)
+        return `${sym.jsname}`
         }
       case defMacroSym:
         {
@@ -173,7 +173,7 @@ function lispCompile(code, n) {
         const [variables, ...body] = operands;
         varCode = variables.map(updateExpr => {
             const [left, right] = updateExpr;
-            code = `${left.value} = (${lispCompile(right, n)})`
+            code = `${left.jsname} = (${lispCompile(right, n)})`
             return code;
         }).join(';');
         

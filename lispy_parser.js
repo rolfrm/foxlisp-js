@@ -26,6 +26,14 @@ class ParserCondition {
   function parseNumber(input) {
     let value = "";
     let isFloat = false;
+    let isNegative = false;
+    if(input[0] == '-'){
+      isNegative = true;
+      input = input.slice(1);
+    }
+    if(input[0] == '+'){
+      input = input.slice(1)
+    }
   
     while (input.length > 0 && (/\d/.test(input[0]) || input[0] === '-' || (!isFloat && input[0] === '.'))) {
       value += input[0];
@@ -53,6 +61,9 @@ class ParserCondition {
       if (isNaN(num)) {
         return [null, null];
       }
+      if(isNegative){
+        return [-num, input];  
+      }
       return [num, input];
     }
   
@@ -60,7 +71,10 @@ class ParserCondition {
     if (isNaN(num)) {
       return [null, null];
     }
-    return [num, input];
+    if(isNegative){
+      return [-num, input];  
+    }
+    return [num, input];  
   }
   
   function parseString(input) {
@@ -133,7 +147,7 @@ class ParserCondition {
         case '\'':
           {
             // Parse quote
-            
+
             const [r, next] = ParseLisp(input.slice(1));
             return [[lisp.quote_sym, r], next]
           }
