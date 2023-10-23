@@ -17,6 +17,16 @@ function setQuote(newQuote){
     return id
 }
 
+internedStrings = []
+
+getInternedString = (id) => internedStrings[id]
+function internString(str){
+    id = internedStrings.length;
+    internedStrings.length += 1
+    internedStrings[id] = str
+    return id
+}
+
 car = (x) => x[0]
 cdr = (x) => x.slice(1)
 
@@ -38,8 +48,11 @@ is_null = (a) => a == null;
 println = (...a) => console.log(...a);
 nth = (a, n) => a[n]
 makemap_ = () => ({type: "lisp-object"})
-put = (obj, name, value) => obj[name.jsname] = value
-get = (obj, name) => obj[name.jsname]
+put = (obj, name, value) =>  obj[name.jsname ? name.jsname : name] = value
+get = (obj, name) => obj[name.jsname ? name.jsname : name]
+charcode = (a) => a.charCodeAt(0)
+strfromchar = (...a) => String.fromCharCode(...a)
+
 
 const loopSym = sym("loop");
 const gtSym = sym("gt");
@@ -56,7 +69,6 @@ const defMacroSym = sym("defmacro");
 const quoteSym = lisp.quote_sym;
 
 const defvarSym = sym("defvar");
-const ySym = sym("y")
 
 function mathMacro(sym){
   function macro(operands){
@@ -116,7 +128,9 @@ function lispCompile(code, n) {
       return code
   }
   if( typeof(code)  == "string" ){
-    return `\"${code}\"`
+    
+    id = internString(code)
+    return `(getInternedString(${id}))`;
   }
     if (code.type == "symbol"){
         return code.jsname
