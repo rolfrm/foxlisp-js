@@ -35,8 +35,11 @@ eq = (a, b) => a === b;
 slice = (a, n) => a.slice(n);
 is_string = (a) => typeof(a) == "string";
 is_null = (a) => a == null;
-println = (a) => console.log(a);
-
+println = (...a) => console.log(...a);
+nth = (a, n) => a[n]
+makemap_ = () => ({type: "lisp-object"})
+put = (obj, name, value) => obj[name.jsname] = value
+get = (obj, name) => obj[name.jsname]
 
 const loopSym = sym("loop");
 const gtSym = sym("gt");
