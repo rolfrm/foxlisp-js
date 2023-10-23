@@ -66,6 +66,8 @@ const letSym = sym("let");
 const ifSym = sym("if");
 const lambdaSym = sym("lambda");
 const defMacroSym = sym("defmacro");
+const orSym = sym("or");
+const andSym = sym("and");
 const quoteSym = lisp.quote_sym;
 
 const defvarSym = sym("defvar");
@@ -130,7 +132,7 @@ function lispCompile(code, n) {
   if( typeof(code)  == "string" ){
     
     id = internString(code)
-    return `(getInternedString(${id}))`;
+    return `getInternedString(${id})`;
   }
     if (code.type == "symbol"){
         return code.jsname
@@ -147,6 +149,16 @@ function lispCompile(code, n) {
       case gtSym:
         const [left, right] = operands;
         return `(${lispCompile(left, n)} > ${lispCompile(right, n)})`;
+      case orSym:
+        {
+          const combined = operands.map(op => lispCompile(op, n)).join("||")
+          return `(${combined})`
+        }
+      case andSym:
+        {
+          const combined = operands.map(op => lispCompile(op, n)).join("&&")
+          return `(${combined})`
+        }
       case lambdaSym:
         {
             const [args, ...body] = operands;
@@ -167,12 +179,14 @@ function lispCompile(code, n) {
         {
             const [quoted] = operands;
             id = setQuote(quoted)
-            return `(getQuote(${id}))`;
+            return `getQuote(${id})`;
         }
       case defvarSym:
         {
         const [sym, code] = operands;
-        eval(`${sym.jsname} = ${lispCompile(code, n)}`)
+        const valueCode = lispCompile(code, n);
+        //console.log("value code:", valueCode)
+        eval(`${sym.jsname} = ${valueCode}`)
         return `${sym.jsname}`
         }
       case defMacroSym:
@@ -190,7 +204,7 @@ function lispCompile(code, n) {
         const [variables, ...body] = operands;
         varCode = variables.map(updateExpr => {
             const [left, right] = updateExpr;
-            code = `${left.jsname} = (${lispCompile(right, n)})`
+            code = `let ${left.jsname} = (${lispCompile(right, n)})`
             return code;
         }).join(';');
         
@@ -243,6 +257,7 @@ function LispEvalBlock(code) {
     }
     code = next;
     js = "return "+ lispCompile(ast)
+    //console.log("code: ", ast, "=>", js)
     //console.log("ast: ", ast)
     //console.log("js: ", js)
     let f = Function(js)
