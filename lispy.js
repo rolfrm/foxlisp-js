@@ -49,9 +49,10 @@ const xSym = sym("x");
 const setSym = sym("set");
 const letSym = sym("let");
 const lambdaSym = sym("lambda");
+const defMacroSym = sym("defmacro");
 const quoteSym = lisp.quote_sym;
 
-const defvar = sym("defvar");
+const defvarSym = sym("defvar");
 const ySym = sym("y")
 
 function mathMacro(sym){
@@ -151,11 +152,19 @@ function lispCompile(code, n) {
             id = setQuote(quoted)
             return `(getQuote(${id}))`;
         }
-      case defvar:
+      case defvarSym:
         {
         const [sym, code] = operands;
         eval(`${sym.value} = ${lispCompile(code, n)}`)
         return `${sym.value}`
+        }
+      case defMacroSym:
+        {
+          const [sym, code] = operands;
+          macroValue = eval(lispCompile(code, n));
+          sym.macro = macroValue;
+
+          return "1"
         }
       case setSym:
         const [variable, value] = operands;
