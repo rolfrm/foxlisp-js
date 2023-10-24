@@ -45,6 +45,7 @@
 (defvar char-0 (car "0"))
 (defvar char-9 (car "9"))
 (defvar char-dot (car "."))
+(defvar nil ())
 (defvar sym-end (lambda (x) (or (is-whitespace x) (eq paren-start x)
 										  (eq paren-end x))))
 
@@ -55,8 +56,10 @@
 	 (block result
         (let ((negative (eq (car input) minus-char))
               (is-float 0)
-				  (final-parse (lambda (x) (if is-float (parse-float x)
-														 (parse-integer x))))
+				  (final-parse (lambda (x)
+									  
+									  (if is-float (* (if negative -1.0 1.0) (parse-float x))
+														 (* (if negative -1 1) (parse-integer x)))))
 				  (output ""))
           (if negative (set input (cdr input))
                 (if (eq plus-char (car input))
@@ -67,15 +70,15 @@
 					 (let ((fst (car input)))
 						(if (and (>= fst char-0) (<= fst char-9))
 							 (set output (+ output fst))
-							 (if (and (not is-float) char-dot)
+							 (if (and (not is-float) (eq fst char-dot))
 								  (progn
 									 (set is-float t)
 									 (set output (+ output fst)))
-								  (if (sym-end fst)
+								  (if (and (sym-end fst) output)
 										(return-from result (list (final-parse
 																			output) input ))
-										(return-from result null)))))
-							 
+										(return-from result ())))))
+					 
 						
 					 (set input (cdr input))
 					 )
@@ -84,21 +87,56 @@
 				  (return-from result ()))
 			 ))))
 
-
+(defvar parse-symbol
+  (lambda (str) 
+	 (let ((output ""))
+		(println 'sym? (car str))
+		(loop (and str (not (sym-end (car str))))
+		 
+		 (set output (+ output (car str)))
+		 (println 'output output)
+		 (set str (cdr str)))
+		(if output
+			 (list output str)
+			 nil))))
 
 (defvar parse-lisp (lambda (str) 
     (block finish
       (loop str 
-        (set str (skip-whitespace str))
-        (return-from finish 0)
-        (let ((next (car str)))
-            (if (eq next paren-start)
-
-            1 2)
-        
-        )
-
-    ))))
+				(let ((next (car str))
+						(result (list)))
+				  (println 'next: next)
+          (if (eq next paren-start)
+				  (progn
+					 (set str (cdr str))
+					 (set str (skip-whitespace str))
+					 (loop (not (eq (car str) paren-end))
+					  (let ((r (parse-lisp str)))
+						 (if (not r)
+							  (return-from finish "error"))
+		
+						 (set result (concat result (car r)))
+						 (set str (skip-whitespace (cadr r)))
+						 )
+					  
+					  
+					  )
+					 (set str (skip-whitespace (cdr str)))
+						 
+					 (return-from finish (list result str))
+					 
+					 )
+				  )
+			 
+			 (let ((n (parse-number str)))
+				(if n
+					 (progn
+						(return-from finish n))))
+			 
+			 (let ((n (parse-symbol str)))
+				(if n
+					 (return-from finish n)))
+        )))))
     
 (println (parse-lisp "(+ 1 2)"))
 
@@ -123,5 +161,9 @@ asd"))
 (println (reverse (list 1 2 3)))
 (println ())
 (println "???")
-(println "parse number: " (parse-number "123.5 asd"))
+(println "parse number: " (parse-number "-123 asd"))
+(println "parse lisp: " (parse-lisp "(+ 1 2)"))
+;(defvar concat (get (list 1 2) 'concat))
+
+(concat (list 3 4) (list 3 4))
 ;(if  (println 'yes) (println 'no))

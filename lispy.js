@@ -55,6 +55,7 @@ strfromchar = (...a) => String.fromCharCode(...a)
 reverse = (a) => a.slice().reverse()
 gte = (a,b) => a >= b
 lte = (a,b) => b >= a
+concat = (a,b)=> a.concat(b)
 
 
 const loopSym = sym("loop");
@@ -75,6 +76,7 @@ const andSym = sym("and");
 const blockSym = sym("block");
 const returnFromSym = sym("return-from")
 const quoteSym = lisp.quote_sym;
+
 
 const defvarSym = sym("defvar");
 
