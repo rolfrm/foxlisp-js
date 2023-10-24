@@ -9,6 +9,8 @@
 (defvar tab (car "	"))
 (defvar newline (car "
 "))
+(defvar paren-start (car "("))
+(defvar paren-end (car ")"))
 
 (defvar skip-whitespace (lambda (str) 
     (loop (let ((front (car str))) (or (eq space front) (eq tab front) (eq newline front)))
@@ -17,12 +19,41 @@
 ))
 
 
-(defvar parse-lisp (lambda (str) 
+(defmacro case (lambda (cases)
+    (let ((value (car cases))
+          (out-cases (list)))
+        (let ((cases (cdr cases)))
+            (loop cases 
+                (let ((thiscase (car cases)))
+                    
+                    ['if ['eq value [car case]]]
+                )
+                (set cases (cdr cases))
+            )
+        
+        )
+    ))
 
-    (car str)))
-(println (parse-lisp "(+ 1 2)"))
+)
 (defvar t (eq 1 1))
 (defvar false (eq 1 0))
+
+
+(defvar parse-lisp (lambda (str) 
+    (block finish
+      (loop str 
+        (set str (skip-whitespace str))
+        (return-from finish 0)
+        (let ((next (car str)))
+            (if (eq next paren-start)
+
+            1 2)
+        
+        )
+
+    ))))
+    
+(println (parse-lisp "(+ 1 2)"))
 
 (println (skip-whitespace "  123"))
 (defvar obj2 (makemap_))
@@ -42,5 +73,7 @@
 asd"))
 
 (println (block a (+ 1 2 (return-from a 5))))
-
+(println (reverse (list 1 2 3)))
+(println ())
+(println "???")
 ;(if  (println 'yes) (println 'no))

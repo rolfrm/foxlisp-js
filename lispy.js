@@ -52,6 +52,7 @@ put = (obj, name, value) =>  obj[name.jsname ? name.jsname : name] = value
 get = (obj, name) => obj[name.jsname ? name.jsname : name]
 charcode = (a) => a.charCodeAt(0)
 strfromchar = (...a) => String.fromCharCode(...a)
+reverse = (a) => a.slice().reverse()
 
 
 const loopSym = sym("loop");
@@ -127,8 +128,7 @@ function lispCompile(code, n) {
   if(n > 10){
     throw new "errrrr";
   }
-    //console.log("code:", code)
-    if( typeof(code)  == "number" ){
+  if( typeof(code)  == "number" ){
       return code
   }
   if( typeof(code)  == "string" ){
@@ -138,6 +138,9 @@ function lispCompile(code, n) {
   }
     if (code.type == "symbol"){
         return code.jsname
+    }
+    if(code.length == 0) {
+      return "null"
     }
 
     const [operator, ...operands] = code;
@@ -357,5 +360,10 @@ x = 24
 console.log("- x: ", evalLisp("(- x)"))
 console.log("quoted: - x: ", evalLisp("'(- x)"))
 console.log("quoted: - x: ", evalLisp("'x"))
+
+let test = evalLisp("()")
+if(test != null){
+  throw "expected null"
+}
 
 

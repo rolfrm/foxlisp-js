@@ -128,7 +128,12 @@ class ParserCondition {
           }
           continue;
         case '(':
+          
           input = skipWhitespace(input.slice(1));
+          
+          if(input[0] == ')'){  
+            return [[], input.slice(1)];
+          }
           let out = []
           for(;;){
             const [result,next] = ParseLisp(input)

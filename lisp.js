@@ -14,7 +14,7 @@ function sanitizeSymbolName(name) {
   if(sanitized == name && !isreserved)
     return sanitized;
   
-  console.log(">>>>", name, sanitized)
+  
   return `_${sanitized}_${nameid}`;
 }
 
