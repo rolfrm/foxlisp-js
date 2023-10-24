@@ -56,6 +56,7 @@ reverse = (a) => a.slice().reverse()
 gte = (a,b) => a >= b
 lte = (a,b) => b >= a
 concat = (a,b)=> a.concat(b)
+makesym = (a) => sym(a)
 
 
 const loopSym = sym("loop");

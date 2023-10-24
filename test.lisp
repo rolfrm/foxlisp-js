@@ -97,7 +97,7 @@
 		 (println 'output output)
 		 (set str (cdr str)))
 		(if output
-			 (list output str)
+			 (list (makesym output) str)
 			 nil))))
 
 (defvar parse-lisp (lambda (str) 
@@ -165,5 +165,13 @@ asd"))
 (println "parse lisp: " (parse-lisp "(+ 1 2)"))
 ;(defvar concat (get (list 1 2) 'concat))
 
+(defvar make-sym2 (lambda (name)
+  (let ((map (make-map)))
+	 (put map 'jsname name)
+	 (put map 'name name)
+	 map)))
+
 (concat (list 3 4) (list 3 4))
-;(if  (println 'yes) (println 'no))
+(println (makesym "+"))
+													 ;(if  (println 'yes) (println 'no))
+
