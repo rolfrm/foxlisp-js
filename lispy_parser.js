@@ -35,7 +35,7 @@ class ParserCondition {
       input = input.slice(1)
     }
   
-    while (input.length > 0 && (/\d/.test(input[0]) || input[0] === '-' || (!isFloat && input[0] === '.'))) {
+    while (input.length > 0 && (/\d/.test(input[0]) || (!isFloat && input[0] === '.'))) {
       value += input[0];
       if (input[0] === '.') {
         isFloat = true;

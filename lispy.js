@@ -53,6 +53,8 @@ get = (obj, name) => obj[name.jsname ? name.jsname : name]
 charcode = (a) => a.charCodeAt(0)
 strfromchar = (...a) => String.fromCharCode(...a)
 reverse = (a) => a.slice().reverse()
+gte = (a,b) => a >= b
+lte = (a,b) => b >= a
 
 
 const loopSym = sym("loop");
@@ -64,6 +66,7 @@ const mulSym = sym("mul");
 const divSym = sym("div");
 const setSym = sym("set");
 const letSym = sym("let");
+const prognSym = sym("progn");
 const ifSym = sym("if");
 const lambdaSym = sym("lambda");
 const defMacroSym = sym("defmacro");
@@ -187,6 +190,15 @@ function lispCompile(code, n) {
             const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
             return `((${argstr}) => {let tmp = null; ${bodyCode}; return tmp;})`;
         }
+	 case prognSym:
+		  {
+				const body = operands;
+				if(body.length == 0){
+					 return `${lispCompile(body[0], n)}`
+				}
+				const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
+				return `(() => {let tmp = null; ${bodyCode}; return tmp;})()`;
+		  }
       case notSym:
         {
             const [left] = operands;
@@ -195,7 +207,7 @@ function lispCompile(code, n) {
       case quoteSym:
         {
             const [quoted] = operands;
-            id = setQuote(quoted)
+            const id = setQuote(quoted)
             return `getQuote(${id})`;
         }
       case defvarSym:
@@ -217,9 +229,9 @@ function lispCompile(code, n) {
       case setSym:
         const [variable, value] = operands;
         return `${lispCompile(variable)} = ${lispCompile(value, n)}`;
-      case letSym:
+    case letSym:{
         const [variables, ...body] = operands;
-        varCode = variables.map(updateExpr => {
+        const  varCode = variables.map(updateExpr => {
             const [left, right] = updateExpr;
             code = `let ${left.jsname} = (${lispCompile(right, n)})`
             return code;
@@ -227,6 +239,7 @@ function lispCompile(code, n) {
         
         const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
         return `(() => {let tmp = null;${varCode};${bodyCode}; return tmp})()`
+	 }
       case ifSym:
         {
           const [condition, thenClause, elseClause] = operands;
