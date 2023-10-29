@@ -13,6 +13,12 @@
 
 (defmacro defun defun-code)
 
+(defun assert(condition error)
+  (if (not condition)
+		(raise error)
+  ))
+
+
 (defmacro test-macro (lambda (code) (list 'quote (cdr code))))
 (println (test-macro 1 2 3))
 
@@ -169,24 +175,44 @@ asd"))
 (defvar length (lambda (list) (get list 'length)))
 													 ;(if  (println 'yes) (println 'no))
 
+(defun link-ends(lists)
+  (if (> (length lists) 2)
+		(concat (car lists)
+				  (list (link-ends  (cdr lists))))
+		(concat (car lists)
+				  (list (cadr lists)))))
+
 (defvar case-code
-  	 (lambda (cases)
+  (lambda (cases)
+	 (assert (> (length cases) 0) "Expected more than one argument")
 		(let ((value (car cases))
 				(out-cases (list)))
         (let ((cases2 (cdr cases)))
           (loop (length cases2)
-					 ;(println cases2)
-                (let ((thiscase (car cases2)))
-                    
-                    (list 'if (list 'eq value (list 'car 'xcase)))
-						  )
-                (set cases2 (cdr cases2))
-            )
-        
-        )
+			  
+           (let ((thiscase (car cases2)))
+				 
+             (assert (eq 2 (length thiscase)) "case must have a check and evaluation code")
+             (let ((c (list 'if (list 'eq 'cons-value (car thiscase)) (cadr thiscase))))
+					(set out-cases (concat out-cases (list c)))
+					)
+				 )
+           (set cases2 (cdr cases2))
+           )
+			 )
+		  (list 'let (list (list 'cons-value value))
+				  (link-ends out-cases))
 		  )))
-(println (case-code '(case x (a b) (c d))))
 (defun asd (a b c) (+ a b c))
 (defmacro case case-code)
+
+
+
 (println (asd 1 2 3))
 (println (let ((a 10)) (%js "a + 1 + 2 + 3 + 4")))
+(println (case-code (cdr '(case 3 (3 b) (4 d) (5 e) (6 g)))))
+(println (link-ends '((1 2 3) (4 5 6) (7 8 9) (10 11 12))))
+
+(println (case 9 (9 (+ 1 2)) (10 (+ 3 4))))
+
+													 ;(raise "assertion failed")

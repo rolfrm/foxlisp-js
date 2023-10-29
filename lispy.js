@@ -45,6 +45,9 @@ eq = (a, b) => a === b;
 slice = (a, n) => a.slice(n);
 is_string = (a) => typeof(a) == "string";
 is_null = (a) => a == null;
+raise =(err) =>{
+	 throw err;
+};
 
 function println_impl(obj){
   
