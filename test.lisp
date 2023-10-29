@@ -1,10 +1,17 @@
 (defvar make-map makemap_)
 (defvar parse-integer parseInt)
 (defvar parse-float parseFloat)
-(defvar >= gte)
-(defvar <= lte)
-(println (+ 1 2 3))
-(println '(+ 1 2 3))
+(defvar > _op_gt)
+(defvar < _op_lt)
+(defvar >= _op_gte)
+(defvar <= _op_lte)
+
+(defvar defun-code
+	 (lambda (code)
+		(list 'defvar (car code)
+				(concat (list 'lambda (cadr code)) (cddr code)))))
+
+(defmacro defun defun-code)
 
 (defmacro test-macro (lambda (code) (list 'quote (cdr code))))
 (println (test-macro 1 2 3))
@@ -23,21 +30,6 @@
 ))
 
 
-;; (defmacro case (lambda (cases)
-;;     (let ((value (car cases))
-;;           (out-cases (list)))
-;;         (let ((cases (cdr cases)))
-;;             (loop cases 
-;;                 (let ((thiscase (car cases)))
-                    
-;;                     (list 'if (list 'eq value (list car case)))
-;;                 )
-;;                 (set cases (cdr cases))
-;;             )
-        
-;;         )
-;;     ))
-;; )
 (defvar t (eq 1 1))
 (defvar false (eq 1 0))
 (defvar minus-char (car "-"))
@@ -48,6 +40,9 @@
 (defvar nil ())
 (defvar sym-end (lambda (x) (or (is-whitespace x) (eq paren-start x)
 										  (eq paren-end x))))
+
+(defvar is-digit
+  (lambda (x) (and (>= x char-0) (<= x char-9))))
 
 ;(Defvar is-digit (lambda (x) (
 
@@ -68,7 +63,7 @@
             )
           (loop input 
 					 (let ((fst (car input)))
-						(if (and (>= fst char-0) (<= fst char-9))
+						(if (is-digit fst)
 							 (set output (+ output fst))
 							 (if (and (not is-float) (eq fst char-dot))
 								  (progn
@@ -90,22 +85,19 @@
 (defvar parse-symbol
   (lambda (str) 
 	 (let ((output ""))
-		(println 'sym? (car str))
 		(loop (and str (not (sym-end (car str))))
-		 
 		 (set output (+ output (car str)))
-		 (println 'output output)
 		 (set str (cdr str)))
 		(if output
 			 (list (makesym output) str)
 			 nil))))
 
-(defvar parse-lisp (lambda (str) 
-    (block finish
+(defvar parse-lisp
+  (lambda (str) 
+	 (block finish
       (loop str 
 				(let ((next (car str))
 						(result (list)))
-				  (println 'next: next)
           (if (eq next paren-start)
 				  (progn
 					 (set str (cdr str))
@@ -173,5 +165,28 @@ asd"))
 
 (concat (list 3 4) (list 3 4))
 (println (makesym "+"))
+
+(defvar length (lambda (list) (get list 'length)))
 													 ;(if  (println 'yes) (println 'no))
 
+(defvar case-code
+  	 (lambda (cases)
+		(let ((value (car cases))
+				(out-cases (list)))
+        (let ((cases2 (cdr cases)))
+          (loop (length cases2)
+					 ;(println cases2)
+                (let ((thiscase (car cases2)))
+                    
+                    (list 'if (list 'eq value (list 'car 'xcase)))
+						  )
+                (set cases2 (cdr cases2))
+            )
+        
+        )
+		  )))
+(println (case-code '(case x (a b) (c d))))
+(defun asd (a b c) (+ a b c))
+(defmacro case case-code)
+(println (asd 1 2 3))
+(println (let ((a 10)) (%js "a + 1 + 2 + 3 + 4")))

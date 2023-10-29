@@ -2,7 +2,7 @@
 const util = require('util');
 
 lisp = {symbolName: {}, symbols: []}
-const reserved = {"true" : true, "false":true, "null": true}
+const reserved = {"true" : true, "false":true, "null": true, "case": true}
 
 
 nameid = 0;

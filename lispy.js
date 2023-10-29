@@ -45,7 +45,49 @@ eq = (a, b) => a === b;
 slice = (a, n) => a.slice(n);
 is_string = (a) => typeof(a) == "string";
 is_null = (a) => a == null;
-println = (...a) => console.log(...a);
+
+function println_impl(obj){
+  
+  if(Array.isArray(obj)){
+    let strOut = ""
+    let first = true
+    strOut += "["
+   for(let elem of obj){
+    if(!first){
+      strOut = strOut + ", ";
+    }else{
+      first = false;
+    }
+      strOut += println_impl(elem)
+
+    }
+    strOut += "]"
+    return strOut;
+  }else{
+    if(obj == null){
+      return "null";
+    }
+    if(obj.type == "symbol"){
+      return obj.value;
+    }
+    return obj.toString()
+  }
+}
+
+println = (...a) => {
+  let combined = ""
+  let first = true
+  for(let elem of a){
+    if(!first){
+      combined = combined + ", "
+    }else{
+      first = false
+    }
+    combined = combined + println_impl(elem)
+  }
+	 console.log(combined)
+	 return a[0]
+}
 nth = (a, n) => a[n]
 makemap_ = () => ({type: "lisp-object"})
 put = (obj, name, value) =>  obj[name.jsname ? name.jsname : name] = value
@@ -53,14 +95,15 @@ get = (obj, name) => obj[name.jsname ? name.jsname : name]
 charcode = (a) => a.charCodeAt(0)
 strfromchar = (...a) => String.fromCharCode(...a)
 reverse = (a) => a.slice().reverse()
-gte = (a,b) => a >= b
-lte = (a,b) => b >= a
+_op_gte = (a,b) => a >= b
+_op_lte = (a,b) => b >= a
+_op_lt = (a,b) => a < b
+_op_gt = (a,b) => a > b
 concat = (a,b)=> a.concat(b)
 makesym = (a) => sym(a)
 
 
 const loopSym = sym("loop");
-const gtSym = sym("gt");
 const notSym = sym("not");
 const subSym = sym("sub");
 const addSym = sym("add");
@@ -76,6 +119,7 @@ const orSym = sym("or");
 const andSym = sym("and");
 const blockSym = sym("block");
 const returnFromSym = sym("return-from")
+const jsSym = sym("%js")
 const quoteSym = lisp.quote_sym;
 
 
@@ -131,7 +175,7 @@ function lispCompile(code, n) {
   }else {
     n += 1;
   }
-  if(n > 10){
+  if(n > 100){
     throw new "errrrr";
   }
   if( typeof(code)  == "number" ){
@@ -157,9 +201,6 @@ function lispCompile(code, n) {
         const updateCode = update.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
 
         return `(() => {let tmp = null; for (;${lispCompile(condition)};) { ${updateCode} };return tmp})()`;
-      case gtSym:
-        const [left, right] = operands;
-        return `(${lispCompile(left, n)} > ${lispCompile(right, n)})`;
       case orSym:
         {
           const combined = operands.map(op => lispCompile(op, n)).join("||")
@@ -170,6 +211,11 @@ function lispCompile(code, n) {
           const combined = operands.map(op => lispCompile(op, n)).join("&&")
           return `(${combined})`
         }
+	 case jsSym:
+		  {
+				return operands[0];
+		  }
+		
       case blockSym:{
         const [sym, ...body] = operands;
         const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
@@ -240,7 +286,11 @@ function lispCompile(code, n) {
             return code;
         }).join(';');
         
-        const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
+		  if(body.length == 1){
+				return `(() => {${varCode};return ${lispCompile(body[0])};})()`
+		  }
+
+		  const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
         return `(() => {let tmp = null;${varCode};${bodyCode}; return tmp})()`
 	 }
       case ifSym:
@@ -334,10 +384,12 @@ code3 = `
 //x1()
 //console.log("x: ", x, y)
 //console.log(parser)
-fcn1 = lispCompileFunc("(let ((x 0)) (set x (add x 1)) (loop (not (gt x 100)) (set x (add x +1)) ))")
+
+
+fcn1 = lispCompileFunc("(let ((x 0)) (set x (add x 1)) (loop (not (_op_gt x 100)) (set x (add x +1)) ))")
 console.log("l: ", fcn1())
 if(fcn1() != 101){
-  throw "unexpected value"
+	 throw "unexpected value" + fcn1()
 }
 
 eval("vartest = 10;")
@@ -359,7 +411,7 @@ fcn1 = lispCompileFunc("(eq 1 2)")
 console.log("eq: ", fcn1())
 
 
-fcn1 = lispCompileFunc("(let ((x 0)) (set x (add x 1)) (loop (not (gt x 10000000)) (set x (+ x +1)) ))")
+fcn1 = lispCompileFunc("(let ((x 0)) (set x (add x 1)) (loop (not (_op_gt x 10000000)) (set x (+ x +1)) ))")
 console.log("l: ", fcn1())
 
 fcn1 = lispCompileFunc("(let ((x 0)) (mul 4 (add x 2)))")
