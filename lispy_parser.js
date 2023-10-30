@@ -156,8 +156,20 @@ class ParserCondition {
             const [r, next] = ParseLisp(input.slice(1));
             return [[lisp.quote_sym, r], next]
           }
-          case '"':
-              return parseString(input);
+		case '`':
+			 {
+				  const [r, next] = ParseLisp(input.slice(1));
+              return [[lisp.quasiquote_sym, r], next]
+
+			 }
+		case ',':
+			 {
+				  const [r, next] = ParseLisp(input.slice(1));
+              return [[lisp.quasiunquote_sym, r], next]
+
+			 }
+      case '"':
+          return parseString(input);
 
   
         default:

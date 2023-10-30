@@ -40,10 +40,14 @@ function sym(str, jsname) {
       }
       return lisp.symbolName[str];
   }
-  quote_sym = sym("quote");
+quote_sym = sym("quote");
+quasiquote_sym = sym("quasiquote")
+quasiunquote_sym = sym("quasiunquote")
 
   module.exports = {
     sym: sym,
     lisp: lisp,
-    quote_sym : quote_sym
+		quote_sym : quote_sym,
+		quasiquote_sym : quasiquote_sym,
+		quasiunquote_sym : quasiunquote_sym
   };

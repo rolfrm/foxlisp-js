@@ -5,7 +5,7 @@
 (defvar < _op_lt)
 (defvar >= _op_gte)
 (defvar <= _op_lte)
-
+(defvar null? is_null)
 (defvar defun-code
 	 (lambda (code)
 		(list 'defvar (car code)
