@@ -124,7 +124,8 @@ const blockSym = sym("block");
 const returnFromSym = sym("return-from")
 const jsSym = sym("%js")
 const quoteSym = lisp.quote_sym;
-
+const quasiQuoteSym = lisp.quasiquote_sym;
+const quasiUnQuoteSym = lisp.quasiunquote_sym;
 
 const defvarSym = sym("defvar");
 
@@ -159,6 +160,25 @@ function subMacro(operands){
    return first;
 }
 
+function unquoteToJs(code){
+	 if(code == null){
+		  return "null"
+	 }
+	 if(Array.isArray(code)){
+		  const innerCode = code.map(elem => unquoteToJs(elem)).join(',');
+		  return `[${innerCode}]`;
+	 }
+	 if(code.type == "symbol"){
+		  return `sym(${lisp.symbolId})`
+	 }
+	 if(typeof(code) == 'string'){
+		  return `"${code}"`
+	 }
+	 
+	 
+	 return code.toString();
+
+}
 
 add2 = sym("+")
 add2.macro = mathMacro(addSym);
@@ -262,6 +282,14 @@ function lispCompile(code, n) {
             const id = setQuote(quoted)
             return `getQuote(${id})`;
         }
+	 case quasiQuoteSym:
+		  {
+				const [quoted] = operands
+				const code = unquoteToJs(quoted)
+				return code;
+
+		  }
+		  
       case defvarSym:
         {
         const [sym, code] = operands;

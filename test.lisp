@@ -215,4 +215,6 @@ asd"))
 
 (println (case 9 (9 (+ 1 2)) (10 (+ 3 4))))
 
+(println `(1 2 3 "asd" (3 2 1)))
+
 													 ;(raise "assertion failed")
