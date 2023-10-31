@@ -43,11 +43,13 @@ function sym(str, jsname) {
 quote_sym = sym("quote");
 quasiquote_sym = sym("quasiquote")
 quasiunquote_sym = sym("quasiunquote")
+quasiunquotesplice_sym = sym("quasiunquote-splice")
 
   module.exports = {
     sym: sym,
     lisp: lisp,
 		quote_sym : quote_sym,
 		quasiquote_sym : quasiquote_sym,
-		quasiunquote_sym : quasiunquote_sym
+		quasiunquote_sym : quasiunquote_sym,
+		quasiunquotesplice_sym : quasiunquotesplice_sym
   };

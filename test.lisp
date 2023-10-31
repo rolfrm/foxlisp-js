@@ -215,6 +215,7 @@ asd"))
 
 (println (case 9 (9 (+ 1 2)) (10 (+ 3 4))))
 
-(println `(1 2 3 "asd" (3 2 1)))
+(println `(1 2 3 "asd" asd (3 2 1 ,(+ 1 2) ,@(list 4 5 6) 1 2 "hello
+world")))
 
-													 ;(raise "assertion failed")
+;(println (get "asd123"))													 ;(raise "assertion failed")

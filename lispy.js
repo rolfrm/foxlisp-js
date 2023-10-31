@@ -40,6 +40,7 @@ caddr => (x) => x[2]
 cddr = (x) => x.slice(2);
 len = (x) => x.length
 list = (...x) => x
+
 get_type = (x) => typeof x;
 eq = (a, b) => a === b;
 slice = (a, n) => a.slice(n);
@@ -48,6 +49,27 @@ is_null = (a) => a == null;
 raise =(err) =>{
 	 throw err;
 };
+usplice = (x) => ({type: "unsplice", value: x})
+ulist = (...x) => {
+	 let out = []
+	 for (let elem of x){
+		  if(elem.type == "unsplice"){
+				for (let elem2 of elem.value){
+					 out.push(elem2);
+				}
+				
+		  }else{
+				out.push(elem);
+		  }
+	 }
+	 return out
+}
+
+function escapeString(x){
+	 return x.replace(/"/g, '""').replace(/\n/g, '\\n')
+}
+
+getsym = (s) => sym(s, null)
 
 function println_impl(obj){
   
@@ -71,7 +93,7 @@ function println_impl(obj){
       return "null";
     }
     if(obj.type == "symbol"){
-      return obj.value;
+        return obj.value;
     }
     return obj.toString()
   }
@@ -126,6 +148,7 @@ const jsSym = sym("%js")
 const quoteSym = lisp.quote_sym;
 const quasiQuoteSym = lisp.quasiquote_sym;
 const quasiUnQuoteSym = lisp.quasiunquote_sym;
+const quasiUnQuoteSpliceSym = lisp.quasiunquotesplice_sym;
 
 const defvarSym = sym("defvar");
 
@@ -165,14 +188,21 @@ function unquoteToJs(code){
 		  return "null"
 	 }
 	 if(Array.isArray(code)){
+		  if(code[0] == quasiUnQuoteSpliceSym){
+				
+				return `usplice(${lispCompile(code[1])})`;
+		  }
+		  if(code[0] == quasiUnQuoteSym){
+				return lispCompile(code[1])
+		  }
 		  const innerCode = code.map(elem => unquoteToJs(elem)).join(',');
-		  return `[${innerCode}]`;
+		  return `ulist(${innerCode})`;
 	 }
 	 if(code.type == "symbol"){
-		  return `sym(${lisp.symbolId})`
+		  return `getsym("${escapeString(code.value)}")`
 	 }
 	 if(typeof(code) == 'string'){
-		  return `"${code}"`
+		  return `"${escapeString(code)}"`
 	 }
 	 
 	 

@@ -164,6 +164,10 @@ class ParserCondition {
 			 }
 		case ',':
 			 {
+				  if(input[1] == '@'){
+						const [r, next] = ParseLisp(input.slice(2));
+						return [[lisp.quasiunquotesplice_sym, r], next]
+				  }
 				  const [r, next] = ParseLisp(input.slice(1));
               return [[lisp.quasiunquote_sym, r], next]
 
