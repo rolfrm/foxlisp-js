@@ -16,6 +16,12 @@
   `(defvar ,(car code)
 	  (lambda ,(cadr code) ,@(cddr code))))
 
+(defmacro unless (code)
+  `(if ,(car code) () (progn ,@(cdr code))))
+
+(defmacro when (code)
+  `(if ,(car code) (progn @,(cdr code))))
+
 (defun assert(condition error)
   (if (not condition)
 		(raise error)
@@ -153,19 +159,17 @@
 		  (out-cases (list)))
     (let ((cases2 (cdr cases)))
       (loop (length cases2)
-		 
-       (let ((thiscase (car cases2)))
-			
-         (assert (eq 2 (length thiscase)) "case must have a check and evaluation code")
-         (let ((c (list 'if (list 'eq 'cons-value (car thiscase)) (cadr thiscase))))
+	    (let ((thiscase (car cases2)))
+			(assert (eq 2 (length thiscase)) "case must have a check and evaluation code")
+         (let ((c `(if (eq cons-value ,(car thiscase)) ,(cadr thiscase))))
 			  (set out-cases (concat out-cases (list c)))
 			  )
 			)
        (set cases2 (cdr cases2))
        )
 		)
-	 (println out-cases)
 	 `(let ((cons-value ,value))
 		 ,(link-ends out-cases))
 	 ))
+
 

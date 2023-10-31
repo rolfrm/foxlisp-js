@@ -53,7 +53,10 @@ usplice = (x) => ({type: "unsplice", value: x})
 ulist = (...x) => {
 	 let out = []
 	 for (let elem of x){
-		  if(elem.type == "unsplice"){
+		  if(elem == undefined){
+				throw new Error("content is undefined");
+		  }
+		  if(typeof(elem) == "object" && elem.type == "unsplice"){
 				for (let elem2 of elem.value){
 					 out.push(elem2);
 				}
@@ -62,6 +65,7 @@ ulist = (...x) => {
 				out.push(elem);
 		  }
 	 }
+	 
 	 return out
 }
 
@@ -183,11 +187,30 @@ function subMacro(operands){
    return first;
 }
 
+function quotedJs(code){
+	 if(Array.isArray(code)){
+		  const innerCode = code.map(elem => quotedJs(elem)).join(',');
+		  return `[${innerCode}]`
+	 }
+	 if(code.type == "symbol"){
+		  return `getsym("${escapeString(code.value)}")`
+	 }
+	 if(typeof(code) == 'string'){
+		  return `"${escapeString(code)}"`
+	 }	 
+	 return code.toString();
+
+}
+
 function unquoteToJs(code){
 	 if(code == null){
 		  return "null"
 	 }
 	 if(Array.isArray(code)){
+		  if(code[0] == quasiQuoteSym){
+				
+				return quotedJs(code) 
+		  }
 		  if(code[0] == quasiUnQuoteSpliceSym){
 				
 				return `usplice(${lispCompile(code[1])})`;
@@ -239,6 +262,9 @@ function lispCompile(code, n) {
     id = internString(code)
     return `getInternedString(${id})`;
   }
+	 if(code == undefined){
+		  return "undefined"
+	 }
     if (code.type == "symbol"){
         return code.jsname
     }
@@ -324,17 +350,19 @@ function lispCompile(code, n) {
         {
         const [sym, code] = operands;
         const valueCode = lispCompile(code, n);
-        println(["value code:", valueCode])
+        //println(["value code:", valueCode])
         eval(`${sym.jsname} = ${valueCode}`)
         return `${sym.jsname}`
         }
       case defMacroSym:
         {
-          const [sym, code] = operands;
-          macroValue = eval(lispCompile(code, n));
-          sym.macro = macroValue;
-
-          return "1"
+				const [sym, code] = operands;
+				const macroCode = lispCompile(code, n)
+				console.log("macro code: ", macroCode, code)
+				macroValue = eval(macroCode);
+				sym.macro = macroValue;
+				
+				return "1"
         }
       case setSym:
         const [variable, value] = operands;
@@ -364,11 +392,15 @@ function lispCompile(code, n) {
         }
       // Add more cases for other operators as needed
   
-      default:
+    default:
+		  if(operator == undefined){
+				throw new Error("undefined operator in " code);
+		  }
         if (operator.macro != null) {
-          newcode = operator.macro(operands)
+			 newcode = operator.macro(operands)
+          
           return lispCompile(newcode, n)
-        }  
+        }
         args = operands.map(op => lispCompile(op, n)).join(",")
         
         return `${operator.jsname}(${args})`;
