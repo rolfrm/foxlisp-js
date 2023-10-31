@@ -139,7 +139,7 @@ const letSym = sym("let");
 const prognSym = sym("progn");
 const ifSym = sym("if");
 const lambdaSym = sym("lambda");
-const defMacroSym = sym("defmacro");
+const defMacroSym = sym("setmacro");
 const orSym = sym("or");
 const andSym = sym("and");
 const blockSym = sym("block");
@@ -324,7 +324,7 @@ function lispCompile(code, n) {
         {
         const [sym, code] = operands;
         const valueCode = lispCompile(code, n);
-        console.log("value code:", valueCode)
+        println(["value code:", valueCode])
         eval(`${sym.jsname} = ${valueCode}`)
         return `${sym.jsname}`
         }
@@ -394,18 +394,19 @@ function evalLisp(code){
 function LispEvalBlock(code) {
   for(;;){
     
-    const [ast, next] = parser.ParseLisp(code)
-    //console.log(">> ", next, ast);
-    if (next == null){
-     return;
-    }
-    code = next;
-    js = "return "+ lispCompile(ast)
-    console.log("code: ", ast, "=>", js)
-    //console.log("ast: ", ast)
-    //console.log("js: ", js)
-    let f = Function(js)
-    f();
+		const [ast, next] = parser.ParseLisp(code)
+		//console.log(">> ", next, ast);
+		if (next == null){
+			 return;
+		}
+		code = next;
+		js = "return "+ lispCompile(ast)
+		println(["value code:", ast, "=>", js])
+		//console.log("code: ", ast, "=>", js)
+		//console.log("ast: ", ast)
+		//console.log("js: ", js)
+		let f = Function(js)
+		f();
   }
 }
 

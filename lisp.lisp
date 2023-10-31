@@ -6,21 +6,20 @@
 (defvar >= _op_gte)
 (defvar <= _op_lte)
 (defvar null? is_null)
-(defvar defun-code
-	 (lambda (code)
-		`(defvar ,(car code)
-				(lambda ,(cadr code) ,@(cddr code)))))
 
-(defmacro defun defun-code)
+(setmacro defmacro
+			 (lambda (code)
+				`(setmacro ,(car code)
+							  (lambda ,(cadr code) ,@(cddr code)))))
+
+(defmacro defun (code)
+  `(defvar ,(car code)
+	  (lambda ,(cadr code) ,@(cddr code))))
 
 (defun assert(condition error)
   (if (not condition)
 		(raise error)
   ))
-
-
-(defmacro test-macro (lambda (code) (list 'quote (cdr code))))
-(println (test-macro 1 2 3))
 
 (defvar space (car " "))
 (defvar tab (car "	"))
@@ -35,7 +34,6 @@
     str
 ))
 
-
 (defvar t (eq 1 1))
 (defvar false (eq 1 0))
 (defvar minus-char (car "-"))
@@ -47,10 +45,8 @@
 (defvar sym-end (lambda (x) (or (is-whitespace x) (eq paren-start x)
 										  (eq paren-end x))))
 
-(defvar is-digit
-  (lambda (x) (and (>= x char-0) (<= x char-9))))
-
-;(Defvar is-digit (lambda (x) (
+(defun is-digit(x)
+  (and (>= x char-0) (<= x char-9)))
 
 (defvar parse-number
   (lambda (input)
@@ -135,33 +131,6 @@
 				(if n
 					 (return-from finish n)))
         )))))
-    
-(println (parse-lisp "(+ 1 2)"))
-
-(println (skip-whitespace " abc123__"))
-(defvar obj2 (makemap_))
-(set obj2 (makemap_))
-(println obj2)  
-(put obj2 'x 5)
-(println "obj2:" obj2 (get obj2 'x))
-(put obj2 "y" 3)
-(println "obj2:" obj2 (get obj2 "y"))
-(println 'newline: newline tab (charcode tab) "a")
-(println "|" (strfromchar 31 32 33 34 9 9 9 9 35 36 37 38 39 40 41 42 43 44 52 43 54 (charcode (car "a"))) "|")
-
-(println "r:" (or 0 2 3) "r2:" (and 1 2 3))
-
-(println (skip-whitespace "    
-
-asd"))
-
-(println (block a (+ 1 2 (return-from a 5))))
-(println (reverse (list 1 2 3)))
-(println ())
-(println "???")
-(println "parse number: " (parse-number "-123 asd"))
-(println "parse lisp: " (parse-lisp "(+ 1 2)"))
-;(defvar concat (get (list 1 2) 'concat))
 
 (defvar make-sym2 (lambda (name)
   (let ((map (make-map)))
@@ -169,11 +138,7 @@ asd"))
 	 (put map 'name name)
 	 map)))
 
-(concat (list 3 4) (list 3 4))
-(println (makesym "+"))
-
 (defvar length (lambda (list) (get list 'length)))
-													 ;(if  (println 'yes) (println 'no))
 
 (defun link-ends(lists)
   (if (> (length lists) 2)
@@ -182,29 +147,25 @@ asd"))
 		(concat (car lists)
 				  (list (cadr lists)))))
 
-(defvar case-code
-  (lambda (cases)
-	 (assert (> (length cases) 0) "Expected more than one argument")
-		(let ((value (car cases))
-				(out-cases (list)))
-        (let ((cases2 (cdr cases)))
-          (loop (length cases2)
-			  
-           (let ((thiscase (car cases2)))
-				 
-             (assert (eq 2 (length thiscase)) "case must have a check and evaluation code")
-             (let ((c (list 'if (list 'eq 'cons-value (car thiscase)) (cadr thiscase))))
-					(set out-cases (concat out-cases (list c)))
-					)
-				 )
-           (set cases2 (cdr cases2))
-           )
-			 )
-		  `(let ((cons-value ,value))
-			  ,(link-ends out-cases))
-		  )))
-(setmacro case case-code)
+(defmacro case (cases)
+  (assert (> (length cases) 0) "Expected more than one argument")
+  (let ((value (car cases))
+		  (out-cases (list)))
+    (let ((cases2 (cdr cases)))
+      (loop (length cases2)
+		 
+       (let ((thiscase (car cases2)))
+			
+         (assert (eq 2 (length thiscase)) "case must have a check and evaluation code")
+         (let ((c (list 'if (list 'eq 'cons-value (car thiscase)) (cadr thiscase))))
+			  (set out-cases (concat out-cases (list c)))
+			  )
+			)
+       (set cases2 (cdr cases2))
+       )
+		)
+	 (println out-cases)
+	 `(let ((cons-value ,value))
+		 ,(link-ends out-cases))
+	 ))
 
-
-
-;(println (get "asd123"))													 ;(raise "assertion failed")
