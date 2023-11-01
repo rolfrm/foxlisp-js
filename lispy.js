@@ -359,6 +359,7 @@ function lispCompile(code, n) {
 				const [sym, code] = operands;
 				const macroCode = lispCompile(code, n)
 				console.log("macro code: ", macroCode, code)
+				// todo: macros can only take one arg.
 				macroValue = eval(macroCode);
 				sym.macro = macroValue;
 				
@@ -394,7 +395,7 @@ function lispCompile(code, n) {
   
     default:
 		  if(operator == undefined){
-				throw new Error("undefined operator in " code);
+				throw new Error("undefined operator in ", code)
 		  }
         if (operator.macro != null) {
 			 newcode = operator.macro(operands)
