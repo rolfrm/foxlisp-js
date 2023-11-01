@@ -46,9 +46,11 @@ eq = (a, b) => a === b;
 slice = (a, n) => a.slice(n);
 is_string = (a) => typeof(a) == "string";
 is_null = (a) => a == null;
+is_list = (a) => Array.isArray(a)
 raise =(err) =>{
 	 throw err;
 };
+
 usplice = (x) => ({type: "unsplice", value: x})
 ulist = (...x) => {
 	 let out = []
@@ -153,6 +155,7 @@ const quoteSym = lisp.quote_sym;
 const quasiQuoteSym = lisp.quasiquote_sym;
 const quasiUnQuoteSym = lisp.quasiunquote_sym;
 const quasiUnQuoteSpliceSym = lisp.quasiunquotesplice_sym;
+const restSym = sym("&rest")
 
 const defvarSym = sym("defvar");
 
@@ -310,7 +313,12 @@ function lispCompile(code, n) {
       case lambdaSym:
         {
             const [args, ...body] = operands;
-            const argstr = args.map(arg => arg.jsname).join(",")
+				const restIndex = args.indexOf(restSym)
+				console.log("idx:", restIndex)
+            let argstr = args.map(arg => arg.jsname).join(",")
+				if(restIndex != -1){
+					 argstr = args.slice(0, restIndex).map(arg => arg.jsname).concat(["..." + args[restIndex + 1].jsname]).join(",");
+				}
             if(body.length == 1) {
                 return `((${argstr}) => ${lispCompile(body[0], n)})`;
             }
@@ -322,6 +330,9 @@ function lispCompile(code, n) {
 		  {
 				const body = operands;
 				if(body.length == 0){
+					 return "null"
+				}
+				if(body.length == 1){
 					 return `${lispCompile(body[0], n)}`
 				}
 				const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');

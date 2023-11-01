@@ -6,9 +6,11 @@
 (defvar >= _op_gte)
 (defvar <= _op_lte)
 (defvar null? is_null)
+(defvar list? is_list)
 
 (setmacro defmacro
 			 (lambda (code)
+				
 				`(setmacro ,(car code)
 							  (lambda ,(cadr code) ,@(cddr code)))))
 
@@ -17,15 +19,59 @@
 	  (lambda ,(cadr code) ,@(cddr code))))
 
 (defmacro unless (code)
-  `(if ,(car code) () (progn ,@(cdr code))))
+  `(if ,(car code) (progn) (progn ,@(cdr code))))
 
 (defmacro when (code)
-  `(if ,(car code) (progn @,(cdr code))))
+  `(if ,(car code) (progn ,@(cdr code))))
+
+(defun length(list) (get list 'length))
+
+(defun equals?(a b)
+  (block return2
+	 (if (list? a)
+		  (if (list? b)
+				(if (eq (length a) (length b))
+					 (loop (length a)
+							 (unless (equals? (car a) (car b))
+								(return-from return2 true))
+							 (set a (cdr a))
+							 (set b (cdr b)))))
+		  (eq a b)
+								
+  )))
+
+(defun equals?2(a b)
+  (block return2
+	 (eq a b))
+  )
+
 
 (defun assert(condition error)
-  (if (not condition)
-		(raise error)
+  (if condition
+		(progn)
+		(progn
+		  (raise error))
   ))
+
+(defmacro assert-eq (args)
+  `(assert (eq ,(car args) ,(cadr args))
+			  '("assertion failed: "
+				 ,(car args) != ,(cadr args) )))
+
+(defmacro assert-not-eq(args)
+  `(assert (not (eq ,(car args) ,(cadr args)))
+			  '("assertion failed:" ,(car args) == ,(cadr args))))
+
+(defmacro assert-equals (args)
+  `(assert (equals? ,(car args) ,(cadr args))
+			  '("assertion failed: "
+				 ,(car args) != ,(cadr args) )))
+(defmacro assert-not-equals (args)
+  `(assert (not (equals?  ,(car args) ,(cadr args)))
+			  '("assertion failed: "
+				 ,(car args) equals ,(cadr args) )))
+
+
 
 (defvar space (car " "))
 (defvar tab (car "	"))
@@ -144,7 +190,6 @@
 	 (put map 'name name)
 	 map)))
 
-(defvar length (lambda (list) (get list 'length)))
 
 (defun link-ends(lists)
   (if (> (length lists) 2)
