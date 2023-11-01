@@ -9,20 +9,20 @@
 (defvar list? is_list)
 
 (setmacro defmacro
-			 (lambda (code)
+			 (lambda (name args &rest code)
 				
-				`(setmacro ,(car code)
-							  (lambda ,(cadr code) ,@(cddr code)))))
+				`(setmacro ,name
+							  (lambda ,args ,@code))))
 
-(defmacro defun (code)
-  `(defvar ,(car code)
-	  (lambda ,(cadr code) ,@(cddr code))))
+(defmacro defun (name args &rest code)
+  `(defvar ,name
+	  (lambda ,args ,@code)))
 
-(defmacro unless (code)
-  `(if ,(car code) (progn) (progn ,@(cdr code))))
+(defmacro unless (test &rest actions)
+  `(if ,test (progn) (progn ,@actions)))
 
-(defmacro when (code)
-  `(if ,(car code) (progn ,@(cdr code))))
+(defmacro when (test &rest actions)
+  `(if ,test (progn ,@actions)))
 
 (defun length(list) (get list 'length))
 
@@ -53,23 +53,24 @@
 		  (raise error))
   ))
 
-(defmacro assert-eq (args)
-  `(assert (eq ,(car args) ,(cadr args))
+(defmacro assert-eq (a b)
+  `(assert (eq ,a ,b)
 			  '("assertion failed: "
-				 ,(car args) != ,(cadr args) )))
+				 ,a != ,b )))
 
-(defmacro assert-not-eq(args)
-  `(assert (not (eq ,(car args) ,(cadr args)))
-			  '("assertion failed:" ,(car args) == ,(cadr args))))
+(defmacro assert-not-eq(a b)
+  `(assert (not (eq ,a ,b))
+			  '("assertion failed:" ,a == ,b)))
 
-(defmacro assert-equals (args)
-  `(assert (equals? ,(car args) ,(cadr args))
+(defmacro assert-equals (a b)
+  `(assert (equals? ,a ,b)
 			  '("assertion failed: "
-				 ,(car args) != ,(cadr args) )))
-(defmacro assert-not-equals (args)
-  `(assert (not (equals?  ,(car args) ,(cadr args)))
+				 ,a != ,b )))
+
+(defmacro assert-not-equals (a b)
+  `(assert (not (equals?  ,a ,b))
 			  '("assertion failed: "
-				 ,(car args) equals ,(cadr args) )))
+				 ,a equals ,b )))
 
 
 
@@ -198,7 +199,7 @@
 		(concat (car lists)
 				  (list (cadr lists)))))
 
-(defmacro case (cases)
+(defmacro case (&rest cases)
   (assert (> (length cases) 0) "Expected more than one argument")
   (let ((value (car cases))
 		  (out-cases (list)))

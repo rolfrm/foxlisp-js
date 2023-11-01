@@ -160,7 +160,7 @@ const restSym = sym("&rest")
 const defvarSym = sym("defvar");
 
 function mathMacro(sym){
-  function macro(operands){
+  function macro(...operands){
     let [first, ...rest] = operands;
      if(first == null){
         throw "not enough arguments for add"
@@ -175,7 +175,7 @@ function mathMacro(sym){
 }
 
 
-function subMacro(operands){
+function subMacro(...operands){
   let [first, ...rest] = operands;
    if(first == null){
       throw "not enough arguments for add"
@@ -409,7 +409,8 @@ function lispCompile(code, n) {
 				throw new Error("undefined operator in ", code)
 		  }
         if (operator.macro != null) {
-			 newcode = operator.macro(operands)
+				console.log(operands)
+			 newcode = operator.macro(...operands)
           
           return lispCompile(newcode, n)
         }
