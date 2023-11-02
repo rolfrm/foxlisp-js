@@ -52,6 +52,11 @@ raise =(err) =>{
 };
 
 usplice = (x) => ({type: "unsplice", value: x})
+
+load = (x) => ({type: "load", value: x})
+
+
+
 ulist = (...x) => {
 	 let out = []
 	 for (let elem of x){
@@ -436,6 +441,9 @@ function evalLisp(code){
   return fn();
 }
 
+const fs = require('fs');
+
+
 function LispEvalBlock(code) {
   for(;;){
     
@@ -447,11 +455,21 @@ function LispEvalBlock(code) {
 		code = next;
 		js = "return "+ lispCompile(ast)
 		println(["value code:", ast, "=>", js])
-		//console.log("code: ", ast, "=>", js)
-		//console.log("ast: ", ast)
-		//console.log("js: ", js)
+		
 		let f = Function(js)
-		f();
+		const result = f();
+		if(result != null && typeof(result) == "object" && result.type == "load"){
+			 console.log("load!");
+			 fs.readFile(result.value, (err, data) => {
+				  if (err) {
+						console.error('Error reading the file:', err);
+						return;
+				  }
+				  LispEvalBlock(data + "\n" + next)
+			 });
+			 
+			 return;
+		}
   }
 }
 
