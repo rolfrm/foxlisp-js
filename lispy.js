@@ -441,7 +441,35 @@ function evalLisp(code){
   return fn();
 }
 
-const fs = require('fs');
+loadFileAsync = null
+
+if (typeof module !== 'undefined' && module.exports) {
+  // Code for Node.js
+	 const fs = require('fs');
+	 let load_file = (filePath, contentAction) => {
+		  fs.readFile(filePath, (err, data) => {
+				if (err) {
+					 console.error('Error reading the file:', err);
+					 return;
+				}
+				contentAction(data)
+		  });
+		  
+	 }
+	 loadFileAsync = load_file;
+  // ... other Node.js specific code
+} else {
+  // Code for the browser
+	 // ... browser-specific code
+	 let load_file = (filePath, contentAction) => {
+		  fetch(filePath)
+				.then(response => response.text())
+				.then(data => contentAction(data))
+	 }
+	 loadFileAsync = load_file
+}
+
+
 
 
 function LispEvalBlock(code) {
@@ -460,11 +488,7 @@ function LispEvalBlock(code) {
 		const result = f();
 		if(result != null && typeof(result) == "object" && result.type == "load"){
 			 console.log("load!");
-			 fs.readFile(result.value, (err, data) => {
-				  if (err) {
-						console.error('Error reading the file:', err);
-						return;
-				  }
+			 loadFileAsync(result.value, (data) => {
 				  LispEvalBlock(data + "\n" + next)
 			 });
 			 
