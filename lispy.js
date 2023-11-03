@@ -443,9 +443,9 @@ function evalLisp(code){
 
 loadFileAsync = null
 
-if (typeof module !== 'undefined' && module.exports) {
+if (false && typeof module !== 'undefined' && module.exports) {
   // Code for Node.js
-	 const fs = require('fs');
+	 //const fs = require('fs');
 	 let load_file = (filePath, contentAction) => {
 		  fs.readFile(filePath, (err, data) => {
 				if (err) {
@@ -499,6 +499,7 @@ function LispEvalBlock(code) {
 
 
 lisp.lisp.eval = evalLisp
+lisp.lisp.LispEvalBlock = LispEvalBlock
 module.exports = {
   EvalLisp: evalLisp,
   LispEvalBlock: LispEvalBlock,

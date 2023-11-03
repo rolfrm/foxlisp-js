@@ -22,7 +22,7 @@
             try {
               // You can replace this with an actual Lisp interpreter or evaluator
               //const result = evallisp(editorContent);
-              const result = lisp.eval(editorContent);
+              const result = lisp.LispEvalBlock(editorContent);
               document.getElementById('output').innerText = `Result: ${result}`;
             } catch (error) {
               document.getElementById('output').innerText = `Error: ${error.message}`;
