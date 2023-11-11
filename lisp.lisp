@@ -8,6 +8,7 @@
 (defvar null? is_null)
 (defvar list? is_list)
 
+
 (setmacro defmacro
 			 (lambda (name args &rest code)
 				
@@ -23,6 +24,9 @@
 
 (defmacro when (test &rest actions)
   `(if ,test (progn ,@actions)))
+
+(defun symbol? (item)
+  (when item (eq item.type "symbol")))
 
 (defun length(list) (get list 'length))
 
@@ -200,7 +204,8 @@
 				  (list (cadr lists)))))
 
 (defmacro case (&rest cases)
-  (assert (> (length cases) 0) "Expected more than one argument")
+  (println 'case cases)
+  (assert (> (length cases) 1) "Case expects more than one argument")
   (let ((value (car cases))
 		  (out-cases (list)))
     (let ((cases2 (cdr cases)))
@@ -218,4 +223,19 @@
 		 ,(link-ends out-cases))
 	 ))
 
+(defmacro for-each (sym list &rest body)
+  `(let ((for-each-lst ,list)
+			(,sym nil)
+			(__i 0)
+			(__len (length for-each-lst)))
+	  (loop (< __i __len)
+		(set ,sym (nth for-each-lst __i))
+		(set __i (+ __i 1))
+		,@body)
+	  ))
 
+(defun map (f lst)
+  (let ((out (make-map)))
+	 (put out 'length (length lst))
+	 (Array.from out (lambda (_, index) (f (nth lst index))))))
+  

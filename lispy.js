@@ -1,30 +1,41 @@
 const parser = require("./lispy_parser")
 const lisp = require("./lisp")
-
+console.log("loading lispy")
 function sym(x, jsname){
     return lisp.sym(x, jsname)
 }
 
 quotes = []
+quotes_lookup = new Map();
 function _getQuote(id) {
     return quotes[id]
 }
 getQuote = _getQuote
 function setQuote(newQuote){
-    id = quotes.length;
+	 if(quotes_lookup.has(newQuote)) {
+		  return quotes_lookup.get(newQuote);x
+	 }
+    let id = quotes.length;
     quotes.length += 1
     quotes[id] = newQuote
+	 quotes_lookup.set(newQuote, id)
     return id
 }
 
 internedStrings = []
+internStringLookup = {}
 
 getInternedString = (id) => internedStrings[id]
-function internString(str){
-    id = internedStrings.length;
-    internedStrings.length += 1
-    internedStrings[id] = str
-    return id
+
+function internString(str) {
+    if (str in internStringLookup) {
+        return internStringLookup[str];
+    } else {
+        const id = internedStrings.length;
+        internedStrings.push(str);
+        internStringLookup[str] =  id;
+        return id;
+    }
 }
 
 car = (x) => x[0]
@@ -40,6 +51,7 @@ caddr => (x) => x[2]
 cddr = (x) => x.slice(2);
 len = (x) => x.length
 list = (...x) => x
+makehashmap = () => new Map();
 
 get_type = (x) => typeof x;
 eq = (a, b) => a === b;
@@ -350,9 +362,9 @@ function lispCompile(code, n) {
         }
       case quoteSym:
         {
-            const [quoted] = operands;
+            const [quoted] = operands
             const id = setQuote(quoted)
-            return `getQuote(${id})`;
+            return `getQuote(${id})`
         }
 	 case quasiQuoteSym:
 		  {
@@ -374,7 +386,7 @@ function lispCompile(code, n) {
         {
 				const [sym, code] = operands;
 				const macroCode = lispCompile(code, n)
-				console.log("macro code: ", macroCode, code)
+				console.log("macro code: ", macroCode)
 				// todo: macros can only take one arg.
 				macroValue = eval(macroCode);
 				sym.macro = macroValue;
@@ -414,7 +426,7 @@ function lispCompile(code, n) {
 				throw new Error("undefined operator in ", code)
 		  }
         if (operator.macro != null) {
-				console.log(operands)
+				//console.log(operands)
 			 newcode = operator.macro(...operands)
           
           return lispCompile(newcode, n)
@@ -443,34 +455,7 @@ function evalLisp(code){
 
 loadFileAsync = null
 
-if (false && typeof module !== 'undefined' && module.exports) {
-  // Code for Node.js
-	 //const fs = require('fs');
-	 let load_file = (filePath, contentAction) => {
-		  fs.readFile(filePath, (err, data) => {
-				if (err) {
-					 console.error('Error reading the file:', err);
-					 return;
-				}
-				contentAction(data)
-		  });
-		  
-	 }
-	 loadFileAsync = load_file;
-  // ... other Node.js specific code
-} else {
-  // Code for the browser
-	 // ... browser-specific code
-	 let load_file = (filePath, contentAction) => {
-		  fetch(filePath)
-				.then(response => response.text())
-				.then(data => contentAction(data))
-	 }
-	 loadFileAsync = load_file
-}
-
-
-
+console.log("??");
 
 function LispEvalBlock(code) {
   for(;;){
@@ -500,14 +485,10 @@ function LispEvalBlock(code) {
 
 lisp.lisp.eval = evalLisp
 lisp.lisp.LispEvalBlock = LispEvalBlock
-module.exports = {
-  EvalLisp: evalLisp,
-  LispEvalBlock: LispEvalBlock,
-  lispCompile: lispCompile
-};
+
 
 if(evalLisp("(+ 1 2)") != 3){
-  throw "ho no!"
+	 throw new Error("ho no!")
 }
 
 x = 10000000
@@ -581,7 +562,13 @@ console.log("quoted: - x: ", evalLisp("'x"))
 
 let test = evalLisp("()")
 if(test != null){
-  throw "expected null"
+	 throw new Error("expected null")
 }
 
+console.log("loaded lispy.js ooko")
 
+module.exports = {
+  EvalLisp: evalLisp,
+  LispEvalBlock: LispEvalBlock,
+  lispCompile: lispCompile
+};
