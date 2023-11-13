@@ -5,8 +5,7 @@
 (defvar < _op_lt)
 (defvar >= _op_gte)
 (defvar <= _op_lte)
-(defvar null? is_null)
-(defvar list? is_list)
+
 
 
 (setmacro defmacro
@@ -19,14 +18,20 @@
   `(defvar ,name
 	  (lambda ,args ,@code)))
 
+(defun object? (item) (eq (type-of item) "object"))
+(defun null? (item) (and (object? item) (not item)))  
+
+(defun list? (x) (and (eq (type-of x) "object") (Array.isArray x)))
+(defun string? (x) (eq (type-of x) "string"))
+(defmacro undefined? (x) `(eq (type-of ,x) "undefined"))
+(defun symbol? (item) (and item (eq item.type "symbol")))
+(defun number? (item) (eq (type-of item) "number"))
 (defmacro unless (test &rest actions)
-  `(if ,test (progn) (progn ,@actions)))
+  `(if ,test () (progn ,@actions)))
 
 (defmacro when (test &rest actions)
-  `(if ,test (progn ,@actions)))
+  `(if ,test (progn ,@actions) ()))
 
-(defun symbol? (item)
-  (when item (eq item.type "symbol")))
 
 (defun length(list) (get list 'length))
 
@@ -44,18 +49,26 @@
 								
   )))
 
-(defun equals?2(a b)
-  (block return2
-	 (eq a b))
-  )
+(defmacro incf (sym incr)
+  `(let ((tmp23 ,sym))
+	 (set ,sym (+ ,(or incr 1) tmp23))
+	 ,sym))
+
+(defmacro decf (sym decr)
+  `(let ((tmp33 ,sym))
+	 (set ,sym (- tmp33 ,(or decr 1)))
+	 ,sym))
 
 
-(defun assert(condition error)
+(defun assert(condition error &rest datum)
   (if condition
 		(progn)
 		(progn
-		  (raise error))
-  ))
+		  (raise (or (if datum.length (list error datum) error) "assertion failed")))
+		))
+
+(defun assert-not(condition error)
+  (assert (not condition) error))
 
 (defmacro assert-eq (a b)
   `(assert (eq ,a ,b)
@@ -98,7 +111,7 @@
 (defvar char-0 (car "0"))
 (defvar char-9 (car "9"))
 (defvar char-dot (car "."))
-(defvar nil ())
+(defconstant nil ())
 (defvar sym-end (lambda (x) (or (is-whitespace x) (eq paren-start x)
 										  (eq paren-end x))))
 
@@ -237,5 +250,4 @@
 (defun map (f lst)
   (let ((out (make-map)))
 	 (put out 'length (length lst))
-	 (Array.from out (lambda (_, index) (f (nth lst index))))))
-  
+	 (Array.from out (lambda (_, index) (f (nth st index))))))
