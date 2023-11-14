@@ -6,13 +6,12 @@
 (defvar >= _op_gte)
 (defvar <= _op_lte)
 
-
-
 (setmacro defmacro
 			 (lambda (name args &rest code)
 				
 				`(setmacro ,name
 							  (lambda ,args ,@code))))
+
 
 (defmacro defun (name args &rest code)
   `(defvar ,name
@@ -32,6 +31,11 @@
 (defmacro when (test &rest actions)
   `(if ,test (progn ,@actions) ()))
 
+(defun cadr (x) (nth x 1))
+(defun cddr (x) (slice x 2))
+(defun cdddr (x) (slice x 3))
+(defun cddddr (x) (slice x 4))
+
 
 (defun length(list) (get list 'length))
 
@@ -49,6 +53,28 @@
 								
   )))
 
+
+(defun map (f lst)
+  (let ((out (make-map)))
+	 (put out 'length (length lst))
+	 (Array.from out (lambda (_, index) (f (nth st index))))))
+
+
+(defmacro +(&rest args)
+  (if args
+		(if (eq (len args) 1)
+			 (car args)
+			 `(op_add ,(car args) (+ ,@(cdr args))))
+		0)) 
+
+(defmacro -(&rest args)
+  (if args
+		(if (eq (len args) 1)
+			 (op_sub 0 (car args))
+			 `(op_sub ,(car args) (+ ,@(cdr args))))
+		0)) 
+
+
 (defmacro incf (sym incr)
   `(let ((tmp23 ,sym))
 	 (set ,sym (+ ,(or incr 1) tmp23))
@@ -58,7 +84,6 @@
   `(let ((tmp33 ,sym))
 	 (set ,sym (- tmp33 ,(or decr 1)))
 	 ,sym))
-
 
 (defun assert(condition error &rest datum)
   (if condition
@@ -247,7 +272,3 @@
 		,@body)
 	  ))
 
-(defun map (f lst)
-  (let ((out (make-map)))
-	 (put out 'length (length lst))
-	 (Array.from out (lambda (_, index) (f (nth st index))))))

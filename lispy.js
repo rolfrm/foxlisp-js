@@ -40,21 +40,17 @@ function internString(str) {
 
 car = (x) => x[0]
 cdr = (x) => x.slice(1)
-
-//add = (...x) => x.reduce((sum, num) => sum + num, 0);;
-add = (x, y) => x + y
-sub = (x, y) => x - y
-div = (x, y) => x / y
-mul = (x, y) => x * y
-cadr = (x) => x[1]
-caddr => (x) => x[2]
-cddr = (x) => x.slice(2);
-len = (x) => x.length
+op_add = (x, y) => x + y
+op_sub = (x, y) => x - y
+op_div = (x, y) => x / y
+op_mul = (x, y) => x * y
+op_mod = (x, y) => x % y
+len = (x) => (x && x.length) || 0
 list = (...x) => x
 makehashmap = () => new Map();
 
 eq = (a, b) => a === b;
-slice = (a, n) => a.slice(n);
+slice = (a, n) => a.length <= n ? null : a.slice(n);
 raise =(err) =>{
 	 throw err;
 };
@@ -152,10 +148,6 @@ makesym = (a) => sym(a)
 
 const loopSym = sym("loop");
 const notSym = sym("not");
-const subSym = sym("sub");
-const addSym = sym("add");
-const mulSym = sym("mul");
-const divSym = sym("div");
 const setSym = sym("set");
 const letSym = sym("let");
 const prognSym = sym("progn");
@@ -250,18 +242,7 @@ function unquoteToJs(code){
 	 
 	 
 	 return code.toString();
-
 }
-
-add2 = sym("+")
-add2.macro = mathMacro(addSym);
-mul2 = sym("*")
-mul2.macro = mathMacro(mulSym);
-div2 = sym("/")
-div2.macro = mathMacro(divSym);
-sub2 = sym("-")
-sub2.macro = subMacro;
-
 
 loop_sym = sym("loop")
 
