@@ -59,6 +59,7 @@ usplice = (x) => ({type: "unsplice", value: x})
 
 load = (x) => ({type: "load", value: x})
 
+macroLookup = new Map();
 
 
 ulist = (...x) => {
@@ -168,36 +169,6 @@ const typeOfSym = sym("type-of")
 const declareSym = sym("declare")
 const defvarSym = sym("defvar");
 const defConstSym = sym("defconstant");
-function mathMacro(sym){
-	 function macro(...operands){
-		  let [first, ...rest] = operands;
-		  if(first == null){
-				throw "not enough arguments for add"
-		  }
-		  for (let x of rest) {
-				first = [sym, first, x]
-		  }
-		  return first;
-	 }
-	 return macro;
-	 
-}
-
-
-function subMacro(...operands){
-	 let [first, ...rest] = operands;
-    if(first == null){
-        throw "not enough arguments for add"
-    }
-    if(rest.length == 0) {
-		  return [subSym, 0, first];
-    }
-
-    for (let x of rest) {
-		  first = [subSym, first, x]
-    }
-    return first;
-}
 
 function quotedJs(code){
 	 if(Array.isArray(code)){
@@ -380,9 +351,9 @@ function lispCompile(code, n) {
 				const [sym, code] = operands;
 				const macroCode = lispCompile(code, n)
 				console.log("macro code: ", macroCode)
-				// todo: macros can only take one arg.
 				macroValue = eval(macroCode);
-				sym.macro = macroValue;
+				
+				macroLookup.set(sym, macroValue)
 				
 				return "1"
         }
@@ -421,8 +392,8 @@ function lispCompile(code, n) {
 		  if(operator == undefined){
 				throw new Error("undefined operator in ", code)
 		  }
-        if (operator.macro != null) {
-				newcode = operator.macro(...operands)
+        if (macroLookup.has(operator)) {
+				newcode = (macroLookup.get(operator))(...operands)
 				return lispCompile(newcode, n)
         }
         args = operands.map(op => lispCompile(op, n)).join(",")

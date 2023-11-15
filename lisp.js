@@ -44,11 +44,10 @@ function sym(str, jsname) {
           jsname = sanitizeSymbolName(jsname)
         }
 
-        const symbol = { type: "symbol", value: str, 
-								 jsname: jsname,
-								 macro: null, };
-		  //todo: find something else for macros.
-		  //Object.freeze(symbol)
+        const symbol = { type: "symbol",
+								 value: str, 
+								 jsname: jsname};
+		  Object.freeze(symbol)
         
         lisp.symbolName[str] = symbol;
         lisp.symbols.push(symbol);
