@@ -44,7 +44,7 @@ op_add = (x, y) => x + y
 op_sub = (x, y) => x - y
 op_div = (x, y) => x / y
 op_mul = (x, y) => x * y
-op_mod = (x, y) => x % y
+mod = (x, y) => x % y
 len = (x) => (x && x.length) || 0
 list = (...x) => x
 makehashmap = () => new Map();
@@ -165,7 +165,7 @@ const quasiUnQuoteSym = lisp.quasiunquote_sym;
 const quasiUnQuoteSpliceSym = lisp.quasiunquotesplice_sym;
 const restSym = sym("&rest")
 const typeOfSym = sym("type-of")
-
+const declareSym = sym("declare")
 const defvarSym = sym("defvar");
 const defConstSym = sym("defconstant");
 function mathMacro(sym){
@@ -316,8 +316,7 @@ function lispCompile(code, n) {
         {
             const [args, ...body] = operands;
 				const restIndex = args.indexOf(restSym)
-				console.log("idx:", restIndex)
-            let argstr = args.map(arg => arg.jsname).join(",")
+				let argstr = args.map(arg => arg.jsname).join(",")
 				if(restIndex != -1){
 					 argstr = args.slice(0, restIndex).map(arg => arg.jsname).concat(["..." + args[restIndex + 1].jsname]).join(",");
 				}

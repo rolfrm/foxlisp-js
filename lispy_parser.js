@@ -141,9 +141,10 @@ class ParserCondition {
               input = next;
               out.push(result)
               input = skipWhitespace(input);
-              if(input[0] == ')'){
-                return [out, input.slice(1)];
-              }
+					 if(input[0] == ')'){
+						  Object.freeze(out)
+						  return [out, input.slice(1)];
+					 }
             }else{
               return [null, null]
             }

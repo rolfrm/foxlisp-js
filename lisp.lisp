@@ -6,12 +6,12 @@
 (defvar >= _op_gte)
 (defvar <= _op_lte)
 
+
 (setmacro defmacro
 			 (lambda (name args &rest code)
-				
+				;(declare (type string name))
 				`(setmacro ,name
 							  (lambda ,args ,@code))))
-
 
 (defmacro defun (name args &rest code)
   `(defvar ,name
@@ -19,6 +19,7 @@
 
 (defun object? (item) (eq (type-of item) "object"))
 (defun null? (item) (and (object? item) (not item)))  
+
 
 (defun list? (x) (and (eq (type-of x) "object") (Array.isArray x)))
 (defun string? (x) (eq (type-of x) "string"))
@@ -31,13 +32,32 @@
 (defmacro when (test &rest actions)
   `(if ,test (progn ,@actions) ()))
 
+(defun caar (x) (car (car x)))
 (defun cadr (x) (nth x 1))
 (defun cddr (x) (slice x 2))
 (defun cdddr (x) (slice x 3))
 (defun cddddr (x) (slice x 4))
 
-
 (defun length(list) (get list 'length))
+(defvar *types* (makehashmap))
+(defun hashmap-set(map key value)
+  (map.set key value))
+
+(defmacro deftype (name args typedeclaration)
+  `(hashmap-set *types* ',name '(,args ,typedeclaration)))
+
+(deftype string () '(satisfies string?))
+
+(defmacro lambda2 (args &rest code)
+  (let ((declarations (if (eq (caar code) 'declare)
+								  (let ((decl (car code)))
+									 (set code (cdr code))
+									 decl)))
+		  (type-declarations (list)))
+	 (println declarations)
+	 `(lambda ,args ,@code)
+	 ))
+
 
 (defun equals?(a b)
   (block return2
@@ -61,18 +81,33 @@
 
 
 (defmacro +(&rest args)
-  (if args
+  (if (len args)
 		(if (eq (len args) 1)
 			 (car args)
 			 `(op_add ,(car args) (+ ,@(cdr args))))
 		0)) 
 
 (defmacro -(&rest args)
+  (if (len args)
+		(if (eq (len args) 1)
+			 `(op_sub 0 ,(car args))
+			 `(op_sub ,(car args) (+ ,@(cdr args))))
+		(raise "invalid number of arguments: 0")))
+
+(defmacro *(&rest args)
+  
+  (if (and args (len args))
+		(if (eq (len args) 1)
+			 (car args)
+			 `(op_mul ,(car args) (* ,@(cdr args))))
+		1))
+
+(defmacro /(&rest args)
   (if args
 		(if (eq (len args) 1)
-			 (op_sub 0 (car args))
-			 `(op_sub ,(car args) (+ ,@(cdr args))))
-		0)) 
+			 `(op_div 1 ,(car args))
+			 `(op_div ,(car args) (* ,@(cdr args))))
+		(raise "Invalid number of arguments: 0")))
 
 
 (defmacro incf (sym incr)
@@ -271,4 +306,6 @@
 		(set __i (+ __i 1))
 		,@body)
 	  ))
+
+
 
