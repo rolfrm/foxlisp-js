@@ -282,7 +282,7 @@ function lispCompile(code, n) {
     case returnFromSym:{
         const [sym, value] = operands;
         
-        return `(()=> {throw {id:${sym.jsname}, value:${lispCompile(value)} }})()`;
+        return `(()=> {throw {id:${sym.jsname}, value:${lispCompile(value)}, type: "return-from" }})()`;
     }
     case lambdaSym:
         {
@@ -399,8 +399,7 @@ function lispCompile(code, n) {
 				const [varSym, handlerBody] = handler;
 				const bodyCode = lispCompile(body);
 				const handlerBodyCode = lispCompile(handlerBody);
-				return `(()=>{try{return ${bodyCode}}catch(${varSym.jsname}){return ${handlerBodyCode}}})()`
-				
+				return `(()=>{try{return ${bodyCode}}catch(${varSym.jsname}){ if(${varSym.jsname}.type === "return-from") throw ${varSym.jsname}; return ${handlerBodyCode}}})()`
 				
 		  }
         // Add more cases for other operators as needed
