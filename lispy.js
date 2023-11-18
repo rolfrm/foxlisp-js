@@ -169,6 +169,7 @@ const typeOfSym = sym("type-of")
 const declareSym = sym("declare")
 const defvarSym = sym("defvar");
 const defConstSym = sym("defconstant");
+const handleErrorsSym = sym("handle-errors")
 
 function quotedJs(code){
 	 if(Array.isArray(code)){
@@ -292,12 +293,16 @@ function lispCompile(code, n) {
 					 argstr = args.slice(0, restIndex).map(arg => arg.jsname).concat(["..." + args[restIndex + 1].jsname]).join(",");
 				}
             if(body.length == 1) {
-                return `((${argstr}) => ${lispCompile(body[0], n)})`;
+                let lmb = `((${argstr}) => ${lispCompile(body[0], n)})`;
+					 console.log("lambda code", lmb);
+					 return lmb
             }
 
             const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
-            return `((${argstr}) => {let tmp = null; ${bodyCode}; return tmp;})`;
-        }
+            let lmb =  `((${argstr}) => {let tmp = null; ${bodyCode}; return tmp;})`;
+				console.log("lambda code", lmb);
+				return lmb
+		  }
 	 case prognSym:
 		  {
 				const body = operands;
@@ -386,6 +391,18 @@ function lispCompile(code, n) {
 				const elseCode = elseClause == null ? "null" : lispCompile(elseClause);
 				return `(${conditionCode} ? ${thenCode} : ${elseCode})`
         }
+	 case handleErrorsSym:
+		  {
+				
+				const [body, handler] = operands;
+
+				const [varSym, handlerBody] = handler;
+				const bodyCode = lispCompile(body);
+				const handlerBodyCode = lispCompile(handlerBody);
+				return `(()=>{try{return ${bodyCode}}catch(${varSym.jsname}){return ${handlerBodyCode}}})()`
+				
+				
+		  }
         // Add more cases for other operators as needed
 		  
     default:

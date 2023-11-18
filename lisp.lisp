@@ -34,6 +34,7 @@
 
 (defun caar (x) (car (car x)))
 (defun cadr (x) (nth x 1))
+(defun cadar (x) (cadr (car x)))
 (defun cddr (x) (slice x 2))
 (defun cdddr (x) (slice x 3))
 (defun cddddr (x) (slice x 4))
@@ -43,21 +44,25 @@
 (defun hashmap-set(map key value)
   (map.set key value))
 
+(defun hashmap-get(map key)
+  (map.get key))
+
 (defmacro deftype (name args typedeclaration)
   `(hashmap-set *types* ',name '(,args ,typedeclaration)))
 
-(deftype string () '(satisfies string?))
-
-(defmacro lambda2 (args &rest code)
-  (let ((declarations (if (eq (caar code) 'declare)
-								  (let ((decl (car code)))
-									 (set code (cdr code))
-									 decl)))
-		  (type-declarations (list)))
-	 (println declarations)
-	 `(lambda ,args ,@code)
+(deftype string () (satisfies string?))
+(deftype number () (satisfies number?))
+(defmacro check-type (type value)
+  (let ((typespec (hashmap-get *types* type))
+		  (tests (list)))
+	 (loop (len typespec)
+	  (when (eq (caar typespec) 'satisfies)
+		 (tests.push `(assert (,(cadar typespec) ,value)))
+		 )
+	  (set typespec (cdr typespec))
+	  )
+	 `(progn ,@tests) 
 	 ))
-
 
 (defun equals?(a b)
   (block return2
@@ -309,3 +314,24 @@
 
 
 
+
+(defmacro lambda2 (args &rest code)
+  (let ((declarations (if (eq (caar code) 'declare)
+								  (let ((decl (car code)))
+									 (set code (cdr code))
+									 decl)))
+		  (type-declarations (list)))
+	 (let ((checks (list)))
+		(for-each decl (cdr declarations)
+					 (when (eq (car decl) 'type)
+						(let ((type (cadr decl))
+								(rest (cddr decl)))
+						  (for-each item rest
+										(checks.push `(check-type ,type ,item))) 
+						  
+						)
+					 ))
+
+		
+		`(lambda ,args (progn ,@checks ,@code))
+	 )))
