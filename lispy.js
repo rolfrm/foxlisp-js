@@ -218,15 +218,26 @@ function unquoteToJs(code){
 
 loop_sym = sym("loop")
 
-function lispCompile(code, n) {
-	 if(n == undefined){
-		  n = 1;
-	 }else {
-		  n += 1;
+function lispCompileLet(variables, body){
+	 const  varCode = variables.map(updateExpr => {
+		  if(updateExpr.length != 2){
+				throw new Error("The expression (xyz) is malformed.");
+		  }
+        const [left, right] = updateExpr;
+        code = `let ${left.jsname} = (${lispCompile(right)})`
+        return code;
+    }).join(';');
+    
+	 if(body.length == 1){
+		  return `(() => {${varCode};return ${lispCompile(body[0])};})()`
 	 }
-	 if(n > 100){
-		  throw new "errrrr";
-	 }
+	 
+	 const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
+    return `(() => {let tmp = null;${varCode};${bodyCode}; return tmp})()`
+
+}
+
+function lispCompile(code) {
 	 if( typeof(code)  == "number" ){
         return code
 	 }
@@ -250,17 +261,17 @@ function lispCompile(code, n) {
     case loopSym:
         const [condition, ...update] = operands;
         
-        const updateCode = update.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
+        const updateCode = update.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
 
         return `(() => {let tmp = null; for (;${lispCompile(condition)};) { ${updateCode} };return tmp})()`;
     case orSym:
         {
-				const combined = operands.map(op => lispCompile(op, n)).join("||")
+				const combined = operands.map(op => lispCompile(op)).join("||")
 				return `(${combined})`
         }
     case andSym:
         {
-				const combined = operands.map(op => lispCompile(op, n)).join("&&")
+				const combined = operands.map(op => lispCompile(op)).join("&&")
 				return `(${combined})`
         }
 	 case jsSym:
@@ -269,12 +280,12 @@ function lispCompile(code, n) {
 		  }
 	 case typeOfSym:
 		  {
-				return `typeof ${lispCompile(operands[0], n)}`;
+				return `typeof ${lispCompile(operands[0])}`;
 		  }
 		  
     case blockSym:{
         const [sym, ...body] = operands;
-        const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
+        const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
         
         return `(()=>{let tmp = null;const ${sym.jsname} = {};
          try{${bodyCode}}catch(ex){if(ex.id === ${sym.jsname}){return ex.value;}else{throw ex;}} return tmp;})()`
@@ -293,32 +304,21 @@ function lispCompile(code, n) {
 					 argstr = args.slice(0, restIndex).map(arg => arg.jsname).concat(["..." + args[restIndex + 1].jsname]).join(",");
 				}
             if(body.length == 1) {
-                let lmb = `((${argstr}) => ${lispCompile(body[0], n)})`;
-					 console.log("lambda code", lmb);
+                let lmb = `((${argstr}) => ${lispCompile(body[0])})`;
 					 return lmb
             }
 
-            const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
-            let lmb =  `((${argstr}) => {let tmp = null; ${bodyCode}; return tmp;})`;
-				console.log("lambda code", lmb);
+            const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
+            let lmb = `((${argstr}) => {let tmp = null; ${bodyCode}; return tmp;})`;
+				
 				return lmb
 		  }
 	 case prognSym:
-		  {
-				const body = operands;
-				if(body.length == 0){
-					 return "null"
-				}
-				if(body.length == 1){
-					 return `${lispCompile(body[0], n)}`
-				}
-				const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
-				return `(() => {let tmp = null; ${bodyCode}; return tmp;})()`;
-		  }
+		  return lispCompileLet([], operands)
     case notSym:
         {
             const [left] = operands;
-            return `(!${lispCompile(left, n)})`;
+            return `(!${lispCompile(left)})`;
         }
     case quoteSym:
         {
@@ -337,7 +337,7 @@ function lispCompile(code, n) {
     case defvarSym:
         {
 				const [sym, code] = operands;
-				const valueCode = lispCompile(code, n);
+				const valueCode = lispCompile(code);
 				
 				const code2 = `${sym.jsname} = ${valueCode}`;
 				console.log(`eval(${code2})`);
@@ -347,14 +347,14 @@ function lispCompile(code, n) {
 	 case defConstSym:
         {
 				const [sym, code] = operands;
-				const valueCode = lispCompile(code, n);
+				const valueCode = lispCompile(code);
 				eval(`${sym.jsname} = ${valueCode}`)
 				return `${sym.jsname}`
         }
     case defMacroSym:
         {
 				const [sym, code] = operands;
-				const macroCode = lispCompile(code, n)
+				const macroCode = lispCompile(code)
 				console.log("macro code: ", macroCode)
 				macroValue = eval(macroCode);
 				
@@ -364,24 +364,10 @@ function lispCompile(code, n) {
         }
     case setSym:
         const [variable, value] = operands;
-        return `${lispCompile(variable)} = ${lispCompile(value, n)}`;
-    case letSym:{
-        const [variables, ...body] = operands;
-        const  varCode = variables.map(updateExpr => {
-				if(updateExpr.length != 2){
-					 throw new Error("The expression (xyz) is malformed.");
-				}
-            const [left, right] = updateExpr;
-            code = `let ${left.jsname} = (${lispCompile(right, n)})`
-            return code;
-        }).join(';');
-        
-		  if(body.length == 1){
-				return `(() => {${varCode};return ${lispCompile(body[0])};})()`
-		  }
-
-		  const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr, n) +')').join(';');
-        return `(() => {let tmp = null;${varCode};${bodyCode}; return tmp})()`
+        return `${lispCompile(variable)} = ${lispCompile(value)}`;
+    case letSym: {
+		  const [variables, ...body] = operands
+		  return lispCompileLet(variables, body)
 	 }
     case ifSym:
         {
@@ -410,9 +396,9 @@ function lispCompile(code, n) {
 		  }
         if (macroLookup.has(operator)) {
 				newcode = (macroLookup.get(operator))(...operands)
-				return lispCompile(newcode, n)
+				return lispCompile(newcode)
         }
-        args = operands.map(op => lispCompile(op, n)).join(",")
+        args = operands.map(op => lispCompile(op)).join(",")
         
         return `${operator.jsname}(${args})`;
     }
