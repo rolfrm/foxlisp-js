@@ -116,14 +116,10 @@
 
 
 (defmacro incf (sym incr)
-  `(let ((tmp23 ,sym))
-	 (set ,sym (+ ,(or incr 1) tmp23))
-	 ,sym))
+  `(set ,sym (+ ,sym ,(or incr 1))))
 
 (defmacro decf (sym decr)
-  `(let ((tmp33 ,sym))
-	 (set ,sym (- tmp33 ,(or decr 1)))
-	 ,sym))
+  `(set ,sym (- ,sym ,(or decr 1))))
 
 (defun assert(condition error &rest datum)
   (if condition

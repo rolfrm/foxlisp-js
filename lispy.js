@@ -249,10 +249,10 @@ function lispCompileLet(variables, body){
 }
 
 function lispCompile(code) {
-	 if( typeof(code)  == "number" ){
+	 if(typeof(code) == "number"){
         return code
 	 }
-	 if( typeof(code)  == "string" ){
+	 if(typeof(code) == "string"){
 		  code = code.replaceAll("\"", "\\\"");
 		  code = code.replaceAll("\n", "\\n");
 		  return `\"${code}\"`;
@@ -273,8 +273,8 @@ function lispCompile(code) {
         const [condition, ...update] = operands;
         
 		  const updateCode = lispCompileLet([], update);
-
-        return `(() => {let tmp = null; for (;${lispCompile(condition)};) { tmp = ${updateCode} };return tmp})()`;
+		  const conditionCode = lispCompile(condition);
+        return `(() => {let tmp = null; for (;${conditionCode};) { tmp = ${updateCode} };return tmp})()`;
     case orSym:
         {
 				const combined = operands.map(op => lispCompile(op)).join("||")
