@@ -22,22 +22,6 @@ function setQuote(newQuote){
     return id
 }
 
-internedStrings = []
-internStringLookup = {}
-
-getInternedString = (id) => internedStrings[id]
-
-function internString(str) {
-    if (str in internStringLookup) {
-        return internStringLookup[str];
-    } else {
-        const id = internedStrings.length;
-        internedStrings.push(str);
-        internStringLookup[str] = id;
-        return id;
-    }
-}
-
 car = (x) => x[0]
 cdr = (x) => x.slice(1)
 op_add = (x, y) => x + y
@@ -51,7 +35,7 @@ makehashmap = () => new Map();
 
 eq = (a, b) => a === b;
 slice = (a, n) => a.length <= n ? null : a.slice(n);
-raise =(err) =>{
+raise = (err) => {
 	 throw err;
 };
 
@@ -88,21 +72,24 @@ function escapeString(x){
 getsym = (s) => sym(s, null)
 
 function println_impl(obj){
-	 
+	 //console.log("print? ", Array.isArray(obj), obj)
 	 if(Array.isArray(obj)){
 		  let strOut = ""
 		  let first = true
-		  strOut += "["
+		  strOut += "("
 		  for(let elem of obj){
 				if(!first){
-					 strOut = strOut + ", ";
+					 strOut = strOut + " ";
 				}else{
 					 first = false;
+					 if(elem == quoteSym){
+						  return "'" + println_impl(obj[1]);
+					 }
 				}
 				strOut += println_impl(elem)
 
 		  }
-		  strOut += "]"
+		  strOut += ")"
 		  return strOut;
 	 }else{
 		  if(obj == undefined){
@@ -170,6 +157,7 @@ const declareSym = sym("declare")
 const defvarSym = sym("defvar");
 const defConstSym = sym("defconstant");
 const handleErrorsSym = sym("handle-errors")
+const loop_sym = sym("loop")
 
 function quotedJs(code){
 	 if(Array.isArray(code)){
@@ -216,7 +204,6 @@ function unquoteToJs(code){
 	 return code.toString();
 }
 
-loop_sym = sym("loop")
 
 function lispCompileLet(variables, body){
 	 const  varCode = variables.map(updateExpr => {
@@ -229,12 +216,36 @@ function lispCompileLet(variables, body){
     }).join(';');
     
 	 if(body.length == 1){
+		  if(variables.length == 0){
+				return `${lispCompile(body[0])}`
+		  }
 		  return `(() => {${varCode};return ${lispCompile(body[0])};})()`
 	 }
-	 
-	 const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
-    return `(() => {let tmp = null;${varCode};${bodyCode}; return tmp})()`
 
+	 let bodyCode = ""
+	 if(variables.length > 0){
+	 	  bodyCode += "(() => {"+ varCode + ";return ";
+	 }else{
+		  bodyCode += "(";
+	 }
+	 
+	 for(let i in body){
+		  if(i > 0){
+				bodyCode = bodyCode + ","
+		  }
+		  bodyCode = bodyCode + `${lispCompile(body[i])}`;
+		  
+	 }
+	 if(body.length == 0){
+		  bodyCode += "null";
+	 }
+	 if(variables.length > 0){
+		  bodyCode = bodyCode + "})()";
+	 }else{
+		  bodyCode = bodyCode + ")";
+	 }
+	 
+	 return bodyCode;
 }
 
 function lispCompile(code) {
@@ -242,9 +253,9 @@ function lispCompile(code) {
         return code
 	 }
 	 if( typeof(code)  == "string" ){
-		  
-		  id = internString(code)
-		  return `getInternedString(${id})`;
+		  code = code.replaceAll("\"", "\\\"");
+		  code = code.replaceAll("\n", "\\n");
+		  return `\"${code}\"`;
 	 }
 	 if(code == undefined){
 		  return "undefined"
@@ -261,9 +272,9 @@ function lispCompile(code) {
     case loopSym:
         const [condition, ...update] = operands;
         
-        const updateCode = update.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
+		  const updateCode = lispCompileLet([], update);
 
-        return `(() => {let tmp = null; for (;${lispCompile(condition)};) { ${updateCode} };return tmp})()`;
+        return `(() => {let tmp = null; for (;${lispCompile(condition)};) { tmp = ${updateCode} };return tmp})()`;
     case orSym:
         {
 				const combined = operands.map(op => lispCompile(op)).join("||")
