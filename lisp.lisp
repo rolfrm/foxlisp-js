@@ -5,7 +5,8 @@
 (defvar < _op_lt)
 (defvar >= _op_gte)
 (defvar <= _op_lte)
-
+(setmacro lambda (_lambda (&rest code)
+								  `(_lambda ,@code)))
 
 (setmacro defmacro
 			 (lambda (name args &rest code)
@@ -149,8 +150,6 @@
   `(assert (not (equals?  ,a ,b))
 			  '("assertion failed: "
 				 ,a equals ,b )))
-
-
 
 (defvar space (car " "))
 (defvar tab (car "	"))
@@ -310,15 +309,18 @@
 
 
 
-
-(defmacro lambda2 (args &rest code)
-  (let ((declarations (if (eq (caar code) 'declare)
+;; this lambda has 
+(defmacro lambda (args &rest code)
+  (let ((declarations (if (and code (car code) (eq (caar code) 'declare))
 								  (let ((decl (car code)))
 									 (set code (cdr code))
-									 decl)))
+									 decl)
+								  (list)))
 		  (type-declarations (list)))
 	 (let ((checks (list)))
+		(when t
 		(for-each decl (cdr declarations)
+					 (println decl)
 					 (when (eq (car decl) 'type)
 						(let ((type (cadr decl))
 								(rest (cddr decl)))
@@ -326,8 +328,8 @@
 										(checks.push `(check-type ,type ,item))) 
 						  
 						)
-					 ))
+					 )))
 
 		
-		`(lambda ,args (progn ,@checks ,@code))
+		`(_lambda ,args (progn ,@checks ,@code))
 	 )))

@@ -22,8 +22,8 @@ function setQuote(newQuote){
     return id
 }
 
-car = (x) => x[0]
-cdr = (x) => x.slice(1)
+car = (x) => x && x[0]
+cdr = (x) => x && x.slice(1)
 op_add = (x, y) => x + y
 op_sub = (x, y) => x - y
 op_div = (x, y) => x / y
@@ -34,7 +34,7 @@ list = (...x) => x
 makehashmap = () => new Map();
 
 eq = (a, b) => a === b;
-slice = (a, n) => a.length <= n ? null : a.slice(n);
+slice = (a, n) => a && (a.length <= n ? null : a.slice(n));
 raise = (err) => {
 	 throw err;
 };
@@ -119,7 +119,7 @@ println = (...a) => {
 	 console.log(combined)
 	 return a[0]
 }
-nth = (a, n) => n >= a.length ? null : a[n]
+nth = (a, n) => a && (n >= a.length ? null : a[n])
 makemap_ = () => ({type: "lisp-object"})
 put = (obj, name, value) =>  obj[name.jsname ? name.jsname : name] = value
 get = (obj, name) => obj[name.jsname ? name.jsname : name]
@@ -140,7 +140,7 @@ const setSym = sym("set");
 const letSym = sym("let");
 const prognSym = sym("progn");
 const ifSym = sym("if");
-const lambdaSym = sym("lambda");
+const lambdaSym = sym("_lambda");
 const defMacroSym = sym("setmacro");
 const orSym = sym("or");
 const andSym = sym("and");
@@ -366,7 +366,6 @@ function lispCompile(code) {
         {
 				const [sym, code] = operands;
 				const macroCode = lispCompile(code)
-				console.log("macro code: ", macroCode)
 				macroValue = eval(macroCode);
 				
 				macroLookup.set(sym, macroValue)
