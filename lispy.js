@@ -5,6 +5,11 @@ function sym(x, jsname){
     return lisp.sym(x, jsname)
 }
 
+function issym(x){
+	 return x && x.type == "symbol";
+}
+
+
 quotes = []
 quotes_lookup = new Map();
 function _getQuote(id) {
@@ -22,6 +27,7 @@ function setQuote(newQuote){
     return id
 }
 
+getsym = lisp.getsym
 car = (x) => x && x[0]
 cdr = (x) => x && x.slice(1)
 op_add = (x, y) => x + y
@@ -45,6 +51,7 @@ load = (x) => ({type: "load", value: x})
 
 macroLookup = new Map();
 
+ismacro = (x) => macroLookup.has(x)
 
 ulist = (...x) => {
 	 let out = []
@@ -334,6 +341,10 @@ function lispCompile(code) {
     case quoteSym:
         {
             const [quoted] = operands
+				if(issym(quoted)){
+					 return `getsym(\"${quoted.value}\")`
+				}
+				
             const id = setQuote(quoted)
             return `getQuote(${id})`
         }

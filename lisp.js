@@ -37,6 +37,10 @@ function sanitizeSymbolName(name) {
 
 }
 
+function getsym(str){
+	 return lisp.symbolName[str]
+}
+
 function sym(str, jsname) {
     if (!lisp.symbolName[str]) {
         if(jsname == null){
@@ -60,7 +64,8 @@ quasiunquote_sym = sym("quasiunquote")
 quasiunquotesplice_sym = sym("quasiunquote-splice")
 
   module.exports = {
-    sym: sym,
+		sym: sym,
+		getsym: getsym,
     lisp: lisp,
 		quote_sym : quote_sym,
 		quasiquote_sym : quasiquote_sym,
