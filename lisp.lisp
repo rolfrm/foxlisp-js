@@ -83,7 +83,7 @@
 (defun map (f lst)
   (let ((out (make-map)))
 	 (put out 'length (length lst))
-	 (Array.from out (lambda (_, index) (f (nth st index))))))
+	 (Array.from out (lambda (_, index) (f (nth lst index))))))
 
 
 (defmacro +(&rest args)
@@ -277,7 +277,7 @@
 				  (list (cadr lists)))))
 
 (defmacro case (&rest cases)
-  (println 'case cases)
+  
   (assert (> (length cases) 1) "Case expects more than one argument")
   (let ((value (car cases))
 		  (out-cases (list)))
@@ -333,3 +333,12 @@
 		
 		`(_lambda ,args (progn ,@checks ,@code))
 	 )))
+
+
+(defun min (x y)
+  (if (< x y) x y)
+)
+
+(defun max (x y)
+  (if (> x y) x y)
+)

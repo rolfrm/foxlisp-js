@@ -127,6 +127,8 @@ println = (...a) => {
 	 return a[0]
 }
 nth = (a, n) => a && (n >= a.length ? null : a[n])
+setnth = (a, n, v) => a[n] = v
+getnth = (a, n) => a[n]
 makemap_ = () => ({type: "lisp-object"})
 put = (obj, name, value) =>  obj[name.jsname ? name.jsname : name] = value
 get = (obj, name) => obj[name.jsname ? name.jsname : name]
@@ -139,6 +141,7 @@ _op_lt = (a,b) => a < b
 _op_gt = (a,b) => a > b
 concat = (a,b)=> a.concat(b)
 makesym = (a) => sym(a)
+
 
 
 const loopSym = sym("loop");
@@ -294,7 +297,16 @@ function lispCompile(code) {
         }
 	 case jsSym:
 		  {
-				return operands[0];
+			let outstr = "";
+			for (let x of operands) {
+				if (typeof(x) == "string") {
+                   outstr += x;
+				}else{
+                   outstr += lispCompile(x)
+				}
+			}
+			return outstr;
+				
 		  }
 	 case typeOfSym:
 		  {

@@ -21,6 +21,31 @@ class ParserCondition {
     }
     return input
   }
+
+  function skipComment(input) {
+    if(input.length == 0 || input[0] != ';'){
+      return input;
+    }
+    while (input.length > 0 && input[0] !== '\n') {
+            
+      input = input.slice(1);
+    }
+    if (input.length > 0) {
+      input = input.slice(1);
+    }
+    return input;
+  }
+
+  function skipCommentAndWhitespace(input){
+    while(true){
+      const input1 = input;
+      input = skipComment(skipWhitespace(input))
+      if(input == input1){
+        return input;
+      }
+    }
+  }
+
   
   // Helper function to parse a number
   function parseNumber(input) {
@@ -112,24 +137,19 @@ class ParserCondition {
     
     // Parsing loop
     while (true) {
-      input = skipWhitespace(input);
+      input = skipCommentAndWhitespace(input);
       if (input.length === 0) {
         
         return [NothingParsed, null];
       }
-  
+      
       switch (input[0]) {
         case ';':
-          while (input.length > 0 && input[0] !== '\n') {
-            input = input.slice(1);
-          }
-          if (input.length > 0) {
-            input = input.slice(1);
-          }
+          input = skipComment(input)
           continue;
         case '(':
           
-          input = skipWhitespace(input.slice(1));
+          input = skipCommentAndWhitespace(input.slice(1));
           
           if(input[0] == ')'){  
             return [[], input.slice(1)];
@@ -140,7 +160,7 @@ class ParserCondition {
             if(next){
               input = next;
               out.push(result)
-              input = skipWhitespace(input);
+              input = skipCommentAndWhitespace(input);
 					 if(input[0] == ')'){
 						  Object.freeze(out)
 						  return [out, input.slice(1)];
