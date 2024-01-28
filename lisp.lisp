@@ -345,3 +345,48 @@
 (defun max (x y)
   (if (> x y) x y)
 )
+
+(defun clamp (v minimum maximum)
+    (if (< v minimum)
+	    minumum
+		(if (> v maximum) maximum v) 
+	))
+
+(defmacro for (varsym start stop increment &rest body)
+  `(let ((,varsym ,start))
+	  (loop ,stop
+		,@body
+		,increment
+	  )
+	  ))
+(defun order-by (lst f)
+    (let ((lst2 (lst.slice)))
+	   (lst2.sort (lambda (a b)
+	      (if (> a b) 
+		     1
+			 (if (< a b) 
+			  -1 0
+			 )
+		  )
+	   ))
+	   lst2))
+
+(defun select (list f)
+   (let ((out (list.slice))
+         (l list.length)
+         )
+     (for i 0 (< i l) (incf i) 
+	     (setnth out i (f (getnth list i))))
+     out
+   ))
+
+
+
+(defmacro incr(sym incr_value)
+  `(set ,sym (+ ,sym ,(or incr_value 1)))
+  )
+
+(defmacro push (location value)
+  `(let ((loc ,location))
+	  (loc.push ,value))
+  )
