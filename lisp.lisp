@@ -5,6 +5,9 @@
 (defvar < _op_lt)
 (defvar >= _op_gte)
 (defvar <= _op_lte)
+(defvar << op_leftshift)
+(defvar >> op_rightshift)
+(defvar xor op_xor)
 (setmacro lambda (_lambda (&rest code)
 								  `(_lambda ,@code)))
 

@@ -34,6 +34,9 @@ op_add = (x, y) => x + y
 op_sub = (x, y) => x - y
 op_div = (x, y) => x / y
 op_mul = (x, y) => x * y
+op_leftshift = (x, y) => x << y;
+op_rightshift = (x, y) => x >> y;
+op_xor = (x, y) => x ^ y;
 mod = (x, y) => x % y
 len = (x) => (x && x.length) || 0
 list = (...x) => x
@@ -442,7 +445,7 @@ function lispCompileFunc(code) {
     if (next == null){
         throw "unable to parse code"
     }
-    js = "return "+ lispCompile(ast)
+    js = "'use strict'; return "+ lispCompile(ast)
     console.log("ast: ", ast)
     console.log("js: ", js)
     return Function(js)
@@ -463,7 +466,7 @@ function LispEvalBlock(code) {
 				return;
 		  }
 		  code = next;
-		  js = "return "+ lispCompile(ast)
+		  js = "'use strict'; return "+ lispCompile(ast)
 		  println(["value code:", ast, "=>", js])
 		  
 		  let f = Function(js)
