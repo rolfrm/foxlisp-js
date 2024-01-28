@@ -144,9 +144,7 @@ class ParserCondition {
       }
       
       switch (input[0]) {
-        case ';':
-          input = skipComment(input)
-          continue;
+        
         case '(':
           
           input = skipCommentAndWhitespace(input.slice(1));
@@ -170,6 +168,14 @@ class ParserCondition {
             }
           }
           break;
+        case ':':
+          {
+            // Parse keyword
+            const [r, next] = ParseLisp(input.slice(1));
+            return [[lisp.quote_sym, r], next]
+          }
+
+        break;
         case '\'':
           {
             // Parse quote

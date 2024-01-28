@@ -413,15 +413,23 @@ vec3 getColor(int index) {
 		  ;; the bounds of the intersection does not overlap.
 		  (if (not (sphere-intersects a.bounds b.bounds))
 		      infinity-sdf
+			  (progn 
 			  (if (eq a infinity-sdf) b 
 			    (if (eq b infinity-sdf) a
 			      sdf	
 				)
 			  )
+			  )
 		  )
 	)
 	(if (eq sdf.sdf-type 'add)
-	  sdf sdf)
+	  (progn 
+	   ;; if its an add,
+	  sdf 
+	  )
+	  
+	  
+	  sdf)
   ))
 
 (println (f32-array 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0))

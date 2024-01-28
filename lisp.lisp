@@ -154,6 +154,10 @@
 			  '("assertion failed: "
 				 ,a equals ,b )))
 
+(defmacro assert-float-equals (a b e)
+   `(assert (< (or ,e 0.0001)) (abs (- a e)) '("assertion failed: " ,a equals ,b)))
+
+
 (defvar space (car " "))
 (defvar tab (car "	"))
 (defvar newline (car "
@@ -288,10 +292,13 @@
       (loop (length cases2)
 	    (let ((thiscase (car cases2)))
 			(assert (eq 2 (length thiscase)) "case must have a check and evaluation code")
-         (let ((c `(if (eq cons-value ,(car thiscase)) ,(cadr thiscase))))
+         (if (eq :otherwise (car thiscase))
+				(set out-cases (concat out-cases (list (cadr thiscase))))
+			
+		 	(let ((c `(if (eq cons-value ,(car thiscase)) ,(cadr thiscase))))
 			  (set out-cases (concat out-cases (list c)))
 			  )
-			)
+			))
        (set cases2 (cdr cases2))
        )
 		)
