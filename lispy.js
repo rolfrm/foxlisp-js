@@ -60,7 +60,7 @@ ulist = (...x) => {
 	 let out = []
 	 for (let elem of x){
 		  if(elem == undefined){
-				throw new Error("content is undefined");
+				throw new Error("content is undefined" + x);
 		  }
 		  if(typeof(elem) == "object" && elem.type == "unsplice"){
 				for (let elem2 of elem.value){
@@ -171,6 +171,7 @@ const defvarSym = sym("defvar");
 const defConstSym = sym("defconstant");
 const handleErrorsSym = sym("handle-errors")
 const loop_sym = sym("loop")
+const apply_sym = sym("apply")
 
 function quotedJs(code){
 	 if(Array.isArray(code)){
@@ -221,7 +222,7 @@ function unquoteToJs(code){
 function lispCompileLet(variables, body){
 	 const  varCode = variables.map(updateExpr => {
 		  if(updateExpr.length != 2){
-				throw new Error("The expression (xyz) is malformed.");
+				throw new Error("The expression (xyz) is malformed." + updateExpr.toString());
 		  }
         const [left, right] = updateExpr;
         code = `let ${left.jsname} = (${lispCompile(right)})`

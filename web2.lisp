@@ -405,6 +405,25 @@ vec3 getColor(int index) {
 	  (Object.freeze f)
       f))
  
+(defun sdf-optimize-intersect (sdf intersect)
+   (if (sphere-intersects sdf.bounds intersect.bounds)
+      (case sdf.type 
+	    ('add
+
+		   (let ((new (where (select sdf.inner (lambda (sub-sdf)
+		      (sdf-optimize-intersect sub-sdf intersect)
+		    )) (lambda (x) (not (eq infinity-sdf x))))))
+			(let ((new-union (apply sdf-union new)))
+			   new-union)))
+		   (otherwise sdf)
+	
+		
+		)
+	  
+	  
+	  )
+   
+   )
 
 (defun sdf-optimize (sdf)
   (if (eq sdf.sdf-type 'intersect)

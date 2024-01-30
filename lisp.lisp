@@ -43,6 +43,10 @@
 (defun cdddr (x) (slice x 3))
 (defun cddddr (x) (slice x 4))
 
+(defun apply (f lst)
+  (%js "f(..." lst ")")
+)
+
 (defun length(list) (get list 'length))
 (defvar *types* (makehashmap))
 (defun hashmap-set(map key value)
@@ -359,6 +363,14 @@
 		(if (> v maximum) maximum v) 
 	))
 
+(defmacro incr(sym incr_value)
+  `(set ,sym (+ ,sym ,(or incr_value 1)))
+  )
+
+(defmacro push (location value)
+  `(let ((loc ,location))
+	  (loc.push ,value))
+  )
 (defmacro for (varsym start stop increment &rest body)
   `(let ((,varsym ,start))
 	  (loop ,stop
@@ -387,13 +399,27 @@
      out
    ))
 
+(defun where (lst f)
+   (let ((out-lst (list)) (l (length lst)))
+     (for-each x lst  
+	   (when (f x)
+	      (push out-lst x)
+	   )
+	 )
+   out-lst
+   )
+)
 
+(defun aggregate (lst f)
+   (when lst 
+     (let ((v (car lst)))
+	   (for-each x (cdr lst)
+	      (set v (f v x)))
+	   v )))
 
-(defmacro incr(sym incr_value)
-  `(set ,sym (+ ,sym ,(or incr_value 1)))
-  )
+(defun take (lst n)
+   (lst.slice 0 n)
+)
 
-(defmacro push (location value)
-  `(let ((loc ,location))
-	  (loc.push ,value))
-  )
+(defun skip (lst n)
+   (lst.slice n))
