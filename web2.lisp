@@ -290,20 +290,24 @@ vec3 getColor(int index) {
     (set sphere.bounds sphere)
 	(set sphere.center center)
 	(set sphere.radius radius)
+	(set sphere.type 'sdf-primitive)
     sphere
     )
   )
 
-(defun line (a b)
+(defun line (a b r)
+   (when (eq r nil)
+	  (set r 1.0))
+
    (let ((l (lambda (p) 
               (let ((ba (vec3-sub b a))
 			        (pa (vec3-sub p a)))
 					(let ((h (clamp (/ (vec3-dot pa ba) (vec3-dot ba ba)) 0.0 1.0)))
-						(vec3-length (vec3-sub pa (vec3-scale ba h)))
+						(- (vec3-length (vec3-sub pa (vec3-scale ba h))) r)
 					)
 			  ))
          ))
-   (set l.sdf-type 'line)
+   (set l.sdf-type 'primitive)
    l
    )
 
@@ -415,12 +419,20 @@ vec3 getColor(int index) {
 		    )) (lambda (x) (not (eq infinity-sdf x))))))
 			(let ((new-union (apply sdf-union new)))
 			   new-union)))
+
+		('primitive 
+		  (if (sphere-intersects sdf.bounds intersect.bounds)
+		     sdf 
+			 infinity-sdf		  
+		  )
+		)
+
 		   (otherwise sdf)
-	
 		
 		)
+		
 	  
-	  
+	  infinity-sdf
 	  )
    
    )
@@ -490,8 +502,15 @@ vec3 getColor(int index) {
 (assert (sphere-intersects (sphere (vec3 0 0 0) 1.0) (sphere (vec3 1.5 0 0) 1.0)))
 (assert-not (sphere-intersects (sphere (vec3 0 0 0) 1.0) (sphere (vec3 2.5 0 0) 1.0)))
 
-(let ((l1 (line (vec3 0 5 5) (vec3 0 9 9)))
+(let ((l1 (line (vec3 0 5 5) (vec3 0 9 9) 0.0))
       (pt (vec3 0 7 7.2)))
 	  (println (l1 pt))
-
 )
+
+
+(let ((test-sdf (sphere (vec3 0 0 0) 1.0))
+      (test-intersect (sphere (vec3 3.0 0 0) 1.0)))
+	(let ((opt (sdf-optimize-intersect test-sdf test-intersect)))
+	   (println opt)
+	
+	))

@@ -171,7 +171,6 @@ const defvarSym = sym("defvar");
 const defConstSym = sym("defconstant");
 const handleErrorsSym = sym("handle-errors")
 const loop_sym = sym("loop")
-const apply_sym = sym("apply")
 
 function quotedJs(code){
 	 if(Array.isArray(code)){

@@ -44,7 +44,7 @@
 (defun cddddr (x) (slice x 4))
 
 (defun apply (f lst)
-  (%js "f(..." lst ")")
+  (f.apply nil lst)
 )
 
 (defun length(list) (get list 'length))
