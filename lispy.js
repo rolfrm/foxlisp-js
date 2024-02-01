@@ -23,7 +23,7 @@ function setQuote(newQuote){
     let id = quotes.length;
     quotes.length += 1
     quotes[id] = newQuote
-	 quotes_lookup.set(newQuote, id)
+	quotes_lookup.set(newQuote, id)
     return id
 }
 
@@ -129,6 +129,9 @@ println = (...a) => {
 	 console.log(combined)
 	 return a[0]
 }
+
+__valueToString = (a) => println_impl(a);
+
 nth = (a, n) => a && (n >= a.length ? null : a[n])
 setnth = (a, n, v) => a[n] = v
 getnth = (a, n) => a[n]
@@ -143,7 +146,7 @@ _op_lte = (a,b) => b >= a
 _op_lt = (a,b) => a < b
 _op_gt = (a,b) => a > b
 concat = (a,b)=> a.concat(b)
-makesym = (a) => sym(a)
+__makesym = (a) => sym(a)
 
 
 
@@ -260,7 +263,15 @@ function lispCompileLet(variables, body){
 	 
 	 return bodyCode;
 }
+lmbmark = (id, f) => {
+	f.assoc_id = id;
+	return f;
+}
 
+let associd = 0;
+let assoc = {}
+                ///\/\*lmb#(\d+)\*\//
+const markRegex = /\/\*lmb#(\d+)\*\/\(/g;
 function lispCompile(code) {
 	 if(typeof(code) == "number"){
         return code
@@ -336,13 +347,15 @@ function lispCompile(code) {
 				if(restIndex != -1){
 					 argstr = args.slice(0, restIndex).map(arg => arg.jsname).concat(["..." + args[restIndex + 1].jsname]).join(",");
 				}
+			
+			assoc[associd] = operands
             if(body.length == 1) {
-                let lmb = `((${argstr}) => ${lispCompile(body[0])})`;
-					 return lmb
+                let lmb = `/*lmb#${associd++}*/((${argstr}) => ${lispCompile(body[0])})`;
+				return lmb
             }
 
             const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
-            let lmb = `((${argstr}) => {let tmp = null; ${bodyCode}; return tmp;})`;
+            let lmb = `/*lmb#${associd++}*/((${argstr}) => {let tmp = null; ${bodyCode}; return tmp;})`;
 				
 				return lmb
 		  }
@@ -373,12 +386,19 @@ function lispCompile(code) {
 		  
     case defvarSym:
         {
+			    
 				const [sym, code] = operands;
-				const valueCode = lispCompile(code);
-				
+				let valueCode = lispCompile(code);
+				if (typeof(valueCode) == "string"){
+					valueCode = valueCode.replace(markRegex, 'lmbmark($1,');
+				}
 				const code2 = `${sym.jsname} = ${valueCode}`;
-				console.log(`eval(${code2})`);
-				eval(code2);
+				let result = eval(code2);
+				console.log("result: ", valueCode)
+				if(typeof(result) == "function" && result.assoc_id){
+					result.lispname = sym
+					result.lispargs = assoc[result.assoc_id][0]
+				}
 				return `${sym.jsname}`
         }
 	 case defConstSym:
@@ -440,22 +460,26 @@ function lispCompile(code) {
     }
 }
 
-function lispCompileFunc(code) {
+function lispCompileAst(ast){
+    js = "'use strict'; return "+ lispCompile(ast)
+    //console.log("ast: ", ast)
+    //console.log("js: ", js)
+    return Function(js)
+}
+
+function lispCompileString(code) {
     const [ast, next] = parser.ParseLisp(code)
     if (next == null){
         throw "unable to parse code"
     }
-    js = "'use strict'; return "+ lispCompile(ast)
-    console.log("ast: ", ast)
-    console.log("js: ", js)
-    return Function(js)
+    return lispCompileAst(ast)
 }
 
 function evalLisp(code){
-	 fn = lispCompileFunc(code)
+	 let fn = lispCompileAst(code)
 	 return fn();
 }
-
+eval2 = evalLisp
 loadFileAsync = null
 
 function LispEvalBlock(code) {

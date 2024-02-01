@@ -64,7 +64,7 @@
                       (or (find-cursor (car elems))
                           (asd (cdr elems)))))))
          (asd thing)))
-      (else #f)))
+      (t #f)))
   
   (defun highlight-arg (info args)
     
@@ -78,7 +78,7 @@
                (cdr info)))
       ((and (string? (car args)) (string=? (car args) ""))
        (highlight-arg info (cdr args)))
-      (else (cons (car info)
+      (t (cons (car info)
                   (highlight-arg (cdr info) (cdr args))))))
   
   (defun info (sym)
@@ -89,7 +89,7 @@
          (if (pair? pi)
              pi
              `(,pi . args))))
-      (else #f)))
+      (t #f)))
 
   ;; Choose a doc-node from all matches, this is only a heuristic solution.
   ;; The heuristic is to find the doc node that has the same name as the symbol,
@@ -100,7 +100,7 @@
     (case (length doc-nodes)
       ((0) #f)
       ;; ((1) (car doc-nodes))
-      (else (any (lambda (n) (and (assoc (car (chicken-doc#node-path n))
+      (t (any (lambda (n) (and (assoc (car (chicken-doc#node-path n))
                                          ##sys#module-table)
                                   n))
                  doc-nodes))))
@@ -121,15 +121,16 @@
                 `(:ok (:not-available t)))))
         '(:ok (:not-available t)))))
 
-
+(defun net:write (slime data)
+   (slime.write data))
+   
 (defun swank-handle-command (slime cmd)
   (when (eq (car cmd) ':emacs-rex)
     (let ((str (value->string `(:return ,(eval (cadr cmd)) ,(last cmd)))))
-      (let ((strbuf (string->vector str)))
         (let ((lenbuf (hex-string (vector-length strbuf) 6)))
-          (fd:write slime (string->vector lenbuf))
-          (fd:write slime (string->vector str)))
-        ))))
+          (net:write slime lenbuf)
+          (net:write slime str))
+        )))
 
 ;(defvar *swank-mutex* (thread:create-mutex))
 ;(println *swank-mutex*)
@@ -165,7 +166,7 @@
         
         ))
 
-(define *swank:server-port* 8810)
+(defvar *swank:server-port* 8810)
 
 (defun swank-make-server (port file)
   (let ((listener (tcp:listen port)))
@@ -189,7 +190,7 @@
           (slime (cdr listener))
           (next t)
           )
-      (while next
+      (loop next
              (let ((read-len (fd:recv slime len-buf)))
                (when (nil? read-len)
                  (set! read-len 0)
@@ -214,9 +215,9 @@
   (swank-make-server *swank:server-port* nil))
 
 
-(define swank-test '(("li" "CSI>" ("+" "1" "2") "3" "CSI>" ("println" "'123") "123" "CSI>" ("li" "CSI>" ("list?" ("asd")) "t" "CSI>" ("string->vector" ""asd"") ("97" "115" "100") "CSI>" ("string->vector" ""asd"") ("97" "115" "100") "CSI>" ("string->vector" "" swank::%cursor-marker%))) (:print-right-margin 104))
+(defvar swank-test '(("li" "CSI>" ("+" "1" "2") "3" "CSI>" ("println" "'123") "123" "CSI>" ("li" "CSI>" ("list?" ("asd")) "t" "CSI>" ("string->vector" ""asd"") ("97" "115" "100") "CSI>" ("string->vector" ""asd"") ("97" "115" "100") "CSI>" ("string->vector" "" swank::%cursor-marker%))) (:print-right-margin 104))
   )
-(define swank-test-2 '((("defun" "swank:autodoc" ("forms" "&rest" "args") ("println" ("list" "forms" "args")) ("defun" "find-cursor" ("thing") ("cond" (("and" ("list?" "thing") ("memq" "'swank::%cursor-marker%" "thing")) "thing") (("list?" "thing") ("let" (("asd" ("lambda" ("elems") ("unless" ("null?" "elems") ("or" ("find-cursor" ("car" "elems")) ("asd" ("cdr" "elems"))))))) ("asd" "thing"))) ("else" "#f"))) ("defun" "highlight-arg" ("info" "args") ("cond" (("null?" "info") nil) (("null?" "args") "info") (("not" ("pair?" "info")) ("list" "'===>" "info" "'<===")) (("eq?" ("car" "args") "'swank::%cursor-marker%") ("append" ("list" "'===>" ("car" "info") "'<===") ("cdr" "info"))) (("and" ("string?" ("car" "args")) ("string=?" ("car" "args") """")) ("highlight-arg" "info" ("cdr" "args"))) ("else" ("cons" ("car" "info") ("highlight-arg" ("cdr" "info") ("cdr" "args")))))) ("defun" "info" ("sym") ("cond" (("unbound?" "sym") "#f") (("symbol-procedure?" "sym") ("let" (("pi" ("type-of" ("symbol-value" "sym")))) ("if" ("pair?" "pi") "pi" (",pi" "." "args")))) ("else" "#f"))) ("defun" "guess-doc-node" ("doc-nodes") ("println" ("list" "'info-about" "doc-nodes")) ("case" ("length" "doc-nodes") (("0") "#f") ("else" ("any" ("lambda" ("n") ("and" ("assoc" ("car" ("chicken-doc#node-path" "n")) "##sys#module-table") "n")) "doc-nodes")))) ("defun" "mega-consify" ("list") ("if" ("cddr" "list") ("cons" ("car" "list") ("mega-consify" ("cdr" "list"))) ("cons" ("car" "list") ("cadr" "list")))) ("defun" "signature-from-doc" ("sym") ("when" ("bound?" "sym") ("println" "'function-signature") ("println" ("function-signature" ("eval" "sym"))))) ""
+(defvar swank-test-2 '((("defun" "swank:autodoc" ("forms" "&rest" "args") ("println" ("list" "forms" "args")) ("defun" "find-cursor" ("thing") ("cond" (("and" ("list?" "thing") ("memq" "'swank::%cursor-marker%" "thing")) "thing") (("list?" "thing") ("let" (("asd" ("lambda" ("elems") ("unless" ("null?" "elems") ("or" ("find-cursor" ("car" "elems")) ("asd" ("cdr" "elems"))))))) ("asd" "thing"))) ("else" "#f"))) ("defun" "highlight-arg" ("info" "args") ("cond" (("null?" "info") nil) (("null?" "args") "info") (("not" ("pair?" "info")) ("list" "'===>" "info" "'<===")) (("eq?" ("car" "args") "'swank::%cursor-marker%") ("append" ("list" "'===>" ("car" "info") "'<===") ("cdr" "info"))) (("and" ("string?" ("car" "args")) ("string=?" ("car" "args") """")) ("highlight-arg" "info" ("cdr" "args"))) ("else" ("cons" ("car" "info") ("highlight-arg" ("cdr" "info") ("cdr" "args")))))) ("defun" "info" ("sym") ("cond" (("unbound?" "sym") "#f") (("symbol-procedure?" "sym") ("let" (("pi" ("type-of" ("symbol-value" "sym")))) ("if" ("pair?" "pi") "pi" (",pi" "." "args")))) ("else" "#f"))) ("defun" "guess-doc-node" ("doc-nodes") ("println" ("list" "'info-about" "doc-nodes")) ("case" ("length" "doc-nodes") (("0") "#f") ("else" ("any" ("lambda" ("n") ("and" ("assoc" ("car" ("chicken-doc#node-path" "n")) "##sys#module-table") "n")) "doc-nodes")))) ("defun" "mega-consify" ("list") ("if" ("cddr" "list") ("cons" ("car" "list") ("mega-consify" ("cdr" "list"))) ("cons" ("car" "list") ("cadr" "list")))) ("defun" "signature-from-doc" ("sym") ("when" ("bound?" "sym") ("println" "'function-signature") ("println" ("function-signature" ("eval" "sym"))))) ""
                          (cond ((eq? sym 'define) ))
                          (if (or (symbol-macro? sym) (symbol-procedure? sym))
                              (let* ((doc-nodes nil);(match-nodes sym))
@@ -237,12 +238,12 @@
 (println (swank:autodoc (car swank-test)))
 (println (swank:autodoc (car swank-test-2)))
 
-(define swank-test-3 '(("lisp-write-doc" "hashtable-set!" ("" swank::%cursor-marker%)) (:print-right-margin 181)))
+(defvar swank-test-3 '(("lisp-write-doc" "hashtable-set!" ("" swank::%cursor-marker%)) (:print-right-margin 181)))
 
 (println (swank:autodoc (car swank-test-3)))
 
-(define swank-test-4 '(swank:autodoc (quote ("define" "sample1" ("make-vector" swank::%cursor-marker%))) :print-right-margin 141))
+(defvar swank-test-4 '(swank:autodoc (quote ("define" "sample1" ("make-vector" swank::%cursor-marker%))) :print-right-margin 141))
 ;(swank:autodoc (car swank-test-4))
-;(define swank-test-5 '("defun" "swank-event-loop" ("slime") ("let" (("len-buf" ("make-vector" "6" ("byte" "0"))) ("active" "t")) ("loop" "active" swank::%cursor-marker%))))
+;(defvar swank-test-5 '("defun" "swank-event-loop" ("slime") ("let" (("len-buf" ("make-vector" "6" ("byte" "0"))) ("active" "t")) ("loop" "active" swank::%cursor-marker%))))
 
 (println 'test-done)

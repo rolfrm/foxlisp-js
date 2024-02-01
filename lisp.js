@@ -1,7 +1,7 @@
 
 lisp = {symbolName: {}, symbols: []}
 const reserved = {"true" : true, "false":true, "null": true, "case": true,
-						"tmp": true, "undefined": true, "new": true}
+						"tmp": true, "undefined": true, "new": true, "eval": true}
 
 const sanitizedLookup = {}
 const sanitizedLookupRev = {}

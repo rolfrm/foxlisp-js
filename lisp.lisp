@@ -8,6 +8,7 @@
 (defvar << op_leftshift)
 (defvar >> op_rightshift)
 (defvar xor op_xor)
+(defvar eval eval2)
 (setmacro lambda (_lambda (&rest code)
 								  `(_lambda ,@code)))
 
@@ -28,8 +29,10 @@
 (defun list? (x) (and (eq (type-of x) "object") (Array.isArray x)))
 (defun string? (x) (eq (type-of x) "string"))
 (defmacro undefined? (x) `(eq (type-of ,x) "undefined"))
+(defmacro bound? (x) `(not (undefined? x)))
 (defun symbol? (item) (and item (eq item.type "symbol")))
 (defun number? (item) (eq (type-of item) "number"))
+
 (defmacro unless (test &rest actions)
   `(if ,test () (progn ,@actions)))
 
@@ -85,6 +88,10 @@
 		  (eq a b)
 								
   )))
+
+(defun value->string (value) (__valueToString value))
+(defun string->symbol (string) (__makesym string))
+
 
 
 (defun map (f lst)
@@ -310,6 +317,7 @@
 		 ,(link-ends out-cases))
 	 ))
 
+
 (defmacro for-each (sym list &rest body)
   `(let ((for-each-lst ,list)
 			(,sym nil)
@@ -321,7 +329,18 @@
 		,@body)
 	  ))
 
-
+(defmacro cond (&rest cases)
+  (let ((out-cases (list)))
+     (for-each item cases
+	   (assert-eq 2 (length item))
+	   (let ((c `(if ,(car item) ,(cadr item))))
+	      ;; append the case to the list of cases.
+	      (set out-cases (concat out-cases (list c)))
+	   )
+	  )
+	  (link-ends out-cases)
+  )
+)
 
 ;; this lambda has 
 (defmacro lambda (args &rest code)
@@ -423,3 +442,13 @@
 
 (defun skip (lst n)
    (lst.slice n))
+
+
+(defun async-call (f)
+   (%js "async function (){" f "()}()") 
+)
+
+(defun function-signature (f)
+   
+	(println f.lispname f.lispargs)
+)
