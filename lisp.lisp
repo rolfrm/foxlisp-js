@@ -342,6 +342,14 @@
   )
 )
 
+(defun index-of (item lst)
+   (lst.indexOf item)
+)
+
+(defun memq (item lst)
+   (skip lst (index-of item lst))
+)
+
 ;; this lambda has 
 (defmacro lambda (args &rest code)
   (let ((declarations (if (and code (car code) (eq (caar code) 'declare))
@@ -449,6 +457,5 @@
 )
 
 (defun function-signature (f)
-   
 	(println f.lispname f.lispargs)
 )
