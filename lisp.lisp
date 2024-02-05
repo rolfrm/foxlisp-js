@@ -45,6 +45,7 @@
 (defun cddr (x) (slice x 2))
 (defun cdddr (x) (slice x 3))
 (defun cddddr (x) (slice x 4))
+(defun elt (l i) (getnth l i))
 
 (defun apply (f lst)
   (f.apply nil lst)
@@ -376,19 +377,14 @@
 	 )))
 
 
-(defun min (x y)
-  (if (< x y) x y)
-)
+(defvar min Math.min)
+(defvar max Math.max)
+(defvar abs Math.abs)
 
-(defun max (x y)
-  (if (> x y) x y)
-)
+(defvar floor Math.floor)
 
 (defun clamp (v minimum maximum)
-    (if (< v minimum)
-	    minumum
-		(if (> v maximum) maximum v) 
-	))
+    (min maximum (max v minimum)))
 
 (defmacro incr(sym incr_value)
   `(set ,sym (+ ,sym ,(or incr_value 1)))
@@ -457,5 +453,5 @@
 )
 
 (defun function-signature (f)
-	(println f.lispname f.lispargs)
+	(concat (list f.lispname) f.lispargs)
 )

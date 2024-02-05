@@ -76,7 +76,7 @@
       ((eq? (car args) 'swank::%cursor-marker%)
        (append (list '===> (car info) '<===)
                (cdr info)))
-      ((and (string? (car args)) (string=? (car args) ""))
+      ((and (string? (car args)) (equals? (car args) ""))
        (highlight-arg info (cdr args)))
       (t (cons (car info)
                   (highlight-arg (cdr info) (cdr args))))))
@@ -90,6 +90,7 @@
              pi
              `(,pi . args))))
       (t #f)))
+
 
   ;; Choose a doc-node from all matches, this is only a heuristic solution.
   ;; The heuristic is to find the doc node that has the same name as the symbol,
@@ -112,15 +113,15 @@
         (or describe signature))))
   
   (let ((where (find-cursor forms)))
-    (if (and where (string? (car where)) (not (string= (car where) "")))
+    (if (and where (string? (car where)) (not (equals?  (car where) "")))
         (progn
-          (let* ((sym (string->symbol (car where)))
+          (let ((sym (string->symbol (car where)))
                  (i (or (signature-from-doc sym) (info sym))))
             (if i
                 `(:ok (,(value->string (highlight-arg i where)) t))
                 `(:ok (:not-available t)))))
         '(:ok (:not-available t)))))
-
+  (println ">>>" info)
 (defun net:write (slime data)
    (slime.write data))
    
@@ -178,6 +179,7 @@
     (println "listening")
     (fd:set-blocking listener nil)
     (cons listener nil)))
+
 (defun swank-server-update(listener)
   (unless (cdr listener)
     (let ((new (tcp:accept (car listener))))
