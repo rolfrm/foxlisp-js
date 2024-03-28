@@ -1,2 +1,2 @@
 #/bin/sh
-node ./cli.js $@
+node ./src/cli.js $@

@@ -9,8 +9,10 @@
 (defvar >> op_rightshift)
 (defvar xor op_xor)
 (defvar eval eval2)
+(defvar undefined __undefined)
 (setmacro lambda (_lambda (&rest code)
 								  `(_lambda ,@code)))
+
 
 (setmacro defmacro
 			 (lambda (name args &rest code)
@@ -20,7 +22,8 @@
 
 (defmacro defun (name args &rest code)
   `(defvar ,name
-	  (lambda ,args ,@code)))
+	  (lambda ,args (progn	  
+	  ,@code))))
 
 (defun object? (item) (eq (type-of item) "object"))
 (defun null? (item) (and (object? item) (not item)))  
@@ -54,10 +57,18 @@
 (defun length(list) (get list 'length))
 (defvar *types* (makehashmap))
 (defun hashmap-set(map key value)
-  (map.set key value))
-
+	(map.set key value)
+)
 (defun hashmap-get(map key)
   (map.get key))
+
+(defun hashmap-delete(map key)
+	(map.delete key)
+)
+
+(defun hashmap-keys(map)
+	(Array.from (map.keys))
+)
 
 (defmacro deftype (name args typedeclaration)
   `(hashmap-set *types* ',name '(,args ,typedeclaration)))
@@ -455,3 +466,32 @@
 (defun function-signature (f)
 	(concat (list f.lispname) f.lispargs)
 )
+
+(defmacro defun (name args &rest code)
+  `(defvar ,name
+	  (lambda ,args (progn
+	   ;(println ',name ,@(where args  (lambda (x) (not (eq x '&rest))))) 
+	  
+	  ,@code))))
+
+(defvar *loaded-files* (makehashmap))
+(defun load (file)
+  (let ((dir (loadcontext.split "/")))
+    (dir.pop)
+    (dir.push file)
+    (let ((newpath (dir.join "/")))
+      (loadfile newpath))
+  )
+)
+
+;; math
+
+(defun math:sin (x) (Math.sin x))
+(defun math:cos (x) (Math.cos x))
+(defun math:tan (x) (Math.tan x))
+(defun math:asin (x) (Math.asin x))
+(defun math:acos (x) (Math.acos x))
+(defun math:atan (x) (Math.atan x))
+(defun math:atan2 (y x) (Math.atan2 y x))
+(defun math:sqrt (x) (Math.sqrt x))
+

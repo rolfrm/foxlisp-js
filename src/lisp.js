@@ -1,5 +1,7 @@
 const parser = require("./lispy_parser")
-const lisp = require("./lisp")
+const lisp = require("./symbols")
+
+
 console.log("loading lispy")
 function sym(x, jsname){
     return lisp.sym(x, jsname)
@@ -41,6 +43,7 @@ mod = (x, y) => x % y
 len = (x) => (x && x.length) || 0
 list = (...x) => x
 makehashmap = () => new Map();
+__undefined = undefined
 
 eq = (a, b) => a === b;
 slice = (a, n) => a && (a.length <= n ? null : a.slice(n));
@@ -50,7 +53,7 @@ raise = (err) => {
 
 usplice = (x) => ({type: "unsplice", value: x})
 
-load = (x) => ({type: "load", value: x})
+loadfile = (x, loadcontext) => ({type: "load", value: x, loadcontext: loadcontext})
 
 macroLookup = new Map();
 
@@ -147,7 +150,6 @@ _op_lt = (a,b) => a < b
 _op_gt = (a,b) => a > b
 concat = (a,b)=> a.concat(b)
 __makesym = (a) => sym(a)
-
 
 
 const loopSym = sym("loop");
@@ -393,6 +395,7 @@ function lispCompile(code) {
 					valueCode = valueCode.replace(markRegex, 'lmbmark($1,');
 				}
 				const code2 = `${sym.jsname} = ${valueCode}`;
+				//WriteCodeToLog(code2 + ";")
 				let result = eval(code2);
 				console.log("result: ", valueCode)
 				if(typeof(result) == "function" && result.assoc_id){
@@ -481,23 +484,29 @@ function evalLisp(code){
 }
 eval2 = evalLisp
 loadFileAsync = null
-
+loadcontext = ""
 function LispEvalBlock(code) {
 	 for(;;){
-		  
+		
 		  const [ast, next] = parser.ParseLisp(code)
+		  //console.log(">>>>", code.slice(0, code.length- next.length) )
 		  if (next == null){
 				return;
 		  }
 		  code = next;
 		  js = "'use strict'; return "+ lispCompile(ast)
+		  //WriteCodeToLog("()=> " + js +";")
 		  println(["value code:", ast, "=>", js])
 		  
 		  let f = Function(js)
 		  const result = f();
 		  if(result != null && typeof(result) == "object" && result.type == "load"){
+
 				loadFileAsync(result.value, (data) => {
+					 const prevContext = loadcontext
+					 loadcontext = result.value
 					 LispEvalBlock(data + "\n" + next)
+					 loadcontext = prevContext
 				});
 				
 				return;

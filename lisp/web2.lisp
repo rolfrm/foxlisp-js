@@ -465,11 +465,19 @@ vec3 getColor(int index) {
 )
 
 (defun sdf-intersects2 (a b offset size)
-	(let ((ad (a offset)) (b-d (b offset)))
-	
+	"(let ((a-d (a offset)) (b-d (b offset)))
+	  (cond 
+	    ;; collision?
+	    ((and (< a-d 0.0001) (< b-d 0.0001)) t)
+		;; both outside bounds
+		((or (> a-d (* sqrt2 size)) (> b-d (* sqrt2 size))) nil)
+		;; iterate more
+		(t 
+		   
+		)
 	
 	)
- )
+ )")
  
 (defun sdf-intersects (a b bounds)
    (let ((offset bounds.center) (size bounds.radius))
@@ -762,7 +770,7 @@ vec3 getColor(int index) {
 (defvar png (%js "require('pngjs').PNG"))
 (defvar fs (%js "require('fs')"))
 (defvar p1 (%js "new png({width: 128, height: 128})" ))
-(when 0
+(when t
 (for i 0 (< i 128) (incf i)
    (for j 0 (< j 128) (incf j)
       (let ((color nil) (grad nil))

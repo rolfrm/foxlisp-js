@@ -1,4 +1,4 @@
-const lisp = require("./lisp")
+const lisp = require("./symbols")
 
 class ParserCondition {
     constructor(err) {
