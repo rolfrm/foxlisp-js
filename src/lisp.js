@@ -20,7 +20,7 @@ function _getQuote(id) {
 getQuote = _getQuote
 function setQuote(newQuote){
 	 if(quotes_lookup.has(newQuote)) {
-		  return quotes_lookup.get(newQuote);x
+		  return quotes_lookup.get(newQuote);
 	 }
     let id = quotes.length;
     quotes.length += 1

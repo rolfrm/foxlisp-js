@@ -341,6 +341,15 @@
 		,@body)
 	  ))
 
+(defmacro dotimes (sym-count &rest body)
+  (let ((sym (car sym-count))
+		  (count (cadr sym-count)))
+  `(let ((,sym 0))
+	  (loop (< ,sym ,count)
+		,@body
+		(incr ,sym))
+	  )))
+
 (defmacro cond (&rest cases)
   (let ((out-cases (list)))
      (for-each item cases
@@ -494,4 +503,8 @@
 (defun math:atan (x) (Math.atan x))
 (defun math:atan2 (y x) (Math.atan2 y x))
 (defun math:sqrt (x) (Math.sqrt x))
+
+(defun float32-array (&rest items)
+  (Float32Array.from items)
+)
 

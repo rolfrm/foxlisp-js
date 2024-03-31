@@ -1,4 +1,4 @@
-
+(load "math.lisp")
 
 (defvar vertex-shader-source "
 precision mediump float;
@@ -7,12 +7,9 @@ uniform mat4 modelView;
 uniform mat4 model;
 
 attribute vec3 vp;
-varying vec3 wp;
-varying vec3 eye_dir;
 
 void main() {
     gl_Position = modelView * vec4(vp, 1.0);
-    wp = (model * vec4(vp, 1.0)).xyz;
 }
 "
 
@@ -20,13 +17,7 @@ void main() {
 
 (defvar fragment-shader-source "
 precision mediump float;
-
 uniform vec4 color;
-uniform sampler2D tex1;
-uniform vec3 cameraPosition;
-varying vec2 uv2;
-varying vec3 eye_dir;
-
 void main() {
     gl_FragColor = color;
 }
@@ -70,25 +61,33 @@ void main() {
 )
 (println shader-program)
 
-(when false 
-(defvar vertices '(0 1 -1 -1 1 -1))
+ 
+(defvar vertices '(-1 -1 0 
+                    0 1 0 
+                    1 -1 0))
 
 (defvar vertex-buffer (gl.createBuffer))
 (gl.bindBuffer gl.ARRAY_BUFFER vertex-buffer)
-(gl.bufferData gl.ARRAY_BUFFER (float32-array vertices) gl.STATIC_DRAW)
+(gl.bufferData gl.ARRAY_BUFFER (apply float32-array vertices) gl.STATIC_DRAW)
 
-(defvar position-attribute-location (gl.getAttribLocation shader-program "a_position"))
+(defvar position-attribute-location (gl.getAttribLocation shader-program "vp"))
 (gl.enableVertexAttribArray position-attribute-location)
-(gl.vertexAttribPointer position-attribute-location 2 gl.FLOAT nil 0 0)
-)
-(defvar animate t)
-(defvar time-component 0.0)
+(gl.vertexAttribPointer position-attribute-location 3 gl.FLOAT nil 0 0)
+
+(defvar m4x4identity (mat4:identity))
+(gl.uniformMatrix4fv (gl.getUniformLocation shader-program "model") nil m4x4identity)
+(gl.uniformMatrix4fv (gl.getUniformLocation shader-program "modelView") nil m4x4identity)
+
+(gl.uniform4f (gl.getUniformLocation shader-program "color") 0.0 1.0 1.0 1.0)
+
+(defvar animate nil)
+(defvar time-component 15.0)
 (defun animation-loop ()
     (set time-component (+ time-component 0.01))
     ;; lets make some funky clear-color based on time:
     (gl.clearColor (math:sin time-component) (math:cos time-component) 0.0 1.0)
-    
     (gl.clear gl.COLOR_BUFFER_BIT)
+    (gl.drawArrays gl.TRIANGLES 0 3)
     (println "animation loop")
     (when animate 
         (requestAnimationFrame animation-loop)
