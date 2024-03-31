@@ -148,20 +148,20 @@
 (defmacro decf (sym decr)
   `(set ,sym (- ,sym ,(or decr 1))))
 
-(defun assert(condition error &rest datum)
-  (if condition
+(defmacro assert(condition)
+  `(if ,condition
 		(progn)
-		(progn
-		  (raise (or (if datum.length (list error datum) error) "assertion failed")))
-		))
+		(raise (value->string '("assertion failed" ,condition))))
+		)
 
 (defun assert-not(condition error)
   (assert (not condition) error))
 
 (defmacro assert-eq (a b)
-  `(assert (eq ,a ,b)
-			  '("assertion failed: "
-				 ,a != ,b )))
+  `(assert (eq ,a ,b)))
+
+(defmacro assert-eq-float (a b)
+  `(assert (< (abs (- ,a ,b)) 0.000001)))
 
 (defmacro assert-not-eq(a b)
   `(assert (not (eq ,a ,b))
@@ -494,7 +494,7 @@
 )
 
 ;; math
-
+(defvar math:pi Math.PI)
 (defun math:sin (x) (Math.sin x))
 (defun math:cos (x) (Math.cos x))
 (defun math:tan (x) (Math.tan x))

@@ -129,6 +129,7 @@ println = (...a) => {
 		  }
 		  combined = combined + println_impl(elem)
 	 }
+	 // print without newline:
 	 console.log(combined)
 	 return a[0]
 }
@@ -148,7 +149,7 @@ _op_gte = (a,b) => a >= b
 _op_lte = (a,b) => b >= a
 _op_lt = (a,b) => a < b
 _op_gt = (a,b) => a > b
-concat = (a,b)=> a.concat(b)
+concat = (...lst)=> len(lst) == 0 ? [] : lst[0].concat(...lst.slice(1))
 __makesym = (a) => sym(a)
 
 

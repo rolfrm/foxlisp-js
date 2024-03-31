@@ -265,11 +265,26 @@ asd ")
       (m2 (mat4:translation 2 3 4)))
   (let ((m3 (mat4:multiply m1 m2)))
     (let ((r (mat4:apply m3 (vec3:new 1 1 1))))
-      (assert (eq (vec3:x r) 4.0))
+      (assert-eq (vec3:x r) 4.0)
       (assert (eq (vec3:y r) 6.0))
       (assert (eq (vec3:z r) 8.0))
     )))
 
 (let ((test (vec3:dot (vec3:new 1 2 3) (vec3:new 4 5 6))))
   (assert (eq test 32.0)))
+
+(let ((r (mat4:rotation (* math:pi 0.5) (vec3:new 0 0 1))))
+  
+  (let ((v (vec3:new 1 0 0)))
+    (let ((v2 (mat4:apply r v)))
+      (println v2)
+      (assert-eq-float (vec3:x v2) 0.0)
+      (assert-eq-float (vec3:y v2) -1.0)
+      (assert-eq-float (vec3:z v2) 0.0)
+    )))
+
+(let ((p (mat4:perspective 2.0 1.0 0.1 1000.0)))
+  (mat4:print p)
+  (println (mat4:apply p (vec3:new 0.5 0.5 -1000000)))
+)
 

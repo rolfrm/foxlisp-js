@@ -61,10 +61,18 @@ void main() {
 )
 (println shader-program)
 
+(defvar cube-verts '(0 0 0
+                    0 1 0
+                    1 1 0
+                    1 0 0
+                    0 0 1
+                    0 1 1
+                    1 1 1
+                    1 0 1))
  
-(defvar vertices '(-1 -1 0 
-                    0 1 0 
-                    1 -1 0))
+(defvar vertices '(-1 -1 -0.0
+                    0 1 -0.0 
+                    1 -1 -0.0))
 
 (defvar vertex-buffer (gl.createBuffer))
 (gl.bindBuffer gl.ARRAY_BUFFER vertex-buffer)
@@ -75,8 +83,12 @@ void main() {
 (gl.vertexAttribPointer position-attribute-location 3 gl.FLOAT nil 0 0)
 
 (defvar m4x4identity (mat4:identity))
-(gl.uniformMatrix4fv (gl.getUniformLocation shader-program "model") nil m4x4identity)
-(gl.uniformMatrix4fv (gl.getUniformLocation shader-program "modelView") nil m4x4identity)
+
+(defvar model (mat4:translation 0.0 0.0 -19.0))
+(defvar modelview (mat4:multiply (mat4:perspective 2.0 1.0 0.1 1000.0) model))
+
+(gl.uniformMatrix4fv (gl.getUniformLocation shader-program "model") nil model)
+(gl.uniformMatrix4fv (gl.getUniformLocation shader-program "modelView") nil modelview)
 
 (gl.uniform4f (gl.getUniformLocation shader-program "color") 0.0 1.0 1.0 1.0)
 
