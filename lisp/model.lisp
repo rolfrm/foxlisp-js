@@ -57,7 +57,7 @@
         (list 'polygon-strip-color (float32-array-flatten result) (float32-array-flatten result-color))
     )
 )
-(defmacro model:bake (model)
+(defmacro model:bake (&rest model)
     `(let ((prev-transform model:transform)
            (prev-color model:color)
            (thismodel ',model)
@@ -75,7 +75,7 @@
                 )
             
                 (set model:drawer baker)
-                (progn ,model)
+                (progn ,@model)
                 (set model:drawer current-drawer)
                 
                 (set current (model::combine-models baked))
@@ -84,9 +84,9 @@
             
             )
             
-            (set model:transform prev-transform)
-            (set model:color prev-color))
-        ;(model:draw current)
+        (set model:transform prev-transform)
+        (set model:color prev-color))
+        (model:draw current)
     ))
 
 (defmacro model:with-offset (x y z &rest body)
@@ -122,13 +122,11 @@
 )
 
 (defun model:draw (model)
-    (println 'drawdrawdraw)
+    ;(println 'drawdrawdraw model)
     (model:drawer model)
 )
 
-(defun model:red-cube ()
-    (model:with-color 1.0 0.0 0.0
-        
+(defun model:cube ()
     (dotimes (i 4)
         (model:with-rotation (* i math:pi/2) 1.0 0.0 0.0
             (model:draw model:square))
@@ -137,6 +135,12 @@
         (model:with-rotation (* (+ (* i 2) 1) math:pi/2) 0.0 1.0 0.0
             (model:draw model:square))
     )
+
+)
+
+(defun model:red-cube ()
+    (model:with-color 1.0 0.0 0.0
+        (model:cube)
     )
 )
 

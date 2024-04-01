@@ -1,20 +1,33 @@
-(defun polygon:new (vertices)
+(defun polygon:new (vertices color)
     (let ((poly (list :vertices)))
+        (set poly.triangleCount (/ (length vertices) 3))
+        (if color
+            (set poly.color (Float32Array.from color)) 
+            (set poly.color (Float32Array.from vertices (lambda (x) 1.0)) )
+        )
         (println 'new-polygon vertices)
         (set poly.type 'polygon)
         (set poly.buffer nil)
+        (set poly.colorBuffer nil)
         (set poly.vertices (apply float32-array vertices))
-        (set poly.triangleCount (/ (length vertices) 3))
+        
+        
+        
         poly)
 )
 
 (defun polygon:load (poly)
     (unless poly.buffer 
-        (set poly.buffer (gl.createBuffer)))
+        (set poly.buffer (gl.createBuffer))
+        (set poly.colorBuffer (gl.createBuffer))
+        
+        )
     
    (gl.bindBuffer gl.ARRAY_BUFFER poly.buffer)
    (gl.bufferData gl.ARRAY_BUFFER poly.vertices gl.STATIC_DRAW)
-   (println 'loading: poly.vertices)
+   (gl.bindBuffer gl.ARRAY_BUFFER poly.colorBuffer)
+   (gl.bufferData gl.ARRAY_BUFFER poly.color gl.STATIC_DRAW)
+   (println 'loading: poly.vertices poly.color)
 )
 
 (defun polygon:delete (poly)   
@@ -28,8 +41,11 @@
     (unless poly.buffer 
         (polygon:load poly)
     )
+    ;(println ">>> " poly.color poly.vertices)
     (gl.bindBuffer gl.ARRAY_BUFFER poly.buffer)
     (gl.vertexAttribPointer 0 3 gl.FLOAT false 0 0)
+    (gl.bindBuffer gl.ARRAY_BUFFER poly.colorBuffer)
+    (gl.vertexAttribPointer 1 3 gl.FLOAT false 0 0)
     (gl.drawArrays gl.TRIANGLE_STRIP 0 poly.triangleCount)
     )
 

@@ -40,13 +40,22 @@
 
 (gl.enable gl.CULL_FACE)
 (gl.cullFace gl.BACK)
+(gl.enable gl.DEPTH_TEST)
 (defvar poly-cache (makehashmap))
 (defvar shader (shader:get-default))
 (defun on-draw (model)
     (let ((cached (hashmap-get poly-cache model)))
         (if (not cached)
             (progn
-                (let ((poly (polygon:new (nth model 2))))
+            (println '----loading-model: (car model))
+                (let ((poly 
+                    (if (eq (car model) 'polygon-strip-color)
+                        (progn
+                           
+                            (polygon:new (nth model 1) (nth model 2)))
+                        (polygon:new (nth model 2))))
+                    )
+                
                     (hashmap-set poly-cache model poly)
                     (set cached poly)
                 )
@@ -70,13 +79,17 @@
     (gl.clearColor 0.1 0.1 0.1 1.0)
     (gl.clear gl.COLOR_BUFFER_BIT)
     (model:with-draw on-draw    
+        (model:with-color 1 1 1 
         (model:with-offset 0.0 0.0 -15.0
+
             (model:with-rotation time-component 0.5 0.5 0.5
-                (model:with-offset 3.0 0.0 0.0 (model:red-cube))
-                (model:with-offset -3.0 0.0 0.0 (model:red-cube))
-                (model:with-offset -0.0 3.0 0.0 (model:red-cube))
-                (model:with-scale 2 0.5 0.5 (model:red-cube))
-                ))
+               (model:bake 
+                  (model:with-color 1 1 1
+                    (model:with-offset 3.0 0.0 0.0 (model:red-cube))
+                    (model:with-color 0 1 0 (model:with-offset -3.0 0.0 0.0 (model:cube)))
+                    (model:with-color 1 0 0 (model:with-offset -0.0 3.0 0.0 (model:cube)))
+                    (model:with-color 0 0 1 (model:with-scale 2 0.5 0.5 (model:cube)))
+                )))))
     )
     ;(polygon:draw vertices)
     ;(println "animation loop")
