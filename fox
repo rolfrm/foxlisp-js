@@ -1,2 +1,2 @@
 #/bin/sh
-node ./src/cli.js $@
+node --trace-uncaught ./src/cli.js $@

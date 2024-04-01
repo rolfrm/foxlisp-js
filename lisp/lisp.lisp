@@ -44,6 +44,8 @@
 
 (defun caar (x) (car (car x)))
 (defun cadr (x) (nth x 1))
+(defun caddr (x) (nth x 2))
+(defun cadddr (x) (nth x 3))
 (defun cadar (x) (cadr (car x)))
 (defun cddr (x) (slice x 2))
 (defun cdddr (x) (slice x 3))

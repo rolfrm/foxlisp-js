@@ -70,11 +70,13 @@
     (gl.clearColor 0.1 0.1 0.1 1.0)
     (gl.clear gl.COLOR_BUFFER_BIT)
     (model:with-draw on-draw    
-        (model:with-offset 0.0 0.0 -5.0
-            (model:with-rotation time-component 0.5 0.5 0.0
+        (model:with-offset 0.0 0.0 -15.0
+            (model:with-rotation time-component 0.5 0.5 0.5
                 (model:with-offset 3.0 0.0 0.0 (model:red-cube))
                 (model:with-offset -3.0 0.0 0.0 (model:red-cube))
-                (model:red-cube)))
+                (model:with-offset -0.0 3.0 0.0 (model:red-cube))
+                (model:with-scale 2 0.5 0.5 (model:red-cube))
+                ))
     )
     ;(polygon:draw vertices)
     ;(println "animation loop")

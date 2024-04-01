@@ -1,6 +1,9 @@
 (defun vec3:new(x y z)
     (float32-array x y z)
 )
+(defun vec3:from-array(arr offset)
+    (float32-array (nth arr offset) (nth arr (+ offset 1)) (nth arr (+ offset 2))))
+
 (defun vec3:x(v)
     (nth v 0))
 
@@ -137,6 +140,12 @@
      (+ (* (vec3:y axis-vector) (vec3:x axis-vector) invCosA) (* (vec3:z axis-vector) sinA)) (+ cosA (* (vec3:y axis-vector) (vec3:y axis-vector) invCosA)) (- (* (vec3:y axis-vector) (vec3:z axis-vector) invCosA) (* (vec3:x axis-vector) sinA)) 0
      (- (* (vec3:z axis-vector) (vec3:x axis-vector) invCosA) (* (vec3:y axis-vector) sinA)) (+ (* (vec3:z axis-vector) (vec3:y axis-vector) invCosA) (* (vec3:x axis-vector) sinA)) (+ cosA (* (vec3:z axis-vector) (vec3:z axis-vector) invCosA)) 0
      0 0 0 1)))
+
+(defun mat4:scale (x y z)
+  (mat4:new x 0 0 0 
+            0 y 0 0 
+            0 0 z 0 
+            0 0 0 1))
 
 (defun mat4:print (m)
   (let ((outstr ""))

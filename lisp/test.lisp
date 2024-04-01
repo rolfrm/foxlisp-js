@@ -293,3 +293,7 @@ asd ")
 
 (load "model.lisp")
 (model:red-cube)
+
+(println (float32-array-flatten (list (vec3:new 1 2 3) (vec3:new 4 5 6))))
+
+(model:bake (model:red-cube))
