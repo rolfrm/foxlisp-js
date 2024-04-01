@@ -288,3 +288,5 @@ asd ")
   (println (mat4:apply p (vec3:new 0.5 0.5 -1000000)))
 )
 
+(load "polygon.lisp")
+(println (polygon:new '(0 0 0 1 0 0 0 1 0)))
