@@ -119,8 +119,10 @@
     (mat4:new 
      (* f aspect-inv) 0 0 0
      0 f 0 0
-     0 0 (/ (- (+ zfar znear)) (- znear zfar)) -1
-     0 0 (/ (* -2 zfar znear) (- znear zfar)) 0)))
+     0 0 (/ (- (+ zfar znear)) (- zfar znear)) -1
+     0 0 (/ (* -2 zfar znear) (- zfar znear)) 0)
+     
+     ))
 
 (defun mat4:orthographic (left right bottom top near far)
   (mat4:new 

@@ -44,6 +44,7 @@
 (defvar poly-cache (makehashmap))
 (defvar shader (shader:get-default))
 (defun on-draw (model)
+    
     (let ((cached (hashmap-get poly-cache model)))
         (if (not cached)
             (progn
@@ -80,7 +81,7 @@
     (gl.clear gl.COLOR_BUFFER_BIT)
     (model:with-draw on-draw    
         (model:with-color 1 1 1 
-        (model:with-offset 0.0 0.0 -15.0
+        (model:with-offset 0.0 0.0 -10.0
 
             (model:with-rotation time-component 0.5 0.5 0.5
                (model:bake 
