@@ -486,11 +486,14 @@ function evalLisp(code){
 eval2 = evalLisp
 loadFileAsync = null
 loadcontext = ""
-function LispEvalBlock(code) {
+function LispEvalBlock(code, file) {
 	 for(;;){
 		
 		  const [ast, next] = parser.ParseLisp(code)
 		  //console.log(">>>>", code.slice(0, code.length- next.length) )
+		  if (ast == parser.UnexpectedEOF){
+				throw new Error("Unexpected EOF" + file == nil ? "" : " in file " + file)
+		  }
 		  if (next == null){
 				return;
 		  }
@@ -506,7 +509,7 @@ function LispEvalBlock(code) {
 				loadFileAsync(result.value, (data) => {
 					 const prevContext = loadcontext
 					 loadcontext = result.value
-					 LispEvalBlock(data + "\n" + next)
+					 LispEvalBlock(data + "\n" + next, result.value)
 					 loadcontext = prevContext
 				});
 				

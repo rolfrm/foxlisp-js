@@ -2,9 +2,7 @@
 (load "polygon.lisp")
 (load "shader.lisp")
 
-
-
-
+;; this part must be called to initialize gl
 (defun get-element-by-id (item id)
     (item.getElementById id)
 )
@@ -12,10 +10,9 @@
 (defun get-context (item contextname)
     (item.getContext contextname)
 )
-
 (defvar webgl-canvas (get-element-by-id document "webgl-canvas"))
+;; gl must be defined!.
 (defvar gl (get-context webgl-canvas "webgl"))
-(println gl)
 (assert gl)
 
 (defvar cube-verts '(0 0 0

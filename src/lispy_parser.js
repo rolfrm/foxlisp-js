@@ -13,6 +13,7 @@ class ParserCondition {
   class NothingParsed2 {}
   
   const NothingParsed = new ParserCondition();
+  const UnexpectedEOF = new ParserCondition();
   
   // Helper function to skip whitespace
   function skipWhitespace(input) {
@@ -164,7 +165,7 @@ class ParserCondition {
 						  return [out, input.slice(1)];
 					 }
             }else{
-              return [null, null]
+              return [UnexpectedEOF, null]
             }
           }
           break;
@@ -228,5 +229,6 @@ class ParserCondition {
   }
   
   module.exports = {
-    ParseLisp: ParseLisp
+    ParseLisp: ParseLisp,
+    UnexpectedEOF: UnexpectedEOF
   };
