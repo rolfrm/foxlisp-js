@@ -290,3 +290,6 @@ asd ")
 
 (load "polygon.lisp")
 (println (polygon:new '(0 0 0 1 0 0 0 1 0)))
+
+(load "model.lisp")
+(model:red-cube)

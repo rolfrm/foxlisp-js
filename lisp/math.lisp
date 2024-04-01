@@ -3,10 +3,28 @@
 )
 (defun vec3:x(v)
     (nth v 0))
+
 (defun vec3:y(v) 
     (nth v 1))
+
 (defun vec3:z(v)
     (nth v 2))
+
+(defun vec3:length(v)
+    (math:sqrt (+ (* (vec3:x v) (vec3:x v)) 
+                  (* (vec3:y v) (vec3:y v)) 
+                  (* (vec3:z v) (vec3:z v)))))
+
+(defun vec3:normalize(v)
+    (let ((len (vec3:length v)))
+        (if (< len 0.00000001)
+            (vec3:new 0 0 0)
+            (vec3:new (/ (vec3:x v) len) (/ (vec3:y v) len) (/ (vec3:z v) len))
+        )
+    )
+)
+
+
 
 (defmacro vec3:apply (f a b)
     `(vec3:new (,f (vec3:x ,a) (vec3:x ,b))
@@ -109,7 +127,8 @@
    0 0 0 1))
 
 (defun mat4:rotation (angle axis-vector)
-  (let ((rad angle)
+  (set axis-vector (vec3:normalize axis-vector))
+  (let ((rad angle) 
          (cosA (math:cos rad))
          (sinA (math:sin rad))
          (invCosA (- 1 cosA)))

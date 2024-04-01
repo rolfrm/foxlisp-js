@@ -495,6 +495,8 @@
 
 ;; math
 (defvar math:pi Math.PI)
+(defvar math:2pi (* Math.PI 2))
+(defvar math:pi/2 (/ Math.PI 2))
 (defun math:sin (x) (Math.sin x))
 (defun math:cos (x) (Math.cos x))
 (defun math:tan (x) (Math.tan x))

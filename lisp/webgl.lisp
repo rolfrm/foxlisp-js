@@ -1,6 +1,7 @@
 (load "math.lisp")
 (load "polygon.lisp")
 (load "shader.lisp")
+(load "model.lisp")
 
 ;; this part must be called to initialize gl
 (defun get-element-by-id (item id)
@@ -29,31 +30,54 @@
                                 -1 1 0 
                                 1 1 0)))
 
+(defvar square (polygon:new '(-1 -1 0 
+                                1 -1 0 
+                                -1 1 0 
+                                1 1 0)))
 
 
-(defvar m4x4identity (mat4:identity))
+(defvar perspective (mat4:perspective 2.0 1.0 0.1 1000.0))
 
-(defvar model (mat4:translation 0.0 0.0 -19.0))
-(defvar modelview (mat4:multiply (mat4:perspective 2.0 1.0 0.1 1000.0) model))
 (gl.enable gl.CULL_FACE)
 (gl.cullFace gl.BACK)
-
-(defvar animate nil)
+(defvar poly-cache (makehashmap))
+(defvar shader (shader:get-default))
+(defun on-draw (model)
+    (let ((cached (hashmap-get poly-cache model)))
+        (if (not cached)
+            (progn
+                (let ((poly (polygon:new (nth model 2))))
+                    (hashmap-set poly-cache model poly)
+                    (set cached poly)
+                )
+            )
+        )
+        
+        (shader:set-color shader (vec3:x model:color) (vec3:y model:color) (vec3:z model:color) 1.0)
+        (shader:set-model shader model:transform)
+        (shader:set-model-view shader (mat4:multiply perspective model:transform))
+        (polygon:draw cached)
+        )  
+)
+(defvar animate t)
 (defvar time-component 15.0)
 (defun animation-loop ()
     (set time-component (+ time-component 0.01))
     (let ((shader (shader:get-default)))
-        (println shader)
         (shader:use shader)
-        (shader:set-color shader 0.0 1.0 1.0 1.0)
-        (shader:set-model shader model)
-        (shader:set-model-view shader modelview)    
     )
     ;; lets make some funky clear-color based on time:
-    (gl.clearColor (math:sin time-component) (math:cos time-component) 0.0 1.0)
+    (gl.clearColor 0.1 0.1 0.1 1.0)
     (gl.clear gl.COLOR_BUFFER_BIT)
-    (polygon:draw vertices)
-    (println "animation loop")
+    (model:with-draw on-draw    
+        (model:with-offset 0.0 0.0 -5.0
+            (model:with-rotation time-component 0.5 0.5 0.0
+                (model:with-offset 3.0 0.0 0.0 (model:red-cube))
+                (model:with-offset -3.0 0.0 0.0 (model:red-cube))
+                (model:red-cube)))
+    )
+    ;(polygon:draw vertices)
+    ;(println "animation loop")
     (when animate 
         (requestAnimationFrame animation-loop)
     )

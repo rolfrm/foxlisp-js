@@ -50,7 +50,7 @@ void main() {
 (defun shader:use (shader) 
     (gl.useProgram shader.program)
     (gl.enableVertexAttribArray shader.vertexes)
-    (gl.vertexAttribPointer shader.vertexes 0 3 gl.FLOAT nil 0 0))
+    (gl.vertexAttribPointer shader.vertexes 3 gl.FLOAT false 0 0))
     
 
 (defun shader:set-color (shader r g b a) (gl.uniform4f shader.color r g b a))

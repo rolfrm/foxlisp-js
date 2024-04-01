@@ -1,5 +1,6 @@
 (defun polygon:new (vertices)
     (let ((poly (list :vertices)))
+        (println 'new-polygon vertices)
         (set poly.type 'polygon)
         (set poly.buffer nil)
         (set poly.vertices (apply float32-array vertices))
@@ -13,6 +14,7 @@
     
    (gl.bindBuffer gl.ARRAY_BUFFER poly.buffer)
    (gl.bufferData gl.ARRAY_BUFFER poly.vertices gl.STATIC_DRAW)
+   (println 'loading: poly.vertices)
 )
 
 (defun polygon:delete (poly)   
@@ -29,4 +31,5 @@
     (gl.bindBuffer gl.ARRAY_BUFFER poly.buffer)
     (gl.vertexAttribPointer 0 3 gl.FLOAT false 0 0)
     (gl.drawArrays gl.TRIANGLE_STRIP 0 poly.triangleCount)
-)
+    )
+
