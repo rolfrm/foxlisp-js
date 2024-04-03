@@ -487,8 +487,9 @@ eval2 = evalLisp
 loadFileAsync = null
 loadcontext = ""
 function LispEvalBlock(code, file) {
+	
 	 for(;;){
-		
+		  
 		  const [ast, next] = parser.ParseLisp(code)
 		  //console.log(">>>>", code.slice(0, code.length- next.length) )
 		  if (ast == parser.UnexpectedEOF){

@@ -33,6 +33,7 @@
     (let ((result (list))
           (result-color (list)))
         (for-each item models 
+             (println 'adding item)
             (let ((model-verts (caddr (car item)))
                   (transform (cadr item))
                   (color (caddr item)))
@@ -44,7 +45,7 @@
                         ;; todo: check that the last two are not equal to the next two.
                             (push result (nth result (- (length result) 1)))
                             (push result v)
-
+        
                             (push result-color (nth result-color (- (length result-color) 1)))
                             (push result-color color)
                         )
@@ -54,7 +55,9 @@
                     ))
             )
         )
+        
         (list 'polygon-strip-color (float32-array-flatten result) (float32-array-flatten result-color))
+        
     )
 )
 (defmacro model:bake (&rest model)
@@ -144,3 +147,84 @@
     )
 )
 
+(defun model::generate-sphere (radius steps)
+  (let ((vertex-list (list))
+         (step-phi (/ math:pi steps))
+         (step-theta (/ math:2pi steps)))
+    ;; Generate vertices for triangle strip
+    (dotimes (i steps) ;; vertical steps
+      (dotimes (j (+ steps 1)) ;; horizontal steps
+        (let ((phi1 (* i step-phi))
+              (phi2 (* (+ i 1) step-phi))
+              (theta (* j step-theta)))
+			 (let (
+               (x1 (* radius (math:sin phi1) (math:cos theta)))
+               (y1 (* radius (math:cos phi1)))
+               (z1 (* radius (math:sin phi1) (math:sin theta)))
+               (x2 (* radius (math:sin phi2) (math:cos theta)))
+               (y2 (* radius (math:cos phi2)))
+               (z2 (* radius (math:sin phi2) (math:sin theta))))
+				(let ((seg (list x1 y1 z1 x2 y2 z2)))
+				  (println seg)
+				  
+				  (set vertex-list (concat (list z2 y2 x2 z1 y1 x1) vertex-list))
+				  ;(println '>> vertex-list)
+
+				  )))
+		  )
+		(when (< i (- steps 1))
+        (let ((phi2 (* (+ i 2) step-phi))
+              (theta 0))
+			 (let (
+               (x2 (* radius (math:sin phi2) (math:cos theta)))
+               (y2 (* radius (math:cos phi2)))
+               (z2 (* radius (math:sin phi2) (math:sin theta))))
+				(set vertex-list (list z2 y2 x2 z2 y2 x2) vertex-list)
+		  )
+		)))
+
+	 (list 'polygon :3d-triangle-strip (reverse vertex-list))))
+
+
+(defun model::generate-sphere-2 (stackCount sectorCount radius)
+
+    (let ((vertices '())
+      (lengthInv (/ 1.0 radius))
+      (sectorStep (/ (* 2 math:pi) sectorCount))
+      (stackStep (/ math:pi stackCount)))
+  (dotimes (i (+ stackCount 1))
+    
+    (let 
+        (
+        (stackAngle (- (/ math:pi 2) (* i stackStep)))
+        (stackAngle2 (- (/ math:pi 2) (* (+ i 1) stackStep)))
+        ( xy (* radius (math:cos stackAngle)))
+        (z (* radius (math:sin stackAngle)))
+        (xy2 (* radius (math:cos stackAngle2)))
+        (z2 (* radius (math:sin stackAngle2))))
+        
+    (dotimes (j (+ sectorCount 1))
+      (let ((sectorAngle (* j sectorStep))
+            (x (* xy (math:cos sectorAngle)))
+            (y (* xy (math:sin sectorAngle)))
+            (x2 (* xy2 (math:cos sectorAngle)))
+            (y2 (* xy2 (math:sin sectorAngle))))
+            (println i j)
+            (when (and (eq 0 j) (> i 0))
+                ;make degenerate triangle
+                (println 'degenerate: x y z x y z2)
+                (set vertices (concat vertices (list x y z x2 y2 z2)))
+            )
+            (println x y z x2 y2 z2)
+        (set vertices (concat vertices (list x y z x2 y2 z2)))
+        )))
+      )
+      (list 'polygon :3d-triangle-strip  vertices)
+      
+      ))
+
+(defvar model::sphere12 (model::generate-sphere-2 16 16 1.0))
+(defun model:sphere12 ()
+    ;(model:with-color 1 1 1
+        (model:draw model::sphere12);)
+)

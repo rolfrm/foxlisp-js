@@ -38,8 +38,8 @@
 
 (defvar perspective (mat4:perspective 2.0 1.0 0.1 1000.0))
 
-(gl.enable gl.CULL_FACE)
-(gl.cullFace gl.BACK)
+(gl.disable gl.CULL_FACE)
+;(gl.cullFace gl.BACK)
 (gl.enable gl.DEPTH_TEST)
 (defvar poly-cache (makehashmap))
 (defvar shader (shader:get-default))
@@ -48,7 +48,7 @@
     (let ((cached (hashmap-get poly-cache model)))
         (if (not cached)
             (progn
-            (println '----loading-model: (car model))
+            (println '----loading-model:  model)
                 (let ((poly 
                     (if (eq (car model) 'polygon-strip-color)
                         (progn
@@ -86,10 +86,10 @@
             (model:with-rotation time-component 0.5 0.5 0.5
                (model:bake 
                   (model:with-color 1 1 1
-                    (model:with-offset 3.0 0.0 0.0 (model:red-cube))
+                    (model:with-offset 3.0 0.0 0.0 (model:cube))
                     (model:with-color 0 1 0 (model:with-offset -3.0 0.0 0.0 (model:cube)))
                     (model:with-color 1 0 0 (model:with-offset -0.0 3.0 0.0 (model:cube)))
-                    (model:with-color 0 0 1 (model:with-scale 2 0.5 0.5 (model:cube)))
+                    (model:with-color 0 0 1 (model:with-scale 3 1 1 (model:sphere12)))
                 )))))
     )
     ;(polygon:draw vertices)

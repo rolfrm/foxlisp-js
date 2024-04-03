@@ -1,8 +1,16 @@
 require("./lisp")
 
 let load_file = (filePath, contentAction) => {
+	
 	 fetch(filePath)
-		  .then(response => response.text())
+	 	
+		  .then(response => {
+			if (!response.ok) {
+				return "(println 'file-not-found \"" + filePath + "\")"
+			}
+			return response.text()
+			
+		  })
 		  .then(data => contentAction(data))
 }
 
