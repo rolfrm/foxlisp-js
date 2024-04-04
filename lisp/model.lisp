@@ -31,12 +31,16 @@
 (defvar model::baked-models (makehashmap))
 (defun model::combine-models (models)
     (let ((result (list))
-          (result-color (list)))
+          (result-color (list))
+          (any-color nil)
+          )
         (for-each item models 
              (println 'adding item)
             (let ((model-verts (caddr (car item)))
                   (transform (cadr item))
                   (color (caddr item)))
+                (when color (set any-color color))
+                (unless color (set color any-color))
                   ;(println "item " item model-verts transform)
                 (dotimes (i (/ (length model-verts) 3))
                     (let ((v (mat4:apply transform (vec3:from-array model-verts (* i 3)))))
@@ -45,18 +49,22 @@
                         ;; todo: check that the last two are not equal to the next two.
                             (push result (nth result (- (length result) 1)))
                             (push result v)
-        
-                            (push result-color (nth result-color (- (length result-color) 1)))
-                            (push result-color color)
+                            (when color 
+                                (push result-color (nth result-color (- (length result-color) 1)))
+                                (push result-color color))
                         )
                         
                         (push result v)
-                        (push result-color color)
+                        (when color 
+                            (push result-color color))
                     ))
             )
         )
+        (if any-color 
+            (list 'polygon-strip-color (float32-array-flatten result) (float32-array-flatten result-color))
+            (list 'polygon :3d-triangle-strip (float32-array-flatten result))
+        )
         
-        (list 'polygon-strip-color (float32-array-flatten result) (float32-array-flatten result-color))
         
     )
 )
@@ -223,8 +231,9 @@
       
       ))
 
-(defvar model::sphere12 (model::generate-sphere-2 16 16 1.0))
+(defvar model::sphere12 (model::generate-sphere-2 8 8 1.0))
 (defun model:sphere12 ()
     ;(model:with-color 1 1 1
-        (model:draw model::sphere12);)
+    (model:bake 
+        (model:draw model::sphere12))
 )

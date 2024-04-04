@@ -301,3 +301,4 @@ asd ")
 ;(println (1-))
 
 (println (model::generate-sphere-2 4 4 0.5))
+(model:sphere12)
