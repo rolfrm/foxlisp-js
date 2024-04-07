@@ -1,8 +1,8 @@
 require("./lisp")
 
-let load_file = (filePath, contentAction) => {
+let load_file = (filePath) => {
 	
-	 fetch(filePath)
+	return fetch(filePath)
 	 	
 		  .then(response => {
 			if (!response.ok) {
@@ -11,7 +11,7 @@ let load_file = (filePath, contentAction) => {
 			return response.text()
 			
 		  })
-		  .then(data => contentAction(data))
+		  
 }
 
 function WriteCodeToLog(code){

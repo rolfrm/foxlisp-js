@@ -9,4 +9,4 @@ for(i = 2; i < process.argv.length; i++){
     code += "(loadfile \"" + process.argv[i] + "\")";
 }
 
-LispEvalBlock(code);
+promise = LispEvalBlock(code);

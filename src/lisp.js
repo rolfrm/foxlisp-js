@@ -494,7 +494,7 @@ function evalLisp(code){
 eval2 = evalLisp
 loadFileAsync = null
 loadcontext = ""
-function LispEvalBlock(code, file) {
+async function LispEvalBlock(code, file) {
 	
 	 for(;;){
 		  
@@ -515,13 +515,11 @@ function LispEvalBlock(code, file) {
 		  const result = f();
 		  if(result != null && typeof(result) == "object" && result.type == "load"){
 
-				loadFileAsync(result.value, (data) => {
-					 const prevContext = loadcontext
-					 loadcontext = result.value
-					 LispEvalBlock(data + "\n" + next, result.value)
-					 loadcontext = prevContext
-				});
-				
+				const data = await loadFileAsync(result.value)
+				const prevContext = loadcontext
+				loadcontext = result.value
+				LispEvalBlock(data + "\n" + next, result.value)
+				loadcontext = prevContext
 				return;
 		  }
 	 }

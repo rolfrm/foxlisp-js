@@ -1,13 +1,6 @@
-const fs = require('fs');
-let load_file = (filePath, contentAction) => {
-	fs.readFile(filePath, (err, data) => {
-		if (err) {
-			console.error('Error reading the file:', err);
-			return;
-		}
-		contentAction(data)
-	});
-
+const fs = require('fs').promises;
+async function load_file(filePath){
+    return await fs.readFile(filePath);
 }
 
 function WriteCodeToLog(code) {

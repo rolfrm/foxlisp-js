@@ -101,11 +101,11 @@
         (shader:use shader)
     )
     (when (hashmap-get keydown 'key:a)
-        (set xrot (+ xrot 0.1))
+        (set xrot (- xrot 0.1))
         (println xrot)
     )
     (when (hashmap-get keydown 'key:d)
-        (set xrot (- xrot 0.1))
+        (set xrot (+ xrot 0.1))
         (println xrot)
     )
 
@@ -114,6 +114,8 @@
          )
         (when (key:down 'key:w)
             (set cam-loc (vec3:add cam-loc ld)))
+        (when (key:down 'key:s)
+            (set cam-loc (vec3:sub cam-loc ld)))
     )
 
     ;; lets make some funky clear-color based on time:
