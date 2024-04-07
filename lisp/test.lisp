@@ -302,3 +302,9 @@ asd ")
 
 (println (model::generate-sphere-2 4 4 0.5))
 (model:sphere12)
+
+(with-prefix model: (red-cube))
+  (dotimes (i 100)
+  (println (math:random -50 50))
+
+)

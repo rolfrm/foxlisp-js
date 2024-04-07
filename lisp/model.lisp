@@ -5,7 +5,7 @@
     1 1 1)))
 (defvar model:transform (mat4:identity))
 (defvar model:color nil)
-(defmacro model:with-rotation (angle x y z &rest body)
+(defmacro model:rotation (angle x y z &rest body)
     `(let ((m (mat4:rotation ,angle (vec3:new ,x ,y ,z)))
           (prev-rotation model:transform))
         
@@ -100,7 +100,7 @@
         (model:draw current)
     ))
 
-(defmacro model:with-offset (x y z &rest body)
+(defmacro model:offset (x y z &rest body)
     `(let ((m (mat4:translation  ,x ,y ,z))
           (prev-translation model:transform))
         
@@ -108,7 +108,7 @@
         (progn ,@body)
         (set model:transform prev-translation)
     ))
-(defmacro model:with-scale (x y z &rest body)
+(defmacro model:scale (x y z &rest body)
     `(let ((m (mat4:scale  ,x ,y ,z))
           (prev-model model:transform))
         
@@ -122,6 +122,11 @@
         (progn ,@body)
         (set model:color prev-color)
     ))
+
+(defmacro model:rgb (r g b &rest body)
+    `(model:with-color ,r ,g ,b ,@body)
+)
+
 (defvar model:drawer (lambda (m) (println 'no-drawer-model: m)))
 
 (defmacro model:with-draw (f &rest body)
@@ -138,15 +143,15 @@
 )
 
 (defun model:cube ()
+    (model:bake 
     (dotimes (i 4)
-        (model:with-rotation (* i math:pi/2) 1.0 0.0 0.0
+        (model:rotation (* i math:pi/2) 1.0 0.0 0.0
             (model:draw model:square))
     )
     (dotimes (i 2)
-        (model:with-rotation (* (+ (* i 2) 1) math:pi/2) 0.0 1.0 0.0
+        (model:rotation (* (+ (* i 2) 1) math:pi/2) 0.0 1.0 0.0
             (model:draw model:square))
-    )
-
+    ))
 )
 
 (defun model:red-cube ()
@@ -231,9 +236,59 @@
       
       ))
 
+(defun model:cylinder (radius height steps)
+    (let ((vertices '())
+          (step (/ math:2pi steps))
+          (half-height (/ height 2))
+          )
+        (dotimes (i steps)
+            (let ((theta (* i step))
+                  (theta2 (* (+ i 1) step))
+                  (x1 (* radius (math:cos theta)))
+                  (y1 (* radius (math:sin theta)))
+                  (x2 (* radius (math:cos theta2)))
+                  (y2 (* radius (math:sin theta2)))
+                  )
+                (set vertices (concat vertices (list x1 y1 half-height x2 y2 half-height x1 y1 (- half-height) x2 y2 (- half-height))))
+            )
+        )
+        (set vertices (concat vertices (list (nth vertices 0) (nth vertices 1) half-height (nth vertices 3) (nth vertices 4) half-height (nth vertices 0) (nth vertices 1) (- half-height) (nth vertices 3) (nth vertices 4) (- half-height)))
+        (list 'polygon :3d-triangle-strip vertices)
+    )
+))
+
 (defvar model::sphere12 (model::generate-sphere-2 8 8 1.0))
 (defun model:sphere12 ()
     ;(model:with-color 1 1 1
     (model:bake 
         (model:draw model::sphere12))
 )
+
+(defvar model::cylinder-8 (model:cylinder 1 1 8))
+
+(defvar model:pyramid
+  '(polygon :3d-triangle-strip (-0.5 0 0.5   0 1 0   0.5 0 0.5   0 1 0   0.5 0 -0.5   0 1 0   -0.5 0 -0.5   0 1 0   -0.5 0 0.5)
+))
+
+(defvar model::tile '(polygon :3d-triangle-strip (0 0 0
+                                                 0 0 1
+                                                 1 0 0
+                                                 1 0 1)))
+(defun model:tile () (model:draw model::tile))
+
+(defun model:upcube ()
+  (model:offset 0.0 1.0 0.0
+    (model:scale 0.5 0.5 0.5 
+        (model:cube))))
+
+(defun model:right-tile()
+  (model:offset 0.0 -0.0 -0.5
+    (model:tile)))
+
+(defun model:z-tile()
+  (model:offset -0.5 -0.0 -0.0
+    (model:tile)))
+
+(defun model:tile-centered ()
+  (model:offset -0.5 0.0 -0.5
+    (model:tile)))

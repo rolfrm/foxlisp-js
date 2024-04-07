@@ -29,7 +29,7 @@ function setQuote(newQuote){
     return id
 }
 
-getsym = lisp.getsym
+lookupsym = lisp.getsym
 car = (x) => x && x[0]
 cdr = (x) => x && x.slice(1)
 op_add = (x, y) => x + y
@@ -344,7 +344,15 @@ function lispCompile(code) {
     }
     case lambdaSym:
         {
+
             const [args, ...body] = operands;
+			// find invalid args    
+			for(let arg of args){
+				if(arg.type != "symbol"){
+					 throw new Error("Invalid argument in lambda: " + arg + " in " + println_impl(code));
+				}
+			}
+
 				const restIndex = args.indexOf(restSym)
 				let argstr = args.map(arg => arg.jsname).join(",")
 				if(restIndex != -1){

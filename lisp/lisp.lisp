@@ -105,7 +105,7 @@
 
 (defun value->string (value) (__valueToString value))
 (defun string->symbol (string) (__makesym string))
-
+(defun symbol-name (symbol) symbol.value)
 
 
 (defun map (f lst)
@@ -507,8 +507,40 @@
 (defun math:atan (x) (Math.atan x))
 (defun math:atan2 (y x) (Math.atan2 y x))
 (defun math:sqrt (x) (Math.sqrt x))
-
+(defun math:random (min max)
+  (+ (* (Math.random) (- max min) ) min)
+)
 (defun float32-array (&rest items)
   (Float32Array.from items)
 )
 
+(defun prefix-symbols (prefix code)
+  (let ((any-new nil)
+        (result code))
+    
+    (dotimes (i (length code))
+      (let ((x (nth code i)))
+        (if (symbol? x)
+          (let ((existing-sym (lookupsym (concat (symbol-name prefix) (symbol-name x)))))
+            (when existing-sym
+              (set x existing-sym))
+          )
+          (when (list? x)
+            (set x (prefix-symbols prefix x))
+          
+          )
+        )
+        (unless (eq x (nth code i))
+          (when (eq code result)
+            (set result (apply list code))
+          )
+          (setnth result i x )
+
+        )
+      ))
+      result))
+    
+  
+
+(defmacro with-prefix (prefix &rest body)
+  `(progn ,@(prefix-symbols prefix body)))
