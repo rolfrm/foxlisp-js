@@ -15,18 +15,42 @@
 
 (defvar keydown (makehashmap))
 (defun key:down (key) (hashmap-get keydown key))
+(defvar events-list (list))
+(defun key:clear-events ()
+  (set events-list (list))
+  ) 
+
+(defun key:check-event (key type)
+  (block check
+	 ($ for-each k events-list)
+	 ($ when (eq (car k) type))
+	 ($ when (eq (cadr k) key))
+	 (return-from check t)
+	 ))
+
+(defun key:on-down (key) (key:check-event key 'key-down))
+(defun key:on-up (key) (key:check-event key 'key-up))
+
 (defvar events-loaded nil)
 (unless events-loaded 
     (set events-loaded t)
-    (window.addEventListener "keydown" (lambda (evt) 
-        (evt.preventDefault) 
-        (hashmap-set keydown (keys:code-to-key evt.keyCode) t)
-        (println (keys:code-to-key evt.keyCode))
-        ))
+    (window.addEventListener "keydown"
+	  (lambda (evt)
+		 ($ let ((k (keys:code-to-key evt.keyCode))))
+		 ($ unless (eq k 'key:f12))
+		 ($ unless (eq k 'key:f5))
+		 (evt.preventDefault) 
+       (hashmap-set keydown k t)
+       (println (keys:code-to-key evt.keyCode))
+		 (push events-list (list 'key-down k))
+       ))
     (window.addEventListener "keyup" (lambda (evt) 
-        (evt.preventDefault) 
-        (hashmap-set keydown (keys:code-to-key evt.keyCode) nil)
-
+		  ($ let ((k (keys:code-to-key evt.keyCode))))
+		  ($ unless (eq k 'key:f12))
+		  ($ unless (eq k 'key:f5))
+		  (evt.preventDefault) 
+        (hashmap-set keydown k nil)
+		  (push events-list (list 'key-up k))
         ))
 
     (webgl-canvas.addEventListener "mousedown" (lambda (&rest args) (println args)))
@@ -50,7 +74,7 @@
     (let ((cached (hashmap-get poly-cache model)))
         (if (not cached)
             (progn
-            (println '----loading-model:  model)
+            ;(println '----loading-model:  model)
                 (let ((poly 
                     (if (eq (car model) 'polygon-strip-color)
                         (progn
@@ -70,7 +94,28 @@
         (shader:set-model-view shader (mat4:multiply perspective model:transform))
         (polygon:draw cached)
         )  
-)
+	 )
+
+(defun tree ()
+  (with-prefix model:
+	 (offset 0.0 -3 0.0
+				(rgb 1 0.8 0.4 
+					  ($ scale 1 5 1)
+					  (upcube))
+				(rgb 0.2 0.8 0.4 
+                 ($ offset 0 7.5 0)
+                 ($ scale 2 2 2) 
+                 (sphere12))
+				)
+	 ))
+
+(defvar bullets (list))
+(defun shoot-bullet (loc dir)
+  (println 'shoot-pew-pew loc dir)
+  (push bullets (list loc dir))
+  )
+
+
 (defvar animate t)
 (defvar time-component 15.0)
 (defvar xrot 0.0)
@@ -96,7 +141,13 @@
             (set cam-loc (vec3:sub cam-loc ld)))
         (when (key:down 'key:s)
             (set cam-loc (vec3:add cam-loc ld)))
-    )
+		  (when (key:on-down 'key:space)
+			 (shoot-bullet cam-loc (vec3:new 0 0 1))
+			 )
+		  )
+
+	 (key:clear-events)
+	 
 
     ;; lets make some funky clear-color based on time:
     (gl.clearColor 0.1 0.1 0.1 1.0)
@@ -140,15 +191,22 @@
                    )
                 
                 )
-                (offset 5.0 -3 -10.0
-								(rgb 1 0.8 0.4 
-									  ($ scale 1 5 1)
-									  (upcube))
-                    (rgb 0.2 0.8 0.4 
-                        ($ offset 0 7.5 0)
-                        ($ scale 2 2 2) 
-                        (sphere12))
-                )
+					(println bullets)
+
+					(for-each bullet bullets
+								 ;($ let ((pos (car bullet))))
+								 ;(println pos)
+								 ;($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
+								 ;($ rgb 1 1 1)
+								 ;(sphere12)
+								 )
+					
+
+					(rgb 1 1 1
+                (bake
+					 (dotimes (i 50)
+						($ offset (math:random -50 50) 0.0 (math:random -50 50))
+						(tree))))
 
                 (rgb 0.2 0.7 0.2
 							($ bake) 
@@ -159,19 +217,15 @@
 							)
 
                 (rgb 1 1 1
-                (bake
-                (offset 0 10 -200
-                    (dotimes (i 100 )
-							 ($ rgb 1 1 1)
-							 ($ offset (math:random -200 200) (math:random -10 50) 0 )
-                      (sphere12)
-                    
-                    )
-                    (rgb 1 1 1
-                       (sphere12)
-                    )
-                 
-                )))
+                ($ bake)
+                ($ offset 0 10 -200)
+                (dotimes (i 100 )
+						($ rgb 1 1 1)
+						($ offset (math:random -200 200) (math:random -10 50) 0 )
+                  (sphere12))
+                (rgb 1 1 1
+                     (sphere12))
+                )
 
                 (rgb 0 1 0
                    (offset 0 0 0 

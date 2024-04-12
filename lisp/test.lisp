@@ -332,3 +332,34 @@ asd ")
 (progn
   ($ let ((a 2) (b 3)))
   (println (+ a b)))
+
+(defvar code222 "
+
+(m, v)=>{
+    
+    const x = m[0] * v[0] + m[4] * v[1] + m[8] * v[2]+ m[12];
+    const y = m[1] * v[0] + m[5] * v[1] + m[9] * v[2]+ m[13];
+    const z = m[2] * v[0] + m[6] * v[1] + m[10] * v[2]+ m[14];
+    const w = m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15];
+   if (w != 0.0){
+     v[0] = x / w;
+     v[1] = y / w;
+     v[2] = z / w;
+   }else{
+     v[0] = x;
+     v[1] = y;
+     v[2] = z;
+  
+   }
+   return v;
+}
+
+")
+(defvar __mat4_apply2 (js_eval code222))
+;(set mat4:apply __mat4_apply2)
+
+(let ((v2 (__mat4_apply2 (mat4:perspective 1.5 1.0 2 1000.0) (vec3:new 1 1 1))))
+  (println v2))
+
+(let ((v2 (mat4:apply (mat4:perspective 1.5 1.0 2 1000.0) (vec3:new 1 1 1))))
+  (println v2))

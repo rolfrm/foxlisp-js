@@ -83,29 +83,33 @@
           (mat4:set result i j sum))))
     result))
 
-(defun mat4:apply (m v)
-  (let ((result (vec3:new 
-                 (+ (* (mat4:get m 0 0) (vec3:x v)) 
-                    (* (mat4:get m 0 1) (vec3:y v)) 
-                    (* (mat4:get m 0 2) (vec3:z v)) 
-                    (mat4:get m 0 3))
-                 (+ (* (mat4:get m 1 0) (vec3:x v)) 
-                    (* (mat4:get m 1 1) (vec3:y v)) 
-                    (* (mat4:get m 1 2) (vec3:z v)) 
-                    (mat4:get m 1 3))
-                 (+ (* (mat4:get m 2 0) (vec3:x v)) 
-                    (* (mat4:get m 2 1) (vec3:y v)) 
-                    (* (mat4:get m 2 2) (vec3:z v)) 
-                    (mat4:get m 2 3))))
-        (w (+ (* (mat4:get m 3 0) (vec3:x v)) 
-              (* (mat4:get m 3 1) (vec3:y v)) 
-              (* (mat4:get m 3 2) (vec3:z v)) 
-              (mat4:get m 3 3))))
-                
-    (if (not (eq w 0.0))
-        (vec3:mul-scalar result (/ 1.0 w))
-        result)))
-
+(defun mat4:apply (m v in-place)
+  (let ((w (or (+ (* (mat4:get m 3 0) (vec3:x v)) 
+						(* (mat4:get m 3 1) (vec3:y v)) 
+						(* (mat4:get m 3 2) (vec3:z v)) 
+						(mat4:get m 3 3)) 1.0))
+		  (x 
+         (/ (+ (* (mat4:get m 0 0) (vec3:x v)) 
+					(* (mat4:get m 0 1) (vec3:y v)) 
+               (* (mat4:get m 0 2) (vec3:z v)) 
+               (mat4:get m 0 3)) w))
+		  (y
+         (/ (+ (* (mat4:get m 1 0) (vec3:x v)) 
+               (* (mat4:get m 1 1) (vec3:y v)) 
+               (* (mat4:get m 1 2) (vec3:z v)) 
+               (mat4:get m 1 3)) w))
+		  (z
+         (/ (+ (* (mat4:get m 2 0) (vec3:x v)) 
+               (* (mat4:get m 2 1) (vec3:y v)) 
+               (* (mat4:get m 2 2) (vec3:z v)) 
+               (mat4:get m 2 3)) w))
+        )
+	 (if in-place
+		  (progn
+			 (setnth v 0 x)
+			 (setnth v 1 y)
+			 (setnth v 2 z))
+		  (vec3:new x y z))))
 
 (defun mat4:translation (x y z)
     (mat4:new 1 0 0 0 0 1 0 0 0 0 1 0 x y z 1))

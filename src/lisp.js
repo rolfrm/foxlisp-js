@@ -540,6 +540,14 @@ async function LispEvalBlock(code, file) {
 	 }
 }
 
+function do_eval(code){
+	 return eval?.(code)
+}
+
+js_eval = do_eval
+
+
+
 
 lisp.lisp.eval = evalLisp
 lisp.lisp.LispEvalBlock = LispEvalBlock

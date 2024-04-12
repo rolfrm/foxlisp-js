@@ -5,14 +5,12 @@
             (set poly.color (Float32Array.from color)) 
             (set poly.color (Float32Array.from vertices (lambda (x) 1.0)) )
         )
-        (println 'new-polygon vertices)
+
         (set poly.type 'polygon)
         (set poly.buffer nil)
         (set poly.colorBuffer nil)
-        (set poly.vertices (apply float32-array vertices))
-        
-        
-        
+        (set poly.vertices (float32-array-from vertices))
+
         poly)
 )
 
@@ -27,7 +25,7 @@
    (gl.bufferData gl.ARRAY_BUFFER poly.vertices gl.STATIC_DRAW)
    (gl.bindBuffer gl.ARRAY_BUFFER poly.colorBuffer)
    (gl.bufferData gl.ARRAY_BUFFER poly.color gl.STATIC_DRAW)
-   (println 'loading: poly.vertices poly.color)
+   ;(println 'loading: poly.vertices poly.color)
 )
 
 (defun polygon:delete (poly)   

@@ -408,14 +408,13 @@
 (defun clamp (v minimum maximum)
     (min maximum (max v minimum)))
 
-(defmacro incr(sym incr_value)
+(defmacro incr (sym incr_value)
   `(set ,sym (+ ,sym ,(or incr_value 1)))
   )
 
-(defmacro push (location value)
-  `(let ((loc ,location))
-	  (loc.push ,value))
-  )
+(defun push (location value)
+  (location.push value))
+
 (defmacro for (varsym start stop increment &rest body)
   `(let ((,varsym ,start))
 	  (loop ,stop
@@ -423,6 +422,7 @@
 		,increment
 	  )
 	  ))
+
 (defun order-by (lst f)
     (let ((lst2 (lst.slice)))
 	   (lst2.sort (lambda (a b)
@@ -437,8 +437,7 @@
 
 (defun select (list f)
    (let ((out (list.slice))
-         (l list.length)
-         )
+         (l list.length))
      (for i 0 (< i l) (incf i) 
 	     (setnth out i (f (getnth list i))))
      out
@@ -512,7 +511,11 @@
 )
 (defun float32-array (&rest items)
   (Float32Array.from items)
-)
+  )
+(defun float32-array-from (list)
+  (Float32Array.from list))
+
+
 
 (defun prefix-symbols (prefix code)
   (let ((any-new nil)

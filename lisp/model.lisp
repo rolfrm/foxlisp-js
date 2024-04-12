@@ -16,7 +16,9 @@
     ))
 
 (defun float32-array-flatten (v)
-    (let ((result (list)))
+  (let ((result (list)))
+	 
+	 
         (dotimes (i (length v))
             (let ((item (nth v i)))
                 (dotimes (j (length item))
@@ -25,7 +27,7 @@
             )
         )
         
-        (apply float32-array result)
+        (float32-array-from result)
 ))
 
 (defvar model::baked-models (makehashmap))
@@ -35,7 +37,7 @@
           (any-color nil)
           )
         (for-each item models 
-             (println 'adding item)
+             ;(println 'adding item)
             (let ((model-verts (caddr (car item)))
                   (transform (cadr item))
                   (color (caddr item)))
@@ -66,8 +68,9 @@
         )
         
         
-    )
-)
+		  )
+	 )
+
 (defmacro model:bake (&rest model)
     `(let ((prev-transform model:transform)
            (prev-color model:color)
@@ -79,23 +82,22 @@
             (let (
                 (baked (list))
                 (baker (lambda (model) 
-                    (println 'baking model)
+                    ;(println 'baking model)
                     (push baked (list model model:transform model:color))
                     ))
                   (current-drawer model:drawer)
                 )
             
-                (set model:drawer baker)
-                (progn ,@model)
-                (set model:drawer current-drawer)
-                
-                (set current (model::combine-models baked))
-                (println 'baked: current)
-                (hashmap-set model::baked-models thismodel current)
+              (set model:drawer baker)
+              (progn ,@model)
+              (set model:drawer current-drawer)
+              
+              (set current (model::combine-models baked))
+													 ;(println 'baked: current)
+              (hashmap-set model::baked-models thismodel current)
+              )
             
-            )
-            
-        (set model:transform prev-transform)
+				(set model:transform prev-transform)
         (set model:color prev-color))
         (model:draw current)
     ))
@@ -178,7 +180,7 @@
                (y2 (* radius (math:cos phi2)))
                (z2 (* radius (math:sin phi2) (math:sin theta))))
 				(let ((seg (list x1 y1 z1 x2 y2 z2)))
-				  (println seg)
+				  ;(println seg)
 				  
 				  (set vertex-list (concat (list z2 y2 x2 z1 y1 x1) vertex-list))
 				  ;(println '>> vertex-list)
@@ -222,13 +224,13 @@
             (y (* xy (math:sin sectorAngle)))
             (x2 (* xy2 (math:cos sectorAngle)))
             (y2 (* xy2 (math:sin sectorAngle))))
-            (println i j)
+            ;(println i j)
             (when (and (eq 0 j) (> i 0))
                 ;make degenerate triangle
-                (println 'degenerate: x y z x y z2)
+                ;(println 'degenerate: x y z x y z2)
                 (set vertices (concat vertices (list x y z x2 y2 z2)))
             )
-            (println x y z x2 y2 z2)
+            ;(println x y z x2 y2 z2)
         (set vertices (concat vertices (list x y z x2 y2 z2)))
         )))
       )
