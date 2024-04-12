@@ -306,5 +306,29 @@ asd ")
 (with-prefix model: (red-cube))
   (dotimes (i 100)
   (println (math:random -50 50))
+  )
 
+
+
+;(progn ($ println) 2 3 4)
+
+;; inlet syntax
+
+;(with-prefix model:
+;  (offset 0 0 0
+;			 ($ rotation 0 0 0)
+;			 ($ scale 2 2 2)
+;			 (red-cube)))
+
+(defun print-reader (code)
+  (println 'compile: code)
+  code
 )
+
+(println 1 2 3 ($ +) 4 ($ *) 5 6)
+(assert-eq 34 ($ +) 4 ($ *) 5 ($ * 2 3))
+
+
+(progn
+  ($ let ((a 2) (b 3)))
+  (println (+ a b)))

@@ -544,3 +544,43 @@
 
 (defmacro with-prefix (prefix &rest body)
   `(progn ,@(prefix-symbols prefix body)))
+
+
+(defun $-impl (context index)
+  (let ((new-context (take context (+ 1 index)))
+		  (existing (nth context index)))
+	 (setnth new-context index (concat (cdr existing) (skip context (+ 1 index))))
+	 new-context))
+
+(defvar supermacro (lambda (context index)
+							($-impl context index)))
+
+(defvar super-macros (makehashmap))
+(hashmap-set super-macros '$ supermacro)
+(defun reader-replacer (code)
+  (if (list? code)
+		(progn
+		  (set code (apply list code))
+		(dotimes (i (length code))
+		  (let ((x (getnth code i)))
+			 (when (list? x)
+			 (when (symbol? (car x))
+				(let ((sw (hashmap-get super-macros (car x))))
+				  (if sw
+					 (let ((result (sw code i)))
+						(set code result)
+						(set i 0)
+						)
+
+					 (progn
+						(setnth code i (reader-replacer x))
+						)
+				  )
+				  ))
+			 )
+		  ))
+		code)
+  code))
+
+(set lisp_reader reader-replacer)
+

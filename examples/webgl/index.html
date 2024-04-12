@@ -11,10 +11,11 @@
         <div id="output"></div>
       
         <script>
-          document.addEventListener('DOMContentLoaded', function() 
+          document.addEventListener('DOMContentLoaded', async function() 
           {
-            lisp.LispEvalBlock("(loadfile \"lisp/lisp.lisp\")")
-            lisp.LispEvalBlock("(loadfile \"lisp/webgl.lisp\")")
+            await lisp.LispEvalBlock("(loadfile \"lisp/lisp.lisp\")")
+            await lisp.LispEvalBlock("(loadfile \"lisp/webgl.lisp\")")
+            
           });
         </script>
 

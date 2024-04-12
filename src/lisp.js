@@ -275,7 +275,10 @@ let associd = 0;
 let assoc = {}
                 ///\/\*lmb#(\d+)\*\//
 const markRegex = /\/\*lmb#(\d+)\*\/\(/g;
+let codeStack = []
 function lispCompile(code) {
+	 try{
+		  codeStack.push(code);
 	 if(typeof(code) == "number"){
         return code
 	 }
@@ -463,17 +466,28 @@ function lispCompile(code) {
 				throw new Error("undefined operator in ", code)
 		  }
         if (macroLookup.has(operator)) {
-				newcode = (macroLookup.get(operator))(...operands)
+				let macroFcn = macroLookup.get(operator)
+				let newcode = null;
+				
+				newcode = macroFcn(...operands)
+				
 				return lispCompile(newcode)
         }
         args = operands.map(op => lispCompile(op)).join(",")
         
         return `${operator.jsname}(${args})`;
     }
+	 }finally{
+		  codeStack.pop()
+	 }
+}
+
+lisp_reader = function(code) {
+	return code;
 }
 
 function lispCompileAst(ast){
-    js = "'use strict'; return "+ lispCompile(ast)
+    js = "'use strict'; return "+ lispCompile(lisp_reader(ast))
     //console.log("ast: ", ast)
     //console.log("js: ", js)
     return Function(js)
@@ -491,6 +505,7 @@ function evalLisp(code){
 	 let fn = lispCompileAst(code)
 	 return fn();
 }
+
 eval2 = evalLisp
 loadFileAsync = null
 loadcontext = ""
@@ -507,7 +522,7 @@ async function LispEvalBlock(code, file) {
 				return;
 		  }
 		  code = next;
-		  js = "'use strict'; return "+ lispCompile(ast)
+		  js = "'use strict'; return "+ lispCompile(lisp_reader(ast))
 		  //WriteCodeToLog("()=> " + js +";")
 		  println(["value code:", ast, "=>", js])
 		  
