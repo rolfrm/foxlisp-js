@@ -75,3 +75,35 @@ void main() {
 
           
           
+(defvar shader::vertex-shader-source-sdf "
+precision mediump float;
+
+attribute vec3 vertexes;
+varying vec2 p; 
+void main() {
+    p = vertexes.xy;
+    gl_Position = vec4(vertexes, 1.0);
+}
+"
+
+)
+
+(defvar shader::fragment-shader-source-sdf "
+precision mediump float;
+varying vec2 p;
+uniform vec3 cameraPosition;
+		
+void main() {
+    
+    gl_FragColor = vec4(1,1,0,1);
+}
+
+")
+
+(defvar shader::sdf nil)
+
+(defun shader:get-sdf()
+    (if shader::sdf
+        shader::sdf
+        (set shader::sdf (shader:new shader::vertex-shader-source-sdf shader::fragment-shader-source-sdf)))
+)

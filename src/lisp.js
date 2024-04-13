@@ -516,6 +516,7 @@ async function LispEvalBlock(code, file) {
 		  const [ast, next] = parser.ParseLisp(code)
 		  //console.log(">>>>", code.slice(0, code.length- next.length) )
 		  if (ast == parser.UnexpectedEOF){
+				alert("!")
 				throw new Error("Unexpected EOF" + file == nil ? "" : " in file " + file)
 		  }
 		  if (next == null){

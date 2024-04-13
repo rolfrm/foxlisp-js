@@ -113,6 +113,33 @@
 			 (setnth v 2 z))
 		  (vec3:new x y z))))
 
+(defvar code222 "
+
+(m, v)=>{
+    
+    const x = m[0] * v[0] + m[4] * v[1] + m[8] * v[2]+ m[12];
+    const y = m[1] * v[0] + m[5] * v[1] + m[9] * v[2]+ m[13];
+    const z = m[2] * v[0] + m[6] * v[1] + m[10] * v[2]+ m[14];
+    const w = m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15];
+   if (w != 0.0){
+     v[0] = x / w;
+     v[1] = y / w;
+     v[2] = z / w;
+   }else{
+     v[0] = x;
+     v[1] = y;
+     v[2] = z;
+  
+   }
+   return v;
+}
+
+")
+(defvar __mat4_apply2 (js_eval code222))
+(set mat4:apply __mat4_apply2)
+
+
+
 (defun mat4:translation (x y z)
     (mat4:new 1 0 0 0 0 1 0 0 0 0 1 0 x y z 1))
 

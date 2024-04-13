@@ -296,7 +296,6 @@ asd ")
 
 (println (float32-array-flatten (list (vec3:new 1 2 3) (vec3:new 4 5 6))))
 
-(model:bake (model:red-cube))
 
 ;(println (1-))
 
@@ -361,5 +360,7 @@ asd ")
 (let ((v2 (__mat4_apply2 (mat4:perspective 1.5 1.0 2 1000.0) (vec3:new 1 1 1))))
   (println v2))
 
-(let ((v2 (mat4:apply (mat4:perspective 1.5 1.0 2 1000.0) (vec3:new 1 1 1))))
+(let ((v2 (mat4:apply (mat4:perspective 1.5 1.0 2 1000.0) ! vec3:new 1 1 1)))
   (println v2))
+
+(assert-eq 3 (progn (progn ! + 1 2)))

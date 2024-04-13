@@ -78,12 +78,45 @@
         
 		  )
 	 )
+(defmacro model:bake-keyed (key &rest model)
+    `(let ((prev-transform model:transform)
+           (prev-color model:color)
+           (thismodel ',model)
+			  (key ,key)
+           (current (hashmap-get model::baked-models key)))
+		 ;(println 'bake-keyed key current )
+        (unless current
+            (set model:transform (mat4:identity))
+            (set model:color nil)
+            (let (
+                (baked (list))
+                (baker (lambda (model) 
+                    ;(println 'baking model)
+                    (push baked (list model model:transform model:color))
+                    ))
+                  (current-drawer model:drawer)
+                )
+            
+              (set model:drawer baker)
+              (progn ,@model)
+              (set model:drawer current-drawer)
+              
+              (set current (model::combine-models baked))
+													 ;(println 'baked: current)
+              (hashmap-set model::baked-models key current)
+              )
+            
+				(set model:transform prev-transform)
+        (set model:color prev-color))
+        (model:draw current)
+    ))
 
 (defmacro model:bake (&rest model)
     `(let ((prev-transform model:transform)
            (prev-color model:color)
            (thismodel ',model)
-           (current (hashmap-get model::baked-models thismodel)))
+			  (key ,(if (eq (car model) :key) (cadr model) (list 'quote model)))
+           (current (hashmap-get model::baked-models key)))
         (unless current
             (set model:transform (mat4:identity))
             (set model:color nil)
@@ -136,6 +169,11 @@
 (defmacro model:rgb (r g b &rest body)
     `(model:with-color ,r ,g ,b ,@body)
 )
+
+(defmacro model:rgb2 (lst &rest body)
+    `(model:with-color (vec3:x ,lst) (vec3:y ,lst) (vec3:z ,lst) ,@body)
+)
+
 
 (defvar model:drawer (lambda (m) (println 'no-drawer-model: m)))
 

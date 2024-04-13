@@ -404,6 +404,7 @@
 (defvar abs Math.abs)
 
 (defvar floor Math.floor)
+(defvar round Math.round)
 
 (defun clamp (v minimum maximum)
     (min maximum (max v minimum)))
@@ -555,11 +556,17 @@
 	 (setnth new-context index (concat (cdr existing) (skip context (+ 1 index))))
 	 new-context))
 
-(defvar supermacro (lambda (context index)
-							($-impl context index)))
+(defun !-impl (context index)
+  (let ((pre (take context index))
+		  (post (skip context (+ 1 index))))
+	 (println (concat pre (list post)))))
+
 
 (defvar super-macros (makehashmap))
-(hashmap-set super-macros '$ supermacro)
+(hashmap-set super-macros '$ $-impl)
+(hashmap-set super-macros '! !-impl)
+(hashmap-set super-macros ', !-impl)
+
 (defun reader-replacer (code)
   (if (list? code)
 		(progn
@@ -567,10 +574,10 @@
 		(dotimes (i (length code))
 		  (let ((x (getnth code i)))
 			 (when (list? x)
-			 (when (symbol? (car x))
+			 (if (symbol? (car x))
 				(let ((sw (hashmap-get super-macros (car x))))
 				  (if sw
-					 (let ((result (sw code i)))
+						(let ((result (sw code i)))
 						(set code result)
 						(set i 0)
 						)
@@ -579,8 +586,20 @@
 						(setnth code i (reader-replacer x))
 						)
 				  )
-				  ))
+				  )
+				(progn
+				  (setnth code i (reader-replacer x))
+				  )
+				)
 			 )
+			 (when (symbol? x)
+				(let ((sw (hashmap-get super-macros x)))
+				  (when sw
+					 (set code (sw code i))
+
+					 (set i 0)
+					 )
+				))
 		  ))
 		code)
   code))

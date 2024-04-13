@@ -1,12 +1,32 @@
-(defun tree ()
+
+(defun vec3-interpolate (v a b)
+  (vec3:add (vec3:mul-scalar a (- 1.0 v))
+				(vec3:mul-scalar b v))
+
+  )
+
+(defvar wood-color-dark (vec3:new 0.3 0.3 0.5))
+(defvar wood-color-light (vec3:new 0.8 0.6 0.4))
+
+(defvar wood-foilage-dark (vec3:new 0.3 0.5 0.4))
+(defvar wood-foilage-light (vec3:new 0.5 0.7 0.3))
+
+(defvar ground-dark (vec3:new 0.2 0.4 0.2))
+(defvar ground-light (vec3:new 0.4 0.6 0.2))
+
+(defvar foilage-day '(0.5 1.0 0.5))
+
+(defun tree (a)
+  (set a (or a 0.0))
+  (println 'a a)
   (with-prefix model:
-	 (offset 0.0 -3 0.0
-				(rgb 1 0.8 0.4 
-					  ($ scale 1 7 1)
+	 (offset 0.0 0 0.0
+				(rgb2 (vec3-interpolate a wood-color-light wood-color-dark) 
+					  ($ scale 1 4 1)
 					  (upcube))
-				(rgb 0.2 0.8 0.4 
-                 ($ offset 0 7.5 0)
-                 ($ scale 2 2 2) 
+				(rgb2 (vec3-interpolate a wood-foilage-light wood-foilage-dark) 
+						! offset 0 4 0
+						! scale 2 2 2 
                  (sphere12))
 				)
 	 ))
@@ -94,6 +114,8 @@
 
 (defun cultist ()
   ($ with-prefix model:)
+  ($ rgb 1 1 1)
+  ($ bake)
   ($ offset 0 1.4 0)
   ($ scale 0.8 0.8 0.8)
   ($ rgb 0.2 0.2 0.2)
