@@ -2,7 +2,7 @@
   (with-prefix model:
 	 (offset 0.0 -3 0.0
 				(rgb 1 0.8 0.4 
-					  ($ scale 1 5 1)
+					  ($ scale 1 7 1)
 					  (upcube))
 				(rgb 0.2 0.8 0.4 
                  ($ offset 0 7.5 0)
@@ -41,7 +41,7 @@
 			 (pyramid)))
 
   ;; eyes
-  ($ let ((blink (* 10 (math:sin (* 2 time))))))
+  ($ let ((blink (* 10 (math:sin (* 2 time-component))))))
   (when (> (abs blink) 1)
 	 (set blink 1))
   (rgb 0 0 0
@@ -82,11 +82,47 @@
   
   )
 
+
 (defun high-bird-modelling ()
   ($ with-prefix model:)
-  ($ offset 0 1 0)
+  ($ offset 0 -3 0)
   ;($ scale 0.5 0.5 0.5)
-  (high-bird)
+  (high-bird 1.0)
   
   )
 	 
+
+(defun cultist ()
+  ($ with-prefix model:)
+  ($ offset 0 1.4 0)
+  ($ scale 0.8 0.8 0.8)
+  ($ rgb 0.2 0.2 0.2)
+  
+  (offset 0 2 0
+			 (scale 1.2 1.5 1.2
+					  (pyramid)))
+  (offset 0 0 0
+			 (downcube))
+  (dotimes (i 2)
+	 ($ offset 0 -1 (+ -0.25 (* 0.5 i)))
+	 ($ scale 0.33 1 0.33)
+	 (downcube))
+  
+  (rgb 0 0 0
+		 ($ dotimes (i 2))
+		 ($ offset 0.5 1 (+ -0.2 (* 0.4 i)))
+		 ($ scale 0.1 0.18 0.1)
+		 (cube))
+  
+  (rgb 0.7 0.6 0.6
+		 ($ scale 1 2 1)
+		 (upcube))
+  )
+
+(defun cultist-modelling ()
+  ($ with-prefix model:)
+  ($ offset 0 0 0)
+  ;($ scale 0.5 0.5 0.5)
+  (cultist 1.0)
+  
+  )

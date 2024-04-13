@@ -101,6 +101,52 @@
   (push bullets (list loc dir 0))
   )
 
+(defvar cultists (list
+
+						)	
+
+  )
+
+(defun pentagram ()
+  ($ with-prefix model:)
+  ;($ bake)
+  (progn
+	 ($ dotimes (i 5))
+	 ($ let ((r 5.0)
+				(a (/ (+ i -0.25) -5.0))
+				(a2 (* (/ i 5) math:2pi))
+				))
+	 ($ offset (* r (math:sin a2)) 0 (* r (math:cos a2)))
+	 ($ rotate a 0 1 0)
+	 ($ scale 0.1 0.1 (* r 2))
+	 ($ offset 0 0 -0.5)
+	 (upcube))
+  (progn
+	 ($ dotimes (i 10))
+	 ($ let ((r 5.2)
+				(a (/ (+ i 2.5) -10.0))
+				(a2 (* (/ i 10) math:2pi))
+				))
+	 ($ offset (* r (math:sin a2)) 0 (* r (math:cos a2)))
+	 ($ rotate a 0 1 0)
+	 ($ scale 0.1 0.1 (* r 0.65))
+	 ($ offset 0 0 -0.0)
+	 (upcube))
+  )
+
+  
+  
+
+(defvar shapes (list))
+
+(dotimes (i 5)
+  (let ((r 5.5)
+		  (a (* i (/ math:2pi 5.0))))
+	 (push cultists (list (vec3:new (* r (math:sin a)) 0 (* r (math:cos a))) 0.0))
+
+  ))
+
+
 
 (defvar animate t)
 (defvar time-component 15.0)
@@ -116,7 +162,7 @@
     (let ((shader (shader:get-default)))
         (shader:use shader)
 		  )
-	 ($ let ((move-vec (vec3:new 0 0 0)) (move-angle player-angle)))
+	 ($ let ((move-vec (vec3:new 0 0 0)) (move-angle player-angle) (xrot 0.0)))
 	 
     (when (key:down 'key:a)
 		
@@ -154,6 +200,15 @@
 				  (setnth bullet 0 pos)
 				  (setnth bullet 2 t)
 				  )
+	 (for-each cultist cultists
+				  ($ let ((p (car cultist))
+							 (d (vec3:sub player-loc p))
+							 (dn (vec3:normalize d))
+							 (a (math:atan2 (vec3:z dn) (vec3:x dn)))
+							 ))
+					  (setnth cultist 1 (/ a (* 2 math:pi)))
+				  
+					  )
 	 (key:clear-events)
 	 
 
@@ -163,7 +218,7 @@
     (with-prefix model: 
     (with-draw on-draw    
         (rgb 1 0 1 
-				 (offset 0.0 -2.0 -5.0
+				 (offset 0.0 -2.0 -10.0
 							
 				 (rotation -0.1 1 0 0
             (rotation 0 0 1 0
@@ -175,29 +230,15 @@
 
               (offset (vec3:x player-loc) (vec3:y player-loc) (vec3:z player-loc)
                 ($ rotation xrot 0 1 0)
-                ($ rgb 1 1 0.2)
-                 (high-bird player-dist) 
-              )
-
-               (rotation time-component 0 1 0
-                   
-
-                (offset 0 3 3
-                      (rgb 1 0 0
-                         (dotimes (i 2)
-                           ($ scale 1 1 (if (eq i 0) 1 -1))
-                           ($ rotation (math:sin (* 10 time-component)) 1 0 0) 
-									($ offset 0 0 0.5)
-									($ rgb 0 0 1) 
-									($ scale 1 0.01 1)
-									(upcube))
-                         (scale 1.0 0.3 0.3
-                           (sphere12))
-                      )
-                   
-                   )
-                
-                )
+                (high-bird player-dist) 
+					 )
+				  (for-each cultist-npc cultists
+							($ let ((pos (car cultist-npc))))
+							($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
+							($ rotation (cadr cultist-npc) 0 1 0)
+							(cultist))
+				  (pentagram)
+					
 					(println bullets)
 
 					(for-each bullet bullets
@@ -205,6 +246,7 @@
 								 ;(println pos)
 								 ($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
 								 ($ rgb 1 1 1)
+								 ($ scale 0.2 0.2 0.2)
 								 (sphere12)
 								 )
 					
@@ -229,6 +271,7 @@
                 (dotimes (i 100 )
 						($ rgb 1 1 1)
 						($ offset (math:random -200 200) (math:random -10 50) 0 )
+						($ scale (math:random 5 20) (math:random 5 10) (math:random 5 10))
                   (sphere12))
                 (rgb 1 1 1
                      (sphere12))
@@ -286,7 +329,7 @@
 		($ rotation xrot 0 1 0)
 		;($ offset 0 -2 0)
 		(progn ;bake
-		 (high-bird-modelling))
+		 (cultist-modelling))
 
 		)))
   

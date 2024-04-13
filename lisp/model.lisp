@@ -14,6 +14,15 @@
        (set model:transform prev-rotation)
 		 ))
 
+(defmacro model:rotate (angle x y z &rest body)
+    `(let ((m (mat4:rotation (* ,angle 2 math:pi) (vec3:new ,x ,y ,z)))
+           (prev-rotation model:transform))
+        
+       (set model:transform (mat4:multiply model:transform m))
+       (progn ,@body)
+       (set model:transform prev-rotation)
+		 ))
+
 (defun float32-array-flatten (v)
   (let ((result (list)))
 	 
