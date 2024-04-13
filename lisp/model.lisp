@@ -6,14 +6,13 @@
 (defvar model:transform (mat4:identity))
 (defvar model:color nil)
 (defmacro model:rotation (angle x y z &rest body)
-    `(let ((m (mat4:rotation ,angle (vec3:new ,x ,y ,z)))
-          (prev-rotation model:transform))
+    `(let ((m (mat4:rotation (* ,angle 2 math:pi) (vec3:new ,x ,y ,z)))
+           (prev-rotation model:transform))
         
-        (set model:transform (mat4:multiply model:transform m))
-        ;(println 'rotation: model:transform prev-rotation)
-        (progn ,@body)
-        (set model:transform prev-rotation)
-    ))
+       (set model:transform (mat4:multiply model:transform m))
+       (progn ,@body)
+       (set model:transform prev-rotation)
+		 ))
 
 (defun float32-array-flatten (v)
   (let ((result (list)))
@@ -147,11 +146,11 @@
 (defun model:cube ()
     (model:bake 
     (dotimes (i 4)
-        (model:rotation (* i math:pi/2) 1.0 0.0 0.0
+        (model:rotation (* i 0.25) 1.0 0.0 0.0
             (model:draw model:square))
     )
     (dotimes (i 2)
-        (model:rotation (* (+ (* i 2) 1) math:pi/2) 0.0 1.0 0.0
+        (model:rotation (+ (* i 0.5) 0.25) 0.0 1.0 0.0
             (model:draw model:square))
     ))
 )
@@ -259,29 +258,56 @@
     )
 ))
 
-(defvar model::sphere12 (model::generate-sphere-2 8 8 1.0))
+(defvar model::sphere12 (model::generate-sphere-2 8 8 1))
 (defun model:sphere12 ()
     ;(model:with-color 1 1 1
     (model:bake 
         (model:draw model::sphere12))
 )
 
+(defun model:sphere ()
+    ;(model:with-color 1 1 1
+    (model:bake 
+        (model:draw model::sphere12))
+)
+
+
 (defvar model::cylinder-8 (model:cylinder 1 1 8))
 
-(defvar model:pyramid
-  '(polygon :3d-triangle-strip (-0.5 0 0.5   0 1 0   0.5 0 0.5   0 1 0   0.5 0 -0.5   0 1 0   -0.5 0 -0.5   0 1 0   -0.5 0 0.5)
-))
+(defvar model::pyramid
+  '(polygon :3d-triangle-strip
+	 (
+	  -0.5 0 -0.5
+	  0 1 0
+	  0.5 0 -0.5
+	  0 1 0
+	  0.5 0 0.5
+	  0 1 0
+	  -0.5 0 0.5
+	  0 1 0
+	  -0.5 0 -0.5)
+	 ))
+(defun model:pyramid ()
+  (model:draw model::pyramid))
 
 (defvar model::tile '(polygon :3d-triangle-strip (0 0 0
                                                  0 0 1
                                                  1 0 0
-                                                 1 0 1)))
+                                                  1 0 1
+																  0 0 0
+																  0 0 1)))
 (defun model:tile () (model:draw model::tile))
 
 (defun model:upcube ()
-  (model:offset 0.0 1.0 0.0
-    (model:scale 0.5 0.5 0.5 
-        (model:cube))))
+  ($ model:bake)
+  ($ model:offset 0.0 0.5 0.0)
+  ($ model:scale 0.5 0.5 0.5) 
+  (model:cube))
+(defun model:downcube ()
+  ($ model:bake)
+  ($ model:offset 0.0 -0.5 0.0)
+  ($ model:scale 0.5 0.5 0.5) 
+  (model:cube))
 
 (defun model:right-tile()
   (model:offset 0.0 -0.0 -0.5

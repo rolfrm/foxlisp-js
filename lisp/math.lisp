@@ -58,7 +58,7 @@
             0.0 0.0 0.0 0.0 
             0.0 0.0 0.0 0.0 
             0.0 0.0 0.0 0.0)
-        (apply float32-array args)
+        (float32-array-from args)
     )
 )
 
@@ -82,6 +82,8 @@
             (set sum (+ sum (* (mat4:get a i k) (mat4:get b k j)))))
           (mat4:set result i j sum))))
     result))
+
+
 
 (defun mat4:apply (m v in-place)
   (let ((w (or (+ (* (mat4:get m 3 0) (vec3:x v)) 
