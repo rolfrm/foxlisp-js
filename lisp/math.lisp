@@ -23,7 +23,7 @@
         (if (< len 0.00000001)
             (vec3:new 0 0 0)
             (vec3:new (/ (vec3:x v) len) (/ (vec3:y v) len) (/ (vec3:z v) len))
-        )
+        )'x
     )
 )
 
@@ -135,8 +135,29 @@
 }
 
 ")
+
+(defvar code2222 "
+(a, b)=> {
+    let result = new Float32Array(16);
+
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            let sum = 0.0;
+            for (let k = 0; k < 4; k++) {
+                sum += a[i * 4 + k] * b[k * 4 + j];
+            }
+            result[i * 4 + j] = sum;
+        }
+    }
+
+    return result;
+}
+")
+
+
 (defvar __mat4_apply2 (js_eval code222))
 (set mat4:apply __mat4_apply2)
+;(set mat4:multiply (js_eval code2222))
 
 
 

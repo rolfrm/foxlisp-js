@@ -14,6 +14,9 @@
 )
 (defvar webgl-canvas (get-element-by-id document "webgl-canvas"))
 
+(defvar level-counter-obj (get-element-by-id document "level"))
+(defvar distance-obj (get-element-by-id document "distance"))
+
 (defvar keydown (makehashmap))
 (defun key:down (key) (hashmap-get keydown key))
 (defvar events-list (list))
@@ -98,7 +101,7 @@
 
 (defvar bullets (list))
 (defun shoot-bullet (loc dir)
-  (println 'shoot-pew-pew loc dir)
+  ;(println 'shoot-pew-pew loc dir)
   (push bullets (list loc dir 0))
   )
 
@@ -112,9 +115,10 @@
 (dotimes (i 1000)
   (push nonrandom (math:random 0.0 1.0)))
 (defun math:nonrandom(seed start stop)
-  (let ((r (mod seed 1000)))
-	 (+ start (* r (- stop start)))
-	 ))
+  (let ((r (mod (abs (+ 1453241232 seed)) 1000)))
+	 
+	 (+ start (* (nth nonrandom r) (- stop start))))
+	 )
 
 
 (defun pentagram ()
@@ -147,20 +151,38 @@
 
 
 (defvar winangle (math:random 0.0 math:2pi))
-(defvar winloc-x (* 200 ! math:cos winangle))
-(defvar winloc-y (* 200 ! math:sin winangle))
-  
+
+(defvar win-dist 200)
+(defvar winloc-x (* win-dist ! math:cos winangle))
+(defvar winloc-y (* win-dist ! math:sin winangle))
+(defvar map-seed (math:random 0 1000.0))
+(defvar level-counter 1)
+(defun reload-game ()
+  (set level-counter-obj.innerHTML level-counter)
+  ;(set win-dist (+ win-dist 100))
+  (set distance-obj.innerHTML win-dist)
+  (set map-seed (math:random 0 1000.0))
+
+  (set winloc-x (* 400 ! math:cos winangle))
+  (set winloc-y (* 400 ! math:sin winangle))
+  (set poly-cache (makehashmap))
+  (set model::baked-models (makehashmap))
+  (set cultists (list))
+  (set player-loc (vec3:new 0 0 0))
+  (set player-charge 0.0)
+  (dotimes (i 5)
+	 (let ((r 5.5)
+			 (a (* i (/ math:2pi 5.0))))
+		
+		(push cultists (list (vec3:new
+									 
+									 (+ winloc-x (* r (math:sin a))) 0 (+ winloc-y (* r (math:cos a)))) 0.0 a))
+		
+		))
+  )
 
 (defvar shapes (list))
-
-(dotimes (i 5)
-  (let ((r 5.5)
-		  (a (* i (/ math:2pi 5.0))))
-	 (push cultists (list (vec3:new
-
-								  (+ winloc-x (* r (math:sin a))) 0 (+ winloc-y (* r (math:cos a)))) 0.0 a))
-
-	 ))
+(reload-game)
 
 (defun hill(x y x0 y0 r h)
   (set x (- x x0))
@@ -170,18 +192,46 @@
 	 (+ h (min 0 d))
   ))
 
+(defvar audio-load-code "(p) => new Audio(p)")
+(defvar audio-ctx-load-code "() => new (window.AudioContext || window.webkitAudioContext)();")
+(defvar audio-context-new (js_eval audio-ctx-load-code))
+(defvar audio-load-f (js_eval audio-load-code))
+(defvar audioContext (audio-context-new))
 
+(defvar walking-sound (audio-load-f "walking.mp3"))
+;(defvar soundSrc (audioContext.createMediaElementSource walking-sound))
+;(soundSrc.connect audioContext.destination)
+
+(defvar background-sound (audio-load-f "forestambient.mp3"))
+(defvar wowowow-sound (audio-load-f "wowowow.mp3"))
+(defvar diiiu-sound (audio-load-f "diiiu.mp3"))
+
+
+(defun set-loop(sound)
+  (set sound.loop t))
+
+(defun play-sound(sound)
+  (sound.play)
+  )
+
+(defun stop-sound (sound)
+  (set sound.currentTime 0.5)
+  (sound.pause)
+  )
+
+(set-loop background-sound)
+(set-loop walking-sound)
 (defun heightmap (x y)
   (max
 	(hill x y 0 0 10 2)
-	(hill x y 50 1 10 20)
-	(hill x y -20 -25 10 0)
+	;(hill x y 50 1 10 20)
+	;(hill x y -20 -25 10 0)
 	(hill x y winloc-x winloc-y 10 100)
   (+
-	(* 2.0 (math:sin (* x 0.3)) (math:cos ! + 1.5 (* y 0.3)))
-	(* 5.0 (math:sin (* x 0.1)) (math:cos ! + 1.5  (* y 0.1)))
-	(* 10.0 (math:sin (* x 0.02)) (math:cos ! + 1.5  (* y 0.02)))
-	(* 20.0 (math:sin (* x 0.002)) (math:cos ! + 1.5 (* y 0.002)))
+	(* 2.0 (math:sin (+ map-seed (* x 0.3))) (math:cos ! + map-seed (* y 0.3)))
+	(* 5.0 (math:sin (+ map-seed (* x 0.1))) (math:cos ! + map-seed  (* y 0.1)))
+	(* 10.0 (math:sin (+ map-seed(* x 0.02))) (math:cos ! + map-seed  (* y 0.02)))
+	(* 20.0 (math:sin (+ map-seed (* x 0.002))) (math:cos ! + map-seed (* y 0.002)))
 
 	)))
 
@@ -206,7 +256,9 @@
 (defvar player-loc (vec3:new 0 0 0))
 (defvar player-dir (vec3:new 1 0 0))
 (defvar player-angle 0)
+(defvar view-angle 0.0)
 (defvar player-dist 0)
+(defvar player-charge 0.0)
 (defvar cam-loc (vec3:new 0 0 0))
 
 (defun <> (min value max)
@@ -224,22 +276,53 @@
       (set move-vec (vec3:new -1 0 0))
 		(set move-angle 0.5)
 		)
+	 (when (or (key:down 'key:q) (key:down 'key:arrow-left))
+		(incf view-angle 0.01))
+	 (when (or (key:down 'key:e) (key:down 'key:arrow-right))
+		(incf view-angle -0.01)
+		)
     (when (key:down 'key:d)
 		(set move-angle 0)
 		(set move-vec (vec3:new 1 0 0)))
-    (when (key:down 'key:w)
+    (when (or (key:down 'key:arrow-up) (key:down 'key:w))
 		(set move-angle -0.25)
       (set move-vec (vec3:new 0 0 -1)))
-    (when (key:down 'key:s)
+    (when (or (key:down 'key:s) (key:down 'key:arrow-down))
 		(set move-angle 0.25)
       (set move-vec (vec3:new 0 0 1)))
+	 (when (key:on-down 'key:space)
+													 ;(play-sound walking-sound)
+		
+		(reload-game)
+		)
+	 (when (> player-charge 10.0)
+		(play-sound diiiu-sound)
+		(incf level-counter 1)
+		(incf win-dist 100)
+		(reload-game))
+	 (if (> (vec3:length move-vec) 0.0)
+		  (progn
+			 (play-sound background-sound)
+			 (play-sound walking-sound)
+			 )
+		  (stop-sound walking-sound))
 	 (set move-vec (vec3:mul-scalar move-vec 0.3))
+	 (when (> (vec3:length move-vec) 0)
+		(set move-vec (mat4:apply (mat4:rotation (* (- move-angle view-angle) math:2pi) (vec3:new 0 1 0)) (vec3:new 0.3 0 0.0)))
+		(set move-angle (- move-angle view-angle))
+		)
     (set xrot move-angle)
 	 (set player-angle move-angle)
- 	 (set player-loc (vec3:add player-loc move-vec))
+	 (let ((next-loc (vec3:add player-loc move-vec))
+			 (next-depth (heightmap (nth next-loc 0) (nth next-loc 2)))
+			 )
+		(when (> next-depth -8)
+		  (set player-loc next-loc)))
+
+	 
 	 (set player-dist (+ player-dist (* 0.1 (vec3:length move-vec))))
     (setnth player-loc 1 (max -7 (heightmap (vec3:x player-loc) (vec3:z player-loc))))
-	 
+	 ;(println 'player player-loc)
     (let ((r (mat4:rotation (* math:pi 2 move-angle) (vec3:new 0 1 0)))
           (ld (mat4:apply r (vec3:new 1 0 0)))
          )
@@ -248,6 +331,16 @@
 			 (shoot-bullet (vec3:add player-loc (vec3:new (math:random -30 30) 20 (math:random -30 30))) (mat4:apply r (vec3:new 0 -0.05 0)))
 			 )
 		)
+
+	 (let ((xd (- winloc-x (nth player-loc 0)))
+			 (yd (- winloc-y (nth player-loc 2)))
+			 (d (math:sqrt (+ (* xd xd) (* yd yd)))))
+		(when (< d 3.0)
+		  (incf player-charge 0.02)
+		  (play-sound wowowow-sound)
+		  )
+		)
+	 
 	 ;(println bullets)
 	 (for-each bullet bullets
 				  ($ let ((pos (car bullet))
@@ -271,6 +364,8 @@
 				  
 				  (setnth p 1 (heightmap (nth p 0) (nth p 2)))
 				  (let ((target (if (< dl 15) a (getnth cultist 2))))
+					 (when (> player-charge 0.0)
+						(set target (/ player-charge 5.0)))
 					 (setnth cultist 1 (slow-turn (getnth cultist 1) target 0.01))
 				  
 					 ))
@@ -283,10 +378,10 @@
     (with-prefix model: 
     (with-draw on-draw    
         (rgb 1 0 1 
-				 (offset 0.0 -2.0 -10.0
+				 (offset 0.0 -3.0 -15.0
 							
-				 (rotation -0.12 1 0 0
-            (rotation 0 0 1 0
+				 (rotation -0.10 1 0 0
+            (rotation view-angle 0 1 0
             
 							 (offset (- (vec3:x player-loc)) (- (vec3:y player-loc))  (- (vec3:z player-loc))
 
@@ -316,7 +411,7 @@
 					
 
 					(dotimes (offset -2 3)
-					($ dotimes (offsety -5 1))
+					($ dotimes (offsety -5 2))
 					(let (
           				(zone (+ offset (round (/ (nth player-loc 0) 40))))
 							(zone2 (+ offsety (round (/ (nth player-loc 2) 40))))
@@ -394,9 +489,17 @@
 									(mushroom)
 
 									))
-					 (dotimes (i 2)
-						($ let ((x (+ (math:nonrandom (+ zone zone2) -20.0 20.0) (* zone 20 2)))
-								  (y (+ (math:nonrandom (+ zone zone2) -20.0 20.0) (* zone2 20 2)))
+					 
+					 
+					 )
+							 ;; draw arrow
+					(dotimes (i 2)
+					  ($ let ((x (+ (math:random -0.1 0.1)
+										 (math:nonrandom (+ zone (* 13 zone2) (* i 19)) -20.0 20.0)
+										 (* zone 20 2)))
+								 (y (+ (math:random -0.1 0.1)
+										 (math:nonrandom (+ zone (* 13 zone2) (* i 19)) -20.0 20.0)
+										 (* zone2 20 2)))
 								  (z (+ 0.2 (heightmap x y)))
 								  ))
 						($ when (> z -2.0))
@@ -406,27 +509,29 @@
 								  ))
 						(set dx (/ dx d))
 						(set dy (/ dy d))
-						(rgb 0.8 0.8 1
+						(rgb 0.9 0.9 1
 							  (offset (+ x dx) (+ 1 z) (+ y dy)
 										 (scale 0.2 0.2 0.2
 												  (upcube))
-								  )
-						(offset x (+ 1 z) y
-								  (scale 0.2 0.2 0.2
-								  (upcube))
-								  ))
+										 )
+							  (offset (+ x (* 0.66 dx)) (+ 1 z) (+ y (* 0.66 dy))
+										 (scale 0.2 0.2 0.2
+												  (upcube))
+										 )
+							  (offset x (+ 1 z) y
+										 (scale 0.2 0.2 0.2
+												  (upcube))
+										 ))
 						)
-					 
-					 
-					 )
+		 					 
 							 
 							 )
 					  
 
 					  ))
 					(offset 0 -4 0
-								($ rgb 0.2 0.2 0.8)
-								($ scale 1000 10 10000)
+								($ rgb 0.3 0.3 0.7)
+								($ scale 10000 10 10000)
 								(downcube)
 								)
 					
@@ -434,12 +539,12 @@
 					(offset 50 20 1
 								($ rgb 0.2 0.2 0.2)
 								($ scale 5 5 5)
-								(upcube)
+													 ;(upcube)
 								)
 					 (offset -20 0 -25
 								($ rgb 0.2 0.2 0.2)
 								($ scale 10 10 10)
-								(upcube)
+								;(upcube)
 								)
 
                 

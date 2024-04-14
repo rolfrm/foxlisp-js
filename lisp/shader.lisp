@@ -38,7 +38,7 @@ void main() {
           fogAmount  = 1.0;
         }
     }
-    gl_FragColor = vec4(color.xyz * vertColor * (1.0 - fogAmount) + fog * fogAmount,1);
+    gl_FragColor = vec4(color.xyz * vertColor * (1.0 - fogAmount) + fog * fogAmount,1.0);
 }
 
 ")
