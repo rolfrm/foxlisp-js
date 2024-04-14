@@ -160,7 +160,6 @@
   (max
 	(hill x y 0 0 10 2)
 	(hill x y 50 1 10 20)
-	
 	(hill x y -20 -25 10 0)
   (+
 	(* 2.0 (math:sin (* x 0.3)) (math:cos ! + 1.5 (* y 0.3)))
@@ -327,10 +326,10 @@
 						! when (> (heightmap x y) -4)
 						(offset  x (heightmap x y) y
 									(scale s s s
-											 (tree zonei ))
+											 (tree zonei (math:random 4 12))
 								  )
 
-						)
+						))
 					 
 					 (dotimes (i 10)
 						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))

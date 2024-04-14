@@ -206,7 +206,25 @@
     (model:with-color 1.0 0.0 0.0
         (model:cube)
     )
-)
+	 )
+
+(defun model:vertex-access (model)
+  (if (eq (cadr model) :3d-triangle-strip)
+		(caddr model)
+		(if (eq (car model) 'polygon-strip-color)
+			 (cadr model)
+			 (raise "unable access vertexes") 
+		)
+
+  ))
+
+(defun model:vertex-process (model vertex-process)
+  (let ((a (model:vertex-access model)))
+	 
+	 
+
+  ))
+  
 
 (defun model::generate-sphere (radius steps)
   (let ((vertex-list (list))
@@ -311,7 +329,9 @@
     ;(model:with-color 1 1 1
     (model:bake 
         (model:draw model::sphere12))
-)
+	 )
+
+
 
 (defun model:sphere ()
     ;(model:with-color 1 1 1

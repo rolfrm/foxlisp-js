@@ -471,7 +471,10 @@
 
 (defun take (lst n)
    (lst.slice 0 n)
-)
+	)
+
+(defun slice (lst i n)
+  (lst.slice i n))
 
 (defun skip (lst n)
    (lst.slice n))

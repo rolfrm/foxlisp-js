@@ -8,9 +8,15 @@ attribute vec3 vertexes;
 attribute vec3 vertexColor;
 
 varying vec3 vertColor;
+varying float depth;
 void main() {
-    gl_Position = modelView * vec4(vertexes, 1.0);
+    vec4 p = modelView * vec4(vertexes, 1.0);
+    vec4 p2 = model * vec4(vertexes, 1.0);
+    
+    gl_Position = p;
+    depth = p2.z / p2.w;
     vertColor = vertexColor;
+
 }
 "
 
@@ -20,8 +26,19 @@ void main() {
 precision mediump float;
 uniform vec4 color;
 varying vec3 vertColor;
+varying float depth;
 void main() {
-    gl_FragColor = vec4(vertColor,1) * color;
+    vec3 fog = vec3(1, 1, 1);
+    float fogAmount = 0.0;
+    float fogOffset = 0.5;
+    float depth2 = gl_FragCoord.z / gl_FragCoord.w;
+    if(depth2 > fogOffset){
+        fogAmount = (depth2 - fogOffset) * 0.01;
+        if(fogAmount > 1.0){
+          fogAmount  = 1.0;
+        }
+    }
+    gl_FragColor = vec4(color.xyz * vertColor * (1.0 - fogAmount) + fog * fogAmount,1);
 }
 
 ")

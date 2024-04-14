@@ -16,17 +16,19 @@
 
 (defvar foilage-day '(0.5 1.0 0.5))
 
-(defun tree (a)
+(defun tree (a height treescale)
   (set a (or a 0.0))
-  (println 'a a)
+  (set height (or height 4.0))
+  (set treescale (or treescale (* height 0.5)))
+
   (with-prefix model:
 	 (offset 0.0 0 0.0
 				(rgb2 (vec3-interpolate a wood-color-light wood-color-dark) 
-					  ($ scale 1 4 1)
+					  ($ scale 1 height 1)
 					  (upcube))
 				(rgb2 (vec3-interpolate a wood-foilage-light wood-foilage-dark) 
-						! offset 0 4 0
-						! scale 2 2 2 
+						! offset 0 height 0
+						! scale treescale treescale treescale 
                  (sphere12))
 				)
 	 ))
