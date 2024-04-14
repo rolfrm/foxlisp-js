@@ -473,8 +473,8 @@
    (lst.slice 0 n)
 	)
 
-(defun slice (lst i n)
-  (lst.slice i n))
+;(defun slice (lst i n)
+ ; (lst.slice i n))
 
 (defun skip (lst n)
    (lst.slice n))
@@ -523,9 +523,17 @@
 (defun float32-array (&rest items)
   (Float32Array.from items)
   )
+
 (defun float32-array-from (list)
   (Float32Array.from list))
 
+(defun float32-array-repeat (x times)
+  (when (number? x)
+
+	 ))
+(defun subarray(x i n)
+  (x.subarray i n)
+  )
 
 
 (defun prefix-symbols (prefix code)

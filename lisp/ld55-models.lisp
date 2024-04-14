@@ -16,10 +16,17 @@
 
 (defvar foilage-day '(0.5 1.0 0.5))
 
-(defun tree (a height treescale)
+(defun tree (a height random)
   (set a (or a 0.0))
   (set height (or height 4.0))
-  (set treescale (or treescale (* height 0.5)))
+  ($ let ((treescale (* height 0.5))))
+  (when random
+	 (set random (model::generate-sphere-2 8 8 1))
+	 (model:vertex-process random
+								  (lambda (v)
+									 (setnth v 0 (+ (getnth v 0) (math:random -0.2 0.2)))
+								  )
+	 ))
 
   (with-prefix model:
 	 (offset 0.0 0 0.0
@@ -29,9 +36,39 @@
 				(rgb2 (vec3-interpolate a wood-foilage-light wood-foilage-dark) 
 						! offset 0 height 0
 						! scale treescale treescale treescale 
-                 (sphere12))
+                 (draw (or random model::sphere12)))
 				)
 	 ))
+
+(defun flower (col)
+  (with-prefix model:
+	 (rgb2 col
+			 (scale 0.2 0.2 0.2
+					  (dotimes (i (math:random 1 4))
+						 (offset (math:random -1.5 1.5) 0 (math:random -1.5 1.5)
+								(tile)))
+	 )
+			 )))
+
+(defun mushroom ()
+  (with-prefix model:
+	 (rgb 0.7 0.5 0.3
+			(scale 0.4 0.2 0.4
+					 (sphere12)
+					 )
+			(dotimes (i 4)
+			  ! offset (math:random -0.3 0.3) 0.05 (math:random -0.3 0.3)
+			(rgb 0.6 0.4 0.3
+				  (offset 0 0.2 0
+					  (scale 0.1 0.1 0.1
+								(tile)
+								))))
+					(rgb 0.6 0.4 0.3
+						  (offset 0 -0.2 0
+					  (scale 0.2 0.4 0.2
+								(sphere12)
+								)))
+  )))
 
 (defun tree-modelling()
   ($ with-prefix model:)

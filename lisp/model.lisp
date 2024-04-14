@@ -123,7 +123,6 @@
             (let (
                 (baked (list))
                 (baker (lambda (model) 
-                    ;(println 'baking model)
                     (push baked (list model model:transform model:color))
                     ))
                   (current-drawer model:drawer)
@@ -218,12 +217,30 @@
 
   ))
 
+(defun model:color-access (model)
+  (if (eq (cadr model) :3d-triangle-strip)
+		nil
+		(if (eq (car model) 'polygon-strip-color)
+			 (caddr model)
+			 (raise "unable access vertexes") 
+		)))
+
+
 (defun model:vertex-process (model vertex-process)
   (let ((a (model:vertex-access model)))
-	 
-	 
+	 (dotimes (i 0 (length a) 3)
+		(let ((v (slice a i 3)))
+		  (vertex-process v)
+		  ))))
 
-  ))
+(defun model:process-colors(model color-process base-color)
+  (let ((a (model:vertex-color-access model)))
+	 (unless a
+		(set model (list 'polygon-strip-color (float32-array-from (model:vertex-access model))
+							  (
+		)
+
+  )))))
   
 
 (defun model::generate-sphere (radius steps)

@@ -161,6 +161,7 @@
 	(hill x y 0 0 10 2)
 	(hill x y 50 1 10 20)
 	(hill x y -20 -25 10 0)
+	(hill x y -220 -250 10 100)
   (+
 	(* 2.0 (math:sin (* x 0.3)) (math:cos ! + 1.5 (* y 0.3)))
 	(* 5.0 (math:sin (* x 0.1)) (math:cos ! + 1.5  (* y 0.1)))
@@ -227,19 +228,23 @@
     (let ((r (mat4:rotation (* math:pi 2 move-angle) (vec3:new 0 1 0)))
           (ld (mat4:apply r (vec3:new 1 0 0)))
          )
-		  (when (key:on-down 'key:space)
-			 (shoot-bullet (vec3:add player-loc (vec3:new 0 2 0)) (mat4:apply r (vec3:new 2 0 0)))
+		(when (> 2 (math:random 0 5))
+		  
+			 (shoot-bullet (vec3:add player-loc (vec3:new (math:random -30 30) 10 (math:random -30 30))) (mat4:apply r (vec3:new 0 -0.1 0)))
 			 )
-		  )
+		)
+	 ;(println bullets)
 	 (for-each bullet bullets
 				  ($ let ((pos (car bullet))
 							 (dir (cadr bullet))
 							 (t (caddr bullet))))
 				  (set pos (vec3:add pos dir))
 				  (set t (+ t 1))
+				  
 				  (setnth bullet 0 pos)
 				  (setnth bullet 2 t)
 				  )
+	 (set bullets (where bullets (lambda (x) (> (nth (nth x 0) 1) 4.0))))
 	 (for-each cultist cultists
 				  ($ let ((p (car cultist))
 							 (d (vec3:sub player-loc p))
@@ -274,10 +279,6 @@
                 (high-bird player-dist) 
 					 )
 
-				  (scale -400 -400 -400
-							! rgb 1 1 1
-							(sphere12))
-				  
 				  (for-each cultist-npc cultists
 							($ let ((pos (car cultist-npc))))
 							($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
@@ -292,9 +293,9 @@
 								 ($ let ((pos (car bullet))))
 								 ;(println pos)
 								 ($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
-								 ($ rgb 1 1 1)
-								 ($ scale 0.2 0.2 0.2)
-								 (sphere12)
+								 ($ rgb 0.3 0.8 0.3)
+								 ($ scale 0.4 0.2 0.3)
+								 (tile)
 								 )
 					
 
@@ -348,7 +349,41 @@
 								  )
 
 						)
-					 ))
+					 (dotimes (i 20)
+						! dotimes (j 3)
+						
+						($ let ((colors '((0.3 0.3 0.8) (0.8 0.8 0.3) (0.8 0.3 0.3)))
+								  (x (+ (math:random -20.0 20.0) (* zone 20 2)))
+								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+								  (s1 (math:random 0.5 1.3))
+								  (s2 (math:random 0.5 1.3))
+								  (s3 (math:random 0.5 1.3))
+								  (s4 (math:random 0.5 1.3))
+								  (z (+ 0.02 (heightmap x y)))
+								  ))
+						($ when (> z -2.0))
+						(offset  x z y
+									(flower (nth colors j))
+
+									))
+
+					 (dotimes (i 10)
+						
+						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
+								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+								  (z (+ 0.2 (heightmap x y)))
+								  ))
+						($ when (> z -2.0))
+						(offset  x z y
+									(mushroom)
+
+									))
+					 
+					 
+					 )
+							 
+							 )
+					  
 
 					  ))
 					(offset 0 -4 0
