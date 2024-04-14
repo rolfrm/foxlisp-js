@@ -108,6 +108,15 @@
 
   )
 
+(defvar nonrandom (list))
+(dotimes (i 1000)
+  (push nonrandom (math:random 0.0 1.0)))
+(defun math:nonrandom(seed start stop)
+  (let ((r (mod seed 1000)))
+	 (+ start (* r (- stop start)))
+	 ))
+
+
 (defun pentagram ()
   ($ with-prefix model:)
   ($ rgb 1 1 1)
@@ -136,7 +145,10 @@
 	 (upcube))
   )
 
-  
+
+(defvar winangle (math:random 0.0 math:2pi))
+(defvar winloc-x (* 200 ! math:cos winangle))
+(defvar winloc-y (* 200 ! math:sin winangle))
   
 
 (defvar shapes (list))
@@ -144,7 +156,9 @@
 (dotimes (i 5)
   (let ((r 5.5)
 		  (a (* i (/ math:2pi 5.0))))
-	 (push cultists (list (vec3:new (* r (math:sin a)) 0 (* r (math:cos a))) 0.0 a))
+	 (push cultists (list (vec3:new
+
+								  (+ winloc-x (* r (math:sin a))) 0 (+ winloc-y (* r (math:cos a)))) 0.0 a))
 
 	 ))
 
@@ -156,12 +170,13 @@
 	 (+ h (min 0 d))
   ))
 
+
 (defun heightmap (x y)
   (max
 	(hill x y 0 0 10 2)
 	(hill x y 50 1 10 20)
 	(hill x y -20 -25 10 0)
-	(hill x y -220 -250 10 100)
+	(hill x y winloc-x winloc-y 10 100)
   (+
 	(* 2.0 (math:sin (* x 0.3)) (math:cos ! + 1.5 (* y 0.3)))
 	(* 5.0 (math:sin (* x 0.1)) (math:cos ! + 1.5  (* y 0.1)))
@@ -228,9 +243,9 @@
     (let ((r (mat4:rotation (* math:pi 2 move-angle) (vec3:new 0 1 0)))
           (ld (mat4:apply r (vec3:new 1 0 0)))
          )
-		(when (> 2 (math:random 0 5))
+		(when (> 2 (math:random 0 10))
 		  
-			 (shoot-bullet (vec3:add player-loc (vec3:new (math:random -30 30) 10 (math:random -30 30))) (mat4:apply r (vec3:new 0 -0.1 0)))
+			 (shoot-bullet (vec3:add player-loc (vec3:new (math:random -30 30) 20 (math:random -30 30))) (mat4:apply r (vec3:new 0 -0.05 0)))
 			 )
 		)
 	 ;(println bullets)
@@ -239,6 +254,7 @@
 							 (dir (cadr bullet))
 							 (t (caddr bullet))))
 				  (set pos (vec3:add pos dir))
+				  (setnth pos 0 (+ (* 0.01 (math:sin (nth pos 1))) (nth pos 0))) 
 				  (set t (+ t 1))
 				  
 				  (setnth bullet 0 pos)
@@ -284,7 +300,7 @@
 							($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
 							($ rotation (cadr cultist-npc) 0 1 0)
 							(cultist))
-				  (offset 0 2.2 0
+				  (offset winloc-x (heightmap winloc-x winloc-y) winloc-y
 							 (pentagram))
 					
 					;(println bullets)
@@ -378,6 +394,28 @@
 									(mushroom)
 
 									))
+					 (dotimes (i 2)
+						($ let ((x (+ (math:nonrandom (+ zone zone2) -20.0 20.0) (* zone 20 2)))
+								  (y (+ (math:nonrandom (+ zone zone2) -20.0 20.0) (* zone2 20 2)))
+								  (z (+ 0.2 (heightmap x y)))
+								  ))
+						($ when (> z -2.0))
+						($ let ((dx (- winloc-x x))
+								  (dy (- winloc-y y))
+								  (d (math:sqrt (+ (* dx dx) (* dy dy))))
+								  ))
+						(set dx (/ dx d))
+						(set dy (/ dy d))
+						(rgb 0.8 0.8 1
+							  (offset (+ x dx) (+ 1 z) (+ y dy)
+										 (scale 0.2 0.2 0.2
+												  (upcube))
+								  )
+						(offset x (+ 1 z) y
+								  (scale 0.2 0.2 0.2
+								  (upcube))
+								  ))
+						)
 					 
 					 
 					 )
