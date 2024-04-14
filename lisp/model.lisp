@@ -306,6 +306,7 @@
 ))
 
 (defvar model::sphere12 (model::generate-sphere-2 8 8 1))
+(defvar model::sphere5 (model::generate-sphere-2 5 5 1))
 (defun model:sphere12 ()
     ;(model:with-color 1 1 1
     (model:bake 
@@ -317,7 +318,10 @@
     (model:bake 
         (model:draw model::sphere12))
 )
-
+(defun model:sphere5 ()
+    (model:bake 
+        (model:draw model::sphere5)))
+  
 
 (defvar model::cylinder-8 (model:cylinder 1 1 8))
 
@@ -340,9 +344,7 @@
 (defvar model::tile '(polygon :3d-triangle-strip (0 0 0
                                                  0 0 1
                                                  1 0 0
-                                                  1 0 1
-																  0 0 0
-																  0 0 1)))
+                                                  1 0 1)))
 (defun model:tile () (model:draw model::tile))
 
 (defun model:upcube ()
@@ -367,3 +369,41 @@
 (defun model:tile-centered ()
   (model:offset -0.5 0.0 -0.5
     (model:tile)))
+
+(defvar model::fronttile '(polygon :3d-triangle-strip (0 0 0
+																		 1 0 0 
+																		 0 1 0
+																		 1 1 0)))
+(defun model:fronttile ()
+  (model:draw model::fronttile))
+
+
+(defun gen-heightmap (l x y x2 y2 step)
+  ! let ((vertexes (list))
+			)
+  (dotimes (i x (+ x2) step)
+	 	 (let ((len (length vertexes)))
+		(when (> len 0)
+		  (push vertexes (nth vertexes (- len 3)))
+		  (push vertexes (nth vertexes (- len 2)))
+		  (push vertexes (nth vertexes (- len 1)))
+	 	  (push vertexes (+ i step))
+		  (push vertexes (l (+ i step) y ))
+		  (push vertexes y)
+		
+		  )
+		)
+
+	 (dotimes (j y (+ y2 1) step)
+	 	(push vertexes (+ i step))
+		(push vertexes (l (+ i step) j ))
+		(push vertexes j)
+		(push vertexes i)
+		(push vertexes (l i j))
+		(push vertexes j)
+	 	
+		)
+	 )
+  vertexes
+ 
+)

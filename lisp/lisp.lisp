@@ -345,12 +345,18 @@
 
 (defmacro dotimes (sym-count &rest body)
   (let ((sym (car sym-count))
-		  (count (cadr sym-count)))
-  `(let ((,sym 0))
+		  (l (length sym-count))
+		  (start (if (<= l 2) 0 (cadr sym-count))) 
+		  (count (if (<= l 2) (cadr sym-count) (caddr sym-count)))
+		  (step (if (eq l 4) (nth sym-count 3) 1))
+		  )
+	 
+  `(let ((,sym ,start))
 	  (loop (< ,sym ,count)
 		,@body
-		(incr ,sym))
+		(incr ,sym ,step))
 	  )))
+
 
 (defmacro cond (&rest cases)
   (let ((out-cases (list)))
@@ -405,6 +411,7 @@
 
 (defvar floor Math.floor)
 (defvar round Math.round)
+(defvar math:power Math.pow)
 
 (defun clamp (v minimum maximum)
     (min maximum (max v minimum)))

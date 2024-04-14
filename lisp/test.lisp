@@ -355,7 +355,7 @@ asd ")
 
 ")
 (defvar __mat4_apply2 (js_eval code222))
-;(set mat4:apply __mat4_apply2)
+(set mat4:apply __mat4_apply2)
 
 (let ((v2 (__mat4_apply2 (mat4:perspective 1.5 1.0 2 1000.0) (vec3:new 1 1 1))))
   (println v2))
@@ -364,3 +364,8 @@ asd ")
   (println v2))
 
 (assert-eq 3 (progn (progn ! + 1 2)))
+
+(assert-eq 12 (let ((sum 0)) (dotimes (u 3 6) (incf sum u)) sum))
+(assert-eq 6 (let ((sum 0)) (dotimes (u 4) (incf sum u)) sum))
+(assert-eq 20 (let ((sum 0)) (dotimes (u 0 10 2) (incf sum u)) sum))
+(assert-eq 4 (math:power 2 2))

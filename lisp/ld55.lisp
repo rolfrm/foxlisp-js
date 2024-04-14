@@ -63,7 +63,8 @@
 (defvar gl (get-context webgl-canvas "webgl"))
 (assert gl)
 
-(defvar perspective (mat4:perspective 1.2 1.0 0.1 1000.0))
+(defvar perspective (mat4:perspective 1.2 1.0 0.1 2000.0))
+;(defvar perspective (mat4:orthographic -10 10 -10 10 -30 30))
 
 (gl.enable gl.CULL_FACE)
 (gl.cullFace gl.BACK)
@@ -143,12 +144,45 @@
 (dotimes (i 5)
   (let ((r 5.5)
 		  (a (* i (/ math:2pi 5.0))))
-	 (push cultists (list (vec3:new (* r (math:sin a)) 0 (* r (math:cos a))) 0.0))
+	 (push cultists (list (vec3:new (* r (math:sin a)) 0 (* r (math:cos a))) 0.0 a))
 
+	 ))
+
+(defun hill(x y x0 y0 r h)
+  (set x (- x x0))
+  (set y (- y y0))
+  (let ((dc (math:sqrt (+ (* x x) (* y y))))
+		  (d (- r dc)))
+	 (+ h (min 0 d))
   ))
 
 (defun heightmap (x y)
-  (+ (math:sin (* x 0.1)) (math:cos (* y 0.1))))
+  (max
+	(hill x y 0 0 10 2)
+	(hill x y 50 1 10 20)
+	
+	(hill x y -20 -25 10 0)
+  (+
+	(* 2.0 (math:sin (* x 0.3)) (math:cos ! + 1.5 (* y 0.3)))
+	(* 5.0 (math:sin (* x 0.1)) (math:cos ! + 1.5  (* y 0.1)))
+	(* 10.0 (math:sin (* x 0.02)) (math:cos ! + 1.5  (* y 0.02)))
+	(* 20.0 (math:sin (* x 0.002)) (math:cos ! + 1.5 (* y 0.002)))
+
+	)))
+
+;; rotate towards target. now and target are in turns.
+(defun slow-turn (now target step)
+  (let ((delta (- target now)))
+    (if (> delta 0.5)
+		  (- now (min step (- 1 delta)))
+		  (if (< delta -0.5)
+				(+ now (min step (+ 1 delta)))
+		  		(if (< delta 0)
+					 (- now (min step (- delta)))
+					 (+ now (min step delta)))))))
+					 
+		
+ 
 
 (defvar animate t)
 (defvar time-component 15.0)
@@ -189,7 +223,8 @@
 	 (set player-angle move-angle)
  	 (set player-loc (vec3:add player-loc move-vec))
 	 (set player-dist (+ player-dist (* 0.1 (vec3:length move-vec))))
-    (setnth player-loc 1 (heightmap (vec3:x player-loc) (vec3:z player-loc)))
+    (setnth player-loc 1 (max -7 (heightmap (vec3:x player-loc) (vec3:z player-loc))))
+	 
     (let ((r (mat4:rotation (* math:pi 2 move-angle) (vec3:new 0 1 0)))
           (ld (mat4:apply r (vec3:new 1 0 0)))
          )
@@ -209,13 +244,16 @@
 	 (for-each cultist cultists
 				  ($ let ((p (car cultist))
 							 (d (vec3:sub player-loc p))
+							 (dl (vec3:length d))
 							 (dn (vec3:normalize d))
-							 (a (math:atan2 (vec3:z dn) (vec3:x dn)))
+							 (a (/ (math:atan2 (vec3:z dn) (vec3:x dn)) math:2pi))
 							 ))
-				     (setnth p 1 (heightmap (nth p 0) (nth p 2)))
-					  (setnth cultist 1 (/ a (* 2 math:pi)))
 				  
-					  )
+				  (setnth p 1 (heightmap (nth p 0) (nth p 2)))
+				  (let ((target (if (< dl 15) a (getnth cultist 2))))
+					 (setnth cultist 1 (slow-turn (getnth cultist 1) target 0.01))
+				  
+					 ))
 	 (key:clear-events)
 	 
 
@@ -227,26 +265,26 @@
         (rgb 1 0 1 
 				 (offset 0.0 -2.0 -10.0
 							
-				 (rotation -0.1 1 0 0
+				 (rotation -0.12 1 0 0
             (rotation 0 0 1 0
             
 							 (offset (- (vec3:x player-loc)) (- (vec3:y player-loc))  (- (vec3:z player-loc))
-										;skybox
-							 (scale -500 -500 -500
-									  ($ rgb 0.2 0.3 0.5)
-									  (sphere12))
 
               (offset (vec3:x player-loc) (vec3:y player-loc) (vec3:z player-loc)
                 ($ rotation xrot 0 1 0)
                 (high-bird player-dist) 
 					 )
+
+				  (scale -400 -400 -400
+							! rgb 1 1 1
+							(sphere12))
 				  
 				  (for-each cultist-npc cultists
 							($ let ((pos (car cultist-npc))))
 							($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
 							($ rotation (cadr cultist-npc) 0 1 0)
 							(cultist))
-				  (offset 0 1.5 0
+				  (offset 0 2.2 0
 							 (pentagram))
 					
 					;(println bullets)
@@ -261,113 +299,77 @@
 								 )
 					
 
-					(rgb 0.2 0.4 0.3
-                (bake
-					  (dotimes (i 50)
-						 ($ let ((x (math:random -50 50)) (y (math:random -50 50))))
-						 ($ offset x (heightmap x y) y)
-						 (tree))))
-					(let ((zone (round (/ (nth player-loc 0) 40)))
+					(dotimes (offset -2 3)
+					($ dotimes (offsety -5 1))
+					(let (
+          				(zone (+ offset (round (/ (nth player-loc 0) 40))))
+							(zone2 (+ offsety (round (/ (nth player-loc 2) 40))))
 							(zonei (+ 0.5 (* 0.5 (math:sin (/ zone 2.0))))))
-					  ;(println 'zone? zone)
+							
+					  
 					  (rgb 1 1 1
-							 (bake-keyed zone
-													 ;(alert 'zone!!! zone)
-										 (rgb2 (vec3-interpolate zonei ground-light ground-dark)
-					 (dotimes (i2 20)
-						(dotimes (j2 20)
-						  ($ let ((i (+ (* zone 20) (- i2 10))) (j (+ (* 0 20) (- j2 10)))))
-						  						 ! offset (* 2 i) (heightmap (* i 2) (* 2 j)) (* 2 j)
-						 ! scale 3 3 2.5
-						   (tile)
-
-						 )
-						))
-					 (dotimes (i 20)
+							 (bake-keyed (+ (+ zone 1000) (* (+ zone2 1000) 10000))
+											 (rgb2 (vec3-interpolate 0.0 ground-light ground-dark)
+													 (draw
+													  (list 'polygon :3d-triangle-strip
+															  (gen-heightmap heightmap
+																				  (+ (* zone 40))
+																				  (+ (* zone2 40))
+																				  (+ (* (+ zone 1) 40) -1)
+																				  (+ (* (+ zone2 1) 40) 0)
+																				  2)))
+													 )
+											 
+					 (dotimes (i 10)
 						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
-								  (y (+ (math:random -20.0 20.0)))
+								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
 								  (s (math:random 1.0 1.3))))
+						! when (> (heightmap x y) -4)
 						(offset  x (heightmap x y) y
 									(scale s s s
 											 (tree zonei ))
-
 								  )
 
 						)
+					 
+					 (dotimes (i 10)
+						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
+								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+								  (s1 (math:random 0.5 1.3))
+								  (s2 (math:random 0.5 1.3))
+								  (s3 (math:random 0.5 1.3))
+								  (s4 (math:random 0.5 1.3))
 
+								  ))
+						(offset  x (heightmap x y) y
+									(scale s1 s2 s3
+											 (rgb 0.3 0.3 0.3
+													(rotate s4 0 1 0
+															  (sphere5))))
+								  )
+
+						)
 					 ))
-					  )
 
-					(when nil (when (<> -20 (nth player-loc 0) 20)
-									(rgb 0.2 0.4 0.3
-						 (bake
-					 (dotimes (i2 20)
-						(dotimes (j2 20)
-						  ($ let ((i (- i2 10)) (j (- j2 10))))
-						  (rgb 1 1.0 1.0
-						 ! offset (* 2 i) (heightmap (* i 2) (* 2 j)) (* 2 j)
-						 ! scale 3 3 2.5
-						   (tile)
+					  ))
+					(offset 0 -4 0
+								($ rgb 0.2 0.2 0.8)
+								($ scale 1000 10 10000)
+								(downcube)
+								)
+					
 
-						 ))
-					  ))))
-					(when (<> 20 (nth player-loc 0) 60)
-					 (rgb 0.2 0.4 0.3
-						 (bake
-					 (dotimes (i2 20)
-						(dotimes (j2 20)
-						  ($ let ((i (+ i2 10)) (j (- j2 10))))
-						  
-						  (rgb 1 1.0 1.0
-								 ! offset (* 2 i) (heightmap (* i 2) (* 2 j)) (* 2 j)
-								 ! scale 3 3 2.5
-								 (tile)
-
-								 ))
-						))))
-					(when (<> 60 (nth player-loc 0) 100)
-					 (rgb 0.2 0.4 0.3
-						 (bake
-					 (dotimes (i2 20)
-						(dotimes (j2 20)
-						  ($ let ((i (+ i2 30)) (j (- j2 10))))
-						  
-						  (rgb 1 1.0 1.0
-								 ! offset (* 2 i) (heightmap (* i 2) (* 2 j)) (* 2 j)
-								 ! scale 3 3 2.5
-								 (tile)
-
-								 ))
-						)))))
-
-                (rgb 1 1 1
-                ($ bake)
-                ($ offset 0 10 -200)
-                (dotimes (i 100 )
-						($ rgb 0.4 0.6 0.8)
-						($ offset (math:random -200 200) (math:random -10 50) 0 )
-						($ scale (math:random 5 20) (math:random 5 10) (math:random 5 10))
-                  (sphere12))
-                (rgb 1 1 1
-                     (sphere12))
-                )
-
-					 (offset 20 0 -30
+					(offset 50 20 1
 								($ rgb 0.2 0.2 0.2)
-								($ scale 10 10 10)
+								($ scale 5 5 5)
 								(upcube)
 								)
-					 (offset -10 0 -20
+					 (offset -20 0 -25
 								($ rgb 0.2 0.2 0.2)
 								($ scale 10 10 10)
 								(upcube)
 								)
 
-                (rgb 0.0 0 0.5
-                   (offset 0 0 0 
-                   (scale 100 1 100
-                    ;(   tile-centered)
-                    )))
                 
                 ))))))
     )
