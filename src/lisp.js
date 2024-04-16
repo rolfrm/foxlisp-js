@@ -230,7 +230,7 @@ function lispCompileLet(variables, body){
 				throw new Error("The expression (xyz) is malformed." + updateExpr.toString());
 		  }
         const [left, right] = updateExpr;
-        code = `let ${left.jsname} = (${lispCompile(right)})`
+        code = `let ${left.jsname} = ${lispCompile(right)}`
         return code;
     }).join(';');
     

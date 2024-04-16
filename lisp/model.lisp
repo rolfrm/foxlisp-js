@@ -35,7 +35,7 @@
     (dotimes (i (length v))
       (let ((item (nth v i)))
         (dotimes (j (length item))
-          (setnth result k (nth item j))
+          (set (th result k) (th item j))
 			 (incf k))))
     result
 ))
@@ -64,9 +64,9 @@
 (defvar model::baked-models (makehashmap))
 (defun pushvec(array vec index)
   (set index (* index 3))
-  (setnth array index (nth vec 0))
-  (setnth array (+ index 1) (nth vec 1))
-  (setnth array (+ index 2) (nth vec 2))
+  (set (th array index) (th vec 0))
+  (set (th array (+ index 1)) (th vec 1))
+  (set (th array (+ index 2)) (th vec 2))
   )
 
 (defun model::combine-models (models)
@@ -425,7 +425,8 @@
 	  0 1 0
 	  -0.5 0 0.5
 	  0 1 0
-	  -0.5 0 -0.5)
+	  -0.5 0 -0.5
+	  0 1 0)
 	 ))
 (defun model:pyramid ()
   (model:draw model::pyramid))

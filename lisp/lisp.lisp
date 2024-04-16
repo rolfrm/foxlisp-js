@@ -25,6 +25,9 @@
 	  (lambda ,args (progn	  
 	  ,@code))))
 
+(defmacro th (loc n)
+  `(%js ,loc "[" ,n "]"))
+
 (defun object? (item) (eq (type-of item) "object"))
 (defun null? (item) (and (object? item) (not item)))  
 
@@ -650,10 +653,24 @@
 (defun add-builder (args2)
  
   (if (> (length args2) 1)
-		(concat (list "(" (car args2) ")+(") (add-builder (cdr args2)) (list ")"))
+		(concat (list "(" (car args2) " + ") (add-builder (cdr args2)) (list ")"))
 		(if (eq 0 (length args2))
 			 (list 0)
 			 args2)))
 
 (defmacro + (&rest args2)
 	 `(%js ,@(add-builder args2)))
+
+
+(defun sub-builder (args2)
+ 
+  (if (> (length args2) 1)
+		(concat (list "(" (car args2) " - ") (sub-builder (cdr args2)) (list ")"))
+		(if (eq 0 (length args2))
+			 (list 0)
+			 args2)))
+
+(defmacro - (&rest args2)
+  (if (eq (length args2) 1)
+		`(%js "-" ,(car args2))
+		`(%js ,@(sub-builder args2))))

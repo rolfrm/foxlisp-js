@@ -601,26 +601,36 @@
 			  (scale -500 -500 -500
 						($ rgb 0.5 0.9 1.0)
 						(sphere12))
-		($ offset 0 0 -5)
+		($ offset 0 0 -50)
 		($ scale 1 1 1)
 		($ rotation (+ -0.2 yrot) 1 0 0)
 		($ rotation xrot 0 1 0)
 		;($ offset 0 -2 0)
 		(progn ;bake
-		  ($ scale 0.5 0.5 0.5)
+		  ($ scale 0.1 0.1 0.1)
+		  (offset -1000 (* 10 (+ 0 (math:sin (* 10 time-component)))) -1000
+			(rgb 0 0 1
+				  (scale 2000 1 2000
+							(tile))))
+			
+
 		  (bake
-			($ scale 0.02 0.02 0.02)
-			(dotimes (i -200 200 3)
-			  (dotimes (j -200 200 3)
-				 (rgb 0 0 0
-						(offset i (heightmap i j) j
-								  ($ scale 2 2 2)
-							(tile)
-				 )))))
+					 
+			(rgb 0 1 0
+			(draw
+			 
+			 (list 'polygon :3d-triangle-strip
+					 (gen-heightmap heightmap
+										 (+ (* -20 40))
+										 (+ (* -20 40))
+										 (+ (* (+ 20 1) 40) -1)
+										 (+ (* (+ 20 1) 40) 0)
+										 1))))
+			
 													 ;(tree)
 													 ;(cultist-modelling))
 
-		)))
+		))))
   
   (when animate
 	 (requestAnimationFrame modelling-loop))

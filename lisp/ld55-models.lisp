@@ -156,24 +156,28 @@
   ($ rgb 1 1 1)
   ($ bake)
   ($ offset 0 1.4 0)
+  ($ scale 1 1 1)
   ($ scale 0.8 0.8 0.8)
   ($ rgb 0.2 0.2 0.2)
   
   (offset 0 2 0
 			 (scale 1.2 1.5 1.2
-					  (pyramid)))
+					  (pyramid)
+					  ))
+  ;; lower body 
   (offset 0 0 0
 			 (downcube))
-  (dotimes (i 2)
-	 ($ offset 0 -1 (+ -0.25 (* 0.5 i)))
-	 ($ scale 0.33 1 0.33)
-	 (downcube))
   
   (rgb 0 0 0
 		 ($ dotimes (i 2))
 		 ($ offset 0.5 1 (+ -0.2 (* 0.4 i)))
 		 ($ scale 0.1 0.18 0.1)
 		 (cube))
+  
+  (dotimes (i 2)
+	 ($ offset 0 -1 (+ -0.25 (* 0.5 i)))
+	 ($ scale 0.33 1 0.33)
+	 (downcube))
   
   (rgb 0.7 0.6 0.6
 		 ($ scale 1 2 1)
