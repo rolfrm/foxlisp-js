@@ -155,16 +155,16 @@
 (defvar win-dist 200)
 (defvar winloc-x (* win-dist ! math:cos winangle))
 (defvar winloc-y (* win-dist ! math:sin winangle))
-(defvar map-seed (math:random 0 1000.0))
+(defvar map-seed (math:random -1000.0 1000.0))
 (defvar level-counter 1)
 (defun reload-game ()
   (set level-counter-obj.innerHTML level-counter)
   ;(set win-dist (+ win-dist 100))
   (set distance-obj.innerHTML win-dist)
-  (set map-seed (math:random 0 1000.0))
+  (set map-seed (math:random -1000.0 1000.0))
 
-  (set winloc-x (* 400 ! math:cos winangle))
-  (set winloc-y (* 400 ! math:sin winangle))
+  (set winloc-x (* win-dist ! math:cos winangle))
+  (set winloc-y (* win-dist ! math:sin winangle))
   (set poly-cache (makehashmap))
   (set model::baked-models (makehashmap))
   (set cultists (list))
@@ -187,10 +187,15 @@
 (defun hill(x y x0 y0 r h)
   (set x (- x x0))
   (set y (- y y0))
-  (let ((dc (math:sqrt (+ (* x x) (* y y))))
-		  (d (- r dc)))
-	 (+ h (min 0 d))
-  ))
+  
+  (let ((sqrd (+ (* x x) (* y y))))
+	 (if (< sqrd (* (+ r h) (+ r h) 2))
+		(let (
+				(dc (math:sqrt sqrd))
+				(d (- r dc)))
+		  (+ h (min 0 d)))
+		  -50)))
+	
 
 (defvar audio-load-code "(p) => new Audio(p)")
 (defvar audio-ctx-load-code "() => new (window.AudioContext || window.webkitAudioContext)();")
@@ -227,9 +232,12 @@
 	;(hill x y 50 1 10 20)
 	;(hill x y -20 -25 10 0)
 	(hill x y winloc-x winloc-y 10 100)
-  (+
-	(* 2.0 (math:sin (+ map-seed (* x 0.3))) (math:cos ! + map-seed (* y 0.3)))
-	(* 5.0 (math:sin (+ map-seed (* x 0.1))) (math:cos ! + map-seed  (* y 0.1)))
+  (+	
+	(* 1.0 (math:sin (+ map-seed (* x 0.5))) (math:cos ! + map-seed (* y 0.5)))
+	(* 2.0 (math:sin (+ map-seed (* x 0.3))) (math:cos ! + map-seed (* y 0.29)))
+	(* 2.0 (math:sin (+ map-seed (* x 0.35))) (math:cos ! + map-seed (* y 0.28)))
+	(* 5.0 (math:sin (+ map-seed (* x 0.1))) (math:cos ! + map-seed  (* y 0.12)))
+	(* 5.0 (math:sin (+ map-seed (* x 0.11))) (math:cos ! + map-seed  (* y 0.09)))
 	(* 10.0 (math:sin (+ map-seed(* x 0.02))) (math:cos ! + map-seed  (* y 0.02)))
 	(* 20.0 (math:sin (+ map-seed (* x 0.002))) (math:cos ! + map-seed (* y 0.002)))
 
@@ -247,7 +255,8 @@
 					 (+ now (min step delta)))))))
 					 
 		
- 
+
+(defvar getTime (js_eval "()=> Date.now()"))
 
 (defvar animate t)
 (defvar time-component 15.0)
@@ -263,39 +272,43 @@
 
 (defun <> (min value max)
   (and (< min value) (> max value)))
-
+(defvar last-time (getTime))
 (defun animation-loop ()
-    (set time-component (+ time-component 0.01))
+
+  
     (let ((shader (shader:get-default)))
         (shader:use shader)
 		  )
-	 ($ let ((move-vec (vec3:new 0 0 0)) (move-angle player-angle) (xrot 0.0)))
-	 
+	 ($ let ((this-time (getTime)) (move-vec (vec3:new 0 0 0)) (move-angle player-angle) (xrot 0.0)
+		 (delta 1.0)))
+	 (set time-component  (+ time-component (* delta 0.01)))
+    
+	 (set last-time this-time)
     (when (key:down 'key:a)
 		
       (set move-vec (vec3:new -1 0 0))
 		(set move-angle 0.5)
 		)
 	 (when (or (key:down 'key:q) (key:down 'key:arrow-left))
-		(incf view-angle 0.01))
+		(incf view-angle (* 0.01 delta)))
 	 (when (or (key:down 'key:e) (key:down 'key:arrow-right))
-		(incf view-angle -0.01)
+		(incf view-angle (* delta -0.01))
 		)
     (when (key:down 'key:d)
 		(set move-angle 0)
 		(set move-vec (vec3:new 1 0 0)))
     (when (or (key:down 'key:arrow-up) (key:down 'key:w))
-		(set move-angle -0.25)
+		(set move-angle (* delta -0.25))
       (set move-vec (vec3:new 0 0 -1)))
     (when (or (key:down 'key:s) (key:down 'key:arrow-down))
-		(set move-angle 0.25)
+		(set move-angle (* delta 0.25))
       (set move-vec (vec3:new 0 0 1)))
 	 (when (key:on-down 'key:space)
 													 ;(play-sound walking-sound)
 		
 		(reload-game)
 		)
-	 (when (> player-charge 10.0)
+	 (when (> player-charge 8.0)
 		(play-sound diiiu-sound)
 		(incf level-counter 1)
 		(incf win-dist 100)
@@ -306,9 +319,9 @@
 			 (play-sound walking-sound)
 			 )
 		  (stop-sound walking-sound))
-	 (set move-vec (vec3:mul-scalar move-vec 0.3))
+	 (set move-vec (vec3:mul-scalar move-vec (* delta 0.3)))
 	 (when (> (vec3:length move-vec) 0)
-		(set move-vec (mat4:apply (mat4:rotation (* (- move-angle view-angle) math:2pi) (vec3:new 0 1 0)) (vec3:new 0.3 0 0.0)))
+		(set move-vec (mat4:apply (mat4:rotation (* (- move-angle view-angle) math:2pi) (vec3:new 0 1 0)) (vec3:new 0.25 0 0.0)))
 		(set move-angle (- move-angle view-angle))
 		)
     (set xrot move-angle)
@@ -336,7 +349,7 @@
 			 (yd (- winloc-y (nth player-loc 2)))
 			 (d (math:sqrt (+ (* xd xd) (* yd yd)))))
 		(when (< d 3.0)
-		  (incf player-charge 0.02)
+		  (incf player-charge (* delta 0.02))
 		  (play-sound wowowow-sound)
 		  )
 		)
@@ -373,7 +386,7 @@
 	 
 
     ;; lets make some funky clear-color based on time:
-    (gl.clearColor 0.1 0.1 0.1 1.0)
+    (gl.clearColor 1.0 1.0 1.0 1.0)
     (gl.clear gl.COLOR_BUFFER_BIT)
     (with-prefix model: 
     (with-draw on-draw    
@@ -410,8 +423,8 @@
 								 )
 					
 
-					(dotimes (offset -2 3)
-					($ dotimes (offsety -5 2))
+					(dotimes (offset -3 4)
+					($ dotimes (offsety -3 4))
 					(let (
           				(zone (+ offset (round (/ (nth player-loc 0) 40))))
 							(zone2 (+ offsety (round (/ (nth player-loc 2) 40))))
@@ -456,7 +469,8 @@
 									(scale s1 s2 s3
 											 (rgb 0.3 0.3 0.3
 													(rotate s4 0 1 0
-															  (sphere5))))
+															  (sphere5)
+															  )))
 								  )
 
 						)
@@ -492,6 +506,13 @@
 					 
 					 
 					 )
+
+							 (offset (* zone 20 2) -4 (* zone2 20 2)
+								($ rgb 0.3 0.3 0.7)
+								($ scale 40 10 40)
+								(tile)
+								)
+					
 							 ;; draw arrow
 					(dotimes (i 2)
 					  ($ let ((x (+ (math:random -0.1 0.1)
@@ -529,12 +550,6 @@
 					  
 
 					  ))
-					(offset 0 -4 0
-								($ rgb 0.3 0.3 0.7)
-								($ scale 10000 10 10000)
-								(downcube)
-								)
-					
 
 					(offset 50 20 1
 								($ rgb 0.2 0.2 0.2)
@@ -579,7 +594,7 @@
 
   (key:clear-events)
   
-  (gl.clearColor 0.1 0.1 0.5 1.0)
+  (gl.clearColor 0.0 0.0 0.0 1.0)
   (gl.clear (+ gl.COLOR_BUFFER_BIT gl.DEPTH_BUFFER_BIT))
   (with-prefix model: 
     (with-draw on-draw
@@ -590,12 +605,21 @@
 						(sphere12))
 		($ offset 0 0 -5)
 		($ scale 1 1 1)
-		($ rotation yrot 1 0 0)
+		($ rotation (+ -0.2 yrot) 1 0 0)
 		($ rotation xrot 0 1 0)
 		;($ offset 0 -2 0)
 		(progn ;bake
 		  ($ scale 0.5 0.5 0.5)
-		  (tree)
+		  (bake
+			($ scale 0.02 0.02 0.02)
+			(dotimes (i -200 200 3)
+			  (dotimes (j -200 200 3)
+				 (rgb 0 0 0
+						(offset i (heightmap i j) j
+								  ($ scale 2 2 2)
+							(tile)
+				 )))))
+													 ;(tree)
 													 ;(cultist-modelling))
 
 		)))
@@ -605,6 +629,7 @@
   
   ))
 
+;(requestAnimationFrame animation-loop)
 (animation-loop)
 ;(modelling-loop)
 (defvar triangle (polygon:new

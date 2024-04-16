@@ -370,8 +370,3 @@ asd ")
 (assert-eq 20 (let ((sum 0)) (dotimes (u 0 10 2) (incf sum u)) sum))
 (assert-eq 4 (math:power 2 2))
 (println (slice (list 1 2 3) 1 2))
-
-(let ((sph (model::generate-sphere-2 8 8 1)))
-  (model:vertex-process sph  (lambda (x) (println x)))
-  (println sph)
-  )

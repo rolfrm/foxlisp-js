@@ -56,7 +56,7 @@
   (f.apply nil lst)
 )
 
-(defun length(list) (get list 'length))
+(defun length(list) list.length)
 (defvar *types* (makehashmap))
 (defun hashmap-set(map key value)
 	(map.set key value)
@@ -519,7 +519,14 @@
 (defun math:sqrt (x) (Math.sqrt x))
 (defun math:random (min max)
   (+ (* (Math.random) (- max min) ) min)
-)
+  )
+
+(defvar lisp::make-float32-array (js_eval "(n) => new Float32Array(n)"))
+
+(defun float32-array-sized(size)
+  (lisp::make-float32-array size)
+  )
+
 (defun float32-array (&rest items)
   (Float32Array.from items)
   )
@@ -624,3 +631,27 @@
 
 (set lisp_reader reader-replacer)
 
+
+
+
+(defun mul-builder (args2)
+ 
+  (if (> (length args2) 1)
+		(concat (list "(" (car args2) ")*(") (mul-builder (cdr args2)) (list ")"))
+		(if (eq (length args2) 0)
+			 (list 1)
+			 args2)))
+
+(defmacro * (&rest args2)
+	 `(%js ,@(mul-builder args2)))
+
+(defun add-builder (args2)
+ 
+  (if (> (length args2) 1)
+		(concat (list "(" (car args2) ")+(") (add-builder (cdr args2)) (list ")"))
+		(if (eq 0 (length args2))
+			 (list 0)
+			 args2)))
+
+(defmacro + (&rest args2)
+	 `(%js ,@(add-builder args2)))

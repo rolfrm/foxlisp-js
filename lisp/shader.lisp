@@ -1,5 +1,5 @@
 (defvar shader::vertex-shader-source "
-precision mediump float;
+precision highp float;
 
 uniform mat4 modelView;
 uniform mat4 model;
@@ -23,7 +23,7 @@ void main() {
 )
 
 (defvar shader::fragment-shader-source "
-precision mediump float;
+precision highp float;
 uniform vec4 color;
 varying vec3 vertColor;
 varying float depth;

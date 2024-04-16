@@ -2,7 +2,7 @@
     (float32-array x y z)
 )
 (defun vec3:from-array(arr offset)
-    (float32-array (nth arr offset) (nth arr (+ offset 1)) (nth arr (+ offset 2))))
+    (%js "new Float32Array([arr[offset], arr[offset + 1] , arr[offset + 2]])"))
 
 (defun vec3:x(v)
     (nth v 0))
@@ -23,7 +23,7 @@
         (if (< len 0.00000001)
             (vec3:new 0 0 0)
             (vec3:new (/ (vec3:x v) len) (/ (vec3:y v) len) (/ (vec3:z v) len))
-        )'x
+        )
     )
 )
 
@@ -72,7 +72,23 @@
     (setnth m (+ row (* col 4)) val)
 )
 
-(defun mat4:multiply (a b)
+(defvar mat4::multiply-code "
+  (a, b) => {
+    result = new Float32Array(16)
+    for(let i = 0; i < 4; i++)
+    for(let j = 0; j < 4; j++){
+      let sum = 0.0;
+      for(let k = 0; k < 4; k++){
+         sum = sum + a[i + k * 4] * b[k + j * 4]
+      }
+      result[ i + j * 4] = sum;
+      
+    }
+    return result;
+  }  
+")
+
+(defun mat4:multiply2 (a b)
   (let ((result (mat4:new)))
     
     (dotimes (i 4)
@@ -135,29 +151,10 @@
 }
 
 ")
-
-(defvar code2222 "
-(a, b)=> {
-    let result = new Float32Array(16);
-
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            let sum = 0.0;
-            for (let k = 0; k < 4; k++) {
-                sum += a[i * 4 + k] * b[k * 4 + j];
-            }
-            result[i * 4 + j] = sum;
-        }
-    }
-
-    return result;
-}
-")
-
-
 (defvar __mat4_apply2 (js_eval code222))
 (set mat4:apply __mat4_apply2)
-;(set mat4:multiply (js_eval code2222))
+(defvar mat4::multiply (js_eval mat4::multiply-code))
+(defvar mat4:multiply mat4::multiply)
 
 
 

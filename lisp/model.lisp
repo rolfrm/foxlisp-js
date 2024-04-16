@@ -24,19 +24,42 @@
 		 ))
 
 (defun float32-array-flatten (v)
-  (let ((result (list)))
-	 
-	 
-        (dotimes (i (length v))
-            (let ((item (nth v i)))
-                (dotimes (j (length item))
-                    (push result (nth item j))
-                )
-            )
-        )
-        
-        (float32-array-from result)
+  (let ((size 0)
+		  (k 0)
+		  (result nil))
+	 (dotimes (i (length v))
+		(incf size (length (nth v i)))
+		)
+	 (set result (float32-array-sized size))
+
+    (dotimes (i (length v))
+      (let ((item (nth v i)))
+        (dotimes (j (length item))
+          (setnth result k (nth item j))
+			 (incf k))))
+    result
 ))
+
+(defvar flatten::code "
+   (arrays) => {
+     let size = 0
+     for(let i = 0; i < arrays.length; i++){
+       size += arrays[i].length;
+     }
+     let result = new Float32Array(size);
+     let k = 0
+     for(let i = 0; i < arrays.length; i++){
+        const array = arrays[i];
+        for(let j = 0; j < array.length; j++){
+           result[k] = array[j]
+           k += 1
+        }
+     }
+     return result
+   }
+
+")
+(set float32-array-flatten (js_eval flatten::code))
 
 (defvar model::baked-models (makehashmap))
 (defun model::combine-models (models)

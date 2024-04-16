@@ -408,11 +408,11 @@ function lispCompile(code) {
 				}
 				const code2 = `${sym.jsname} = ${valueCode}`;
 				//WriteCodeToLog(code2 + ";")
-				let result = eval(code2);
+				let result = eval?.(code2);
 				console.log("result: ", valueCode)
 				if(typeof(result) == "function" && result.assoc_id){
 					result.lispname = sym
-					result.lispargs = assoc[result.assoc_id][0]
+					//result.lispargs = assoc[result.assoc_id][0]
 				}
 				return `${sym.jsname}`
         }
