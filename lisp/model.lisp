@@ -62,41 +62,71 @@
 (set float32-array-flatten (js_eval flatten::code))
 
 (defvar model::baked-models (makehashmap))
+(defun pushvec(array vec index)
+  (set index (* index 3))
+  (setnth array index (nth vec 0))
+  (setnth array (+ index 1) (nth vec 1))
+  (setnth array (+ index 2) (nth vec 2))
+  )
+
 (defun model::combine-models (models)
-    (let ((result (list))
-          (result-color (list))
+    (let ((result nil)
+          (result-color nil)
           (any-color nil)
+			 (size 0)
+			 (k 0)
           )
+		(for-each item models
+					 (unless (eq size 0)
+						(set size (+ size (* 2 3)))
+						)
+					 (set size (+ size (length (caddr (car item)))))
+					 
+					 )
+		(set result (float32-array-sized size))
+		
+		
         (for-each item models 
              ;(println 'adding item)
-            (let ((model-verts (caddr (car item)))
+            (let ((model-verts (float32-array-from2 (caddr (car item))))
                   (transform (cadr item))
                   (color (caddr item)))
                 (when color (set any-color color))
                 (unless color (set color any-color))
-                  ;(println "item " item model-verts transform)
+                (mat4:applyn transform model-verts)
                 (dotimes (i (/ (length model-verts) 3))
-                    (let ((v (mat4:apply transform (vec3:from-array model-verts (* i 3)))))
-                        
-                        (when (and (eq i 0) (> (length result) 0))
+                    (let ((v (subarray model-verts (* i 3) 3)))
+                        (when (and (eq i 0) (> k 0))
                         ;; todo: check that the last two are not equal to the next two.
-                            (push result (nth result (- (length result) 1)))
-                            (push result v)
-                            (when color 
-                                (push result-color (nth result-color (- (length result-color) 1)))
-                                (push result-color color))
-                        )
+                          (pushvec result (subarray result (* 3 (- k 1)) 3) k)
+								  (incf k)
+                          (pushvec result v k)
+								  (incf k)
+                          (when color 
+                            (pushvec result-color (subarray result-color (* 3 (- k 3)) 3) (- k 2))
+                            (pushvec result-color color (- k 1)))
+                          )
                         
-                        (push result v)
-                        (when color 
-                            (push result-color color))
+                        (pushvec result v k)
+								
+                        (when color
+								  (unless result-color
+									 (set result-color (float32-array-sized size)))
+                          (pushvec result-color color k))
+								(incf k)
                     ))
             )
-        )
-        (if any-color 
-            (list 'polygon-strip-color (float32-array-flatten result) (float32-array-flatten result-color))
-            (list 'polygon :3d-triangle-strip (float32-array-flatten result))
-        )
+				)
+		  
+		  (let ((flr result)
+				  (flc result-color))
+			 
+			 (when any-color
+				(assert (eq (length flr) (length flc))))
+			 (if any-color 
+              (list 'polygon-strip-color flr flc)
+              (list 'polygon :3d-triangle-strip flr)
+				  ))
         
         
 		  )
@@ -260,8 +290,7 @@
   (let ((a (model:vertex-color-access model)))
 	 (unless a
 		(set model (list 'polygon-strip-color (float32-array-from (model:vertex-access model))
-							  (
-		)
+		
 
   )))))
   
@@ -467,3 +496,5 @@
   vertexes
  
 )
+
+

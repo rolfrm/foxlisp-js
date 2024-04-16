@@ -234,10 +234,8 @@
 	(hill x y winloc-x winloc-y 10 100)
   (+	
 	(* 1.0 (math:sin (+ map-seed (* x 0.5))) (math:cos ! + map-seed (* y 0.5)))
-	(* 2.0 (math:sin (+ map-seed (* x 0.3))) (math:cos ! + map-seed (* y 0.29)))
-	(* 2.0 (math:sin (+ map-seed (* x 0.35))) (math:cos ! + map-seed (* y 0.28)))
-	(* 5.0 (math:sin (+ map-seed (* x 0.1))) (math:cos ! + map-seed  (* y 0.12)))
-	(* 5.0 (math:sin (+ map-seed (* x 0.11))) (math:cos ! + map-seed  (* y 0.09)))
+	(* 2.0 (math:sin (+ map-seed (* x 0.3))) (math:cos ! + map-seed (* y 0.3)))
+	(* 5.0 (math:sin (+ map-seed (* x 0.1))) (math:cos ! + map-seed  (* y 0.1)))
 	(* 10.0 (math:sin (+ map-seed(* x 0.02))) (math:cos ! + map-seed  (* y 0.02)))
 	(* 20.0 (math:sin (+ map-seed (* x 0.002))) (math:cos ! + map-seed (* y 0.002)))
 

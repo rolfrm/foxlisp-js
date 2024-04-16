@@ -533,13 +533,15 @@
 
 (defun float32-array-from (list)
   (Float32Array.from list))
+(defun float32-array-from2 (list)
+  (Float32Array.from list))
 
 (defun float32-array-repeat (x times)
   (when (number? x)
 
 	 ))
 (defun subarray(x i n)
-  (x.subarray i n)
+  (x.subarray i (+ i n))
   )
 
 

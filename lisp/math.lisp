@@ -151,8 +151,33 @@
 }
 
 ")
+
+
+(defvar code::mat4:applyn "
+
+(m, v)=>{
+    const verts = v.length;
+    for(let i = 0; i < verts; i += 3){
+    const x = m[0] * v[i] + m[4] * v[i+1] + m[8] * v[i+2]+ m[12];
+    const y = m[1] * v[i] + m[5] * v[i+1] + m[9] * v[i+2]+ m[13];
+    const z = m[2] * v[i] + m[6] * v[i+1] + m[10] * v[i+2]+ m[14];
+    const w = m[3] * v[i] + m[7] * v[i+1] + m[11] * v[i+2] + m[15];
+   if (w != 0.0){
+     v[i+0] = x / w;
+     v[i+1] = y / w;
+     v[i+2] = z / w;
+   }else{
+     v[i+0] = x;
+     v[i+1] = y;
+     v[i+2] = z;
+   }}}
+")
+
+
+
 (defvar __mat4_apply2 (js_eval code222))
 (set mat4:apply __mat4_apply2)
+(defvar mat4:applyn (js_eval code::mat4:applyn))
 (defvar mat4::multiply (js_eval mat4::multiply-code))
 (defvar mat4:multiply mat4::multiply)
 
