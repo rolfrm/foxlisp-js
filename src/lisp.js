@@ -223,10 +223,31 @@ function unquoteToJs(code){
 	 return code.toString();
 }
 
-function scope(items, onAssign){
-	 items.isScope = true;
-	 items.assign = onAssign;
-	 return items;
+function scope(items){
+	 console.log("scope:  ", items)
+	 for(let i = 0; i < items.length; i++){
+		  if(i == items.length -1){
+				if(isScope(items[i])){
+					 
+					 
+				}else{
+					 items[i] = value_marker + " " + items[i]
+				}
+		  }else{
+				if(isScope(items[i]))
+					 items[i] = items[i].replaceAll(value_marker,"")
+		  }
+		  
+      
+	 }
+	 let a =  items.map(i => i + ";").join("")
+	 console.log(a)
+	 return a
+}
+
+const value_marker = "__LAST__"
+function isScope(code){
+	 return typeof(code) == 'string' && code.includes(value_marker)
 }
 
 getReturnCode = () => "return ";
@@ -238,20 +259,19 @@ function lispCompileLet(variables, body){
 		  }
         const [left, right] = updateExpr;
 		  let r = lispCompile2(right)
-		  if(r.isScope){
-				return scope([`let ${left.jsname}`, r])
+		  console.log(">> ", r)
+		  if(isScope(r)){
+				return `{let ${left.jsname};${r.replaceAll(value_marker, left.jsname)}`
 		  }else{
-				code = `let ${left.jsname} = ${r}`
-        
+				code = `{let ${left.jsname} = ${r}`
 		  }
         return code;
     });
-    var rt = getReturnCode()
-	 
+    
 	 if(body.length == 1 && variables.length == 0){
 		  return `${lispCompile(body[0])}`
 	 }
-	 return scope(varCode.concat(body.map(lispCompile)))
+	 return scope(varCode.concat(body.map(x => lispCompile(x)))) + variables.map(x => "}").join("")
 }
 lmbmark = (id, f) => {
 	f.assoc_id = id;
@@ -265,14 +285,20 @@ const markRegex = /\/\*lmb#(\d+)\*\/\(/g;
 let codeStack = []
 
 function lispCompile(code, assignto){
-	 result = lispCompile2(code);
-	 if(result.isScope){
-		  result.assign(assignto)
-		  return "{"+ result.join(";") + "}"
+	 const result = lispCompile2(code);
+
+	 if(isScope(result) && assignto){
+		  const fin = result.replace(value_marker, assignto);
+		  console.log(fin)
+		  return fin
 	 }
+
 	 if(assignto){
-        return assignto + " " + result;
+        const r = assignto + " " + result;
+		  
+		  return r
 	 }
+	 
 	 return result;
 
 }
@@ -304,9 +330,16 @@ function lispCompile2(code) {
     case loopSym:
         const [condition, ...update] = operands;
         
-		  const updateCode = lispCompileLet([], update);
-		  const conditionCode = lispCompile(condition);
-        return `(() => {let tmp = null; for (;${conditionCode};) { tmp = ${updateCode} };return tmp})()`;
+		  let updateCode = lispCompileLet([], update);
+		  let conditionCode = lispCompile(condition);
+		  if(!isScope(updateCode)){
+				updateCode = value_marker + "=" + updateCode
+		  }
+		  if(isScope(conditionCode)){
+				conditionCode = conditionCode.replaceAll(value_marker, "condition")
+				return `for () { var condition; ${conditionCode}; if(!condition){break;} ${updateCode} }}`;
+		  }
+        return `for (;${conditionCode};) {  ${updateCode}; }`;
     case orSym:
         {
 				const combined = operands.map(op => lispCompile(op)).join("||")
@@ -364,14 +397,14 @@ function lispCompile2(code) {
 					 argstr = args.slice(0, restIndex).map(arg => arg.jsname).concat(["..." + args[restIndex + 1].jsname]).join(",");
 				}
 			
-			assoc[associd] = operands
-            if(body.length == 1) {
-                let lmb = `/*lmb#${associd++}*/((${argstr}) => ${lispCompile(body[0])})`;
-				return lmb
-            }
+				assoc[associd] = operands
+            
 
-            const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
-            let lmb = `/*lmb#${associd++}*/((${argstr}) => {let tmp = null; ${bodyCode}; return tmp;})`;
+            let bodyCode = lispCompileLet([], body)
+				if(isScope(bodyCode)){
+					 bodyCode = "{"+ bodyCode.replaceAll(value_marker, "return") + "}"
+				}
+            let lmb = `(${argstr}) => ${bodyCode}`;
 				
 				return lmb
 		  }
@@ -437,7 +470,14 @@ function lispCompile2(code) {
         }
     case setSym:
         const [variable, value] = operands;
-        return `${lispCompile(variable)} = ${lispCompile(value)}`;
+		  let result = lispCompile(value)
+		  if(isScope(result)){
+				result = result.replaceAll(value_marker, value_marker + variable.jsname + "=")
+				
+		  }else{
+            result = variable.jsname + "=" + result;
+		  }
+		  return result;
     case letSym: {
 		  const [variables, ...body] = operands
 		  return lispCompileLet(variables, body)
@@ -445,10 +485,29 @@ function lispCompile2(code) {
     case ifSym:
         {
 				const [condition, thenClause, elseClause] = operands;
-				const conditionCode = lispCompile(condition);
-				const thenCode = lispCompile(thenClause);
-				const elseCode = elseClause == null ? "null" : lispCompile(elseClause);
-				return `(${conditionCode} ? ${thenCode} : ${elseCode})`
+
+				let conditionCode = lispCompile(condition);
+				let thenCode = lispCompile(thenClause);
+				let elseCode = elseClause == null ? "null" : lispCompile(elseClause);
+
+				if(!isScope(conditionCode) && !isScope(thenCode) && !isScope(elseCode)){
+					 return `(${conditionCode} ? ${thenCode} : ${elseCode})`
+				}
+			   let js = ""
+				if(isScope(conditionCode)){
+					 js = "{var check; " + conditionCode.replaceAll(value_marker, "check = ");
+					 conditionCode = "check"
+				}
+				if(!isScope(elseCode)){
+					 elseCode = value_marker + " " + elseCode;
+				}
+				if(!isScope(thenCode)){
+					 thenCode = value_marker + " " + thenCode;
+				}
+				js = js + `if(${conditionCode}){${thenCode}}else{${elseCode}}}`
+
+				
+				return js;
         }
 	 case handleErrorsSym:
 		  {
@@ -525,16 +584,28 @@ async function LispEvalBlock(code, file) {
 				return;
 		  }
 		  code = next;
+		  var js;
 		  var prevGet = getReturnCode;
 		  try{
 				//getReturnCode = () => "returnValue = ";
-		  
-				js = "{'use strict'; let returnValue = null;" + lispCompile(lisp_reader(ast), "returnValue = ") + ";return returnValue;}";
-		  }finally{
+				js = lispCompile(lisp_reader(ast));
+				if(isScope(js)){
+					 js = js.replaceAll(value_marker, "returnValue =");
+					 js = "{'use strict'; var returnValue;" + js + "return returnValue;}";
+				}else{
+					 js = "{'use strict'; return " + js + "}";
+				}
+		  }catch(e){
+				console.log(e);
+				console.trace(e)
+				return;//throw e
+				}
+		  finally{
 
 		  }
+		  
 		  //WriteCodeToLog("()=> " + js +";")
-		  println(["value code:", ast, "=>", js])
+		  println(["value code:", ast, "=>", js , "<< "])
 		  
 		  let f = Function(js)
 		  const result = f();
