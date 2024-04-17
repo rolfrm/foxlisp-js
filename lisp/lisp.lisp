@@ -674,3 +674,5 @@
   (if (eq (length args2) 1)
 		`(%js "-" ,(car args2))
 		`(%js ,@(sub-builder args2))))
+
+(load "lisp2.lisp")

@@ -65,11 +65,11 @@
 (defun mat4:identity()
     (mat4:new 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1))
 
-(defun mat4:get (m row col)
-    (getnth m (+ row (* col 4)))
+(defmacro mat4:get (m row col)
+    `(th ,m (+ ,row (* ,col 4)))
 )
-(defun mat4:set (m row col val)
-    (setnth m (+ row (* col 4)) val)
+(defmacro mat4:set (m row col val)
+    `(th ,m (+ ,row (* ,col 4)) ,val)
 )
 
 (defvar mat4::multiply-code "

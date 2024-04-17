@@ -342,3 +342,18 @@ asd ")
 (assert-eq 20 (let ((sum 0)) (dotimes (u 0 10 2) (incf sum u)) sum))
 (assert-eq 4 (math:power 2 2))
 (println (slice (list 1 2 3) 1 2))
+
+;; this should give: return op_add(op_sub(3, 6), 2)
+(println '??? lisp2:compile-function)
+
+;(println '???? (lisp2:compile-function '(op_add (op_sub 3 6) 2)))
+;; this should give:
+;; let a = 3
+;; return a
+													 ;(println (js_eval (lisp2:compile-function '(let  ((a 3)) a))))
+
+(defvar test-matrix (mat4:perspective 1.0 1.0 0.5 1000.0))
+(println mat4:multiply2)
+(dotimes (i 1000000)
+  (mat4:multiply2 test-matrix test-matrix))
+

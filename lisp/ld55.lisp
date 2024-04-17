@@ -66,7 +66,7 @@
 (defvar gl (get-context webgl-canvas "webgl"))
 (assert gl)
 
-(defvar perspective (mat4:perspective 1.2 1.0 0.1 2000.0))
+(defvar perspective (mat4:perspective 1.2 1.0 3.0 2000.0))
 ;(defvar perspective (mat4:orthographic -10 10 -10 10 -30 30))
 
 (gl.enable gl.CULL_FACE)

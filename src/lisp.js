@@ -223,6 +223,13 @@ function unquoteToJs(code){
 	 return code.toString();
 }
 
+function scope(items, onAssign){
+	 items.isScope = true;
+	 items.assign = onAssign;
+	 return items;
+}
+
+getReturnCode = () => "return ";
 
 function lispCompileLet(variables, body){
 	 const  varCode = variables.map(updateExpr => {
@@ -230,41 +237,21 @@ function lispCompileLet(variables, body){
 				throw new Error("The expression (xyz) is malformed." + updateExpr.toString());
 		  }
         const [left, right] = updateExpr;
-        code = `let ${left.jsname} = ${lispCompile(right)}`
+		  let r = lispCompile2(right)
+		  if(r.isScope){
+				return scope([`let ${left.jsname}`, r])
+		  }else{
+				code = `let ${left.jsname} = ${r}`
+        
+		  }
         return code;
-    }).join(';');
-    
-	 if(body.length == 1){
-		  if(variables.length == 0){
-				return `${lispCompile(body[0])}`
-		  }
-		  return `(() => {${varCode};return ${lispCompile(body[0])};})()`
-	 }
-
-	 let bodyCode = ""
-	 if(variables.length > 0){
-	 	  bodyCode += "(() => {"+ varCode + ";return ";
-	 }else{
-		  bodyCode += "(";
-	 }
+    });
+    var rt = getReturnCode()
 	 
-	 for(let i in body){
-		  if(i > 0){
-				bodyCode = bodyCode + ","
-		  }
-		  bodyCode = bodyCode + `${lispCompile(body[i])}`;
-		  
+	 if(body.length == 1 && variables.length == 0){
+		  return `${lispCompile(body[0])}`
 	 }
-	 if(body.length == 0){
-		  bodyCode += "null";
-	 }
-	 if(variables.length > 0){
-		  bodyCode = bodyCode + "})()";
-	 }else{
-		  bodyCode = bodyCode + ")";
-	 }
-	 
-	 return bodyCode;
+	 return scope(varCode.concat(body.map(lispCompile)))
 }
 lmbmark = (id, f) => {
 	f.assoc_id = id;
@@ -276,7 +263,22 @@ let assoc = {}
                 ///\/\*lmb#(\d+)\*\//
 const markRegex = /\/\*lmb#(\d+)\*\/\(/g;
 let codeStack = []
-function lispCompile(code) {
+
+function lispCompile(code, assignto){
+	 result = lispCompile2(code);
+	 if(result.isScope){
+		  result.assign(assignto)
+		  return "{"+ result.join(";") + "}"
+	 }
+	 if(assignto){
+        return assignto + " " + result;
+	 }
+	 return result;
+
+}
+
+function lispCompile2(code) {
+	 
 	 try{
 		  codeStack.push(code);
 	 if(typeof(code) == "number"){
@@ -523,7 +525,14 @@ async function LispEvalBlock(code, file) {
 				return;
 		  }
 		  code = next;
-		  js = "'use strict'; return "+ lispCompile(lisp_reader(ast))
+		  var prevGet = getReturnCode;
+		  try{
+				//getReturnCode = () => "returnValue = ";
+		  
+				js = "{'use strict'; let returnValue = null;" + lispCompile(lisp_reader(ast), "returnValue = ") + ";return returnValue;}";
+		  }finally{
+
+		  }
 		  //WriteCodeToLog("()=> " + js +";")
 		  println(["value code:", ast, "=>", js])
 		  
