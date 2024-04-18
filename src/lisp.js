@@ -340,16 +340,6 @@ function lispCompile2(code) {
 				return `for () { var condition; ${conditionCode}; if(!condition){break;} ${updateCode} }}`;
 		  }
         return `for (;${conditionCode};) {  ${updateCode}; }`;
-    case orSym:
-        {
-				const combined = operands.map(op => lispCompile(op)).join("||")
-				return `(${combined})`
-        }
-    case andSym:
-        {
-				const combined = operands.map(op => lispCompile(op)).join("&&")
-				return `(${combined})`
-        }
 	 case jsSym:
 		  {
 			let outstr = "";
@@ -441,7 +431,11 @@ function lispCompile2(code) {
 				if (typeof(valueCode) == "string"){
 					valueCode = valueCode.replace(markRegex, 'lmbmark($1,');
 				}
-				const code2 = `${sym.jsname} = ${valueCode}`;
+				
+				let code2 = `${sym.jsname} = ${valueCode}`;
+				if(isScope(valueCode)){
+					 code2 = `${sym.jsname} = null;${valueCode.replaceAll(value_marker, sym.jsname + "=")}`
+				}
 				//WriteCodeToLog(code2 + ";")
 				let result = eval?.(code2);
 				console.log("result: ", valueCode)
@@ -494,9 +488,11 @@ function lispCompile2(code) {
 					 return `(${conditionCode} ? ${thenCode} : ${elseCode})`
 				}
 			   let js = ""
+				let isConditionScope = false;
 				if(isScope(conditionCode)){
 					 js = "{var check; " + conditionCode.replaceAll(value_marker, "check = ");
 					 conditionCode = "check"
+					 isConditionScope = true
 				}
 				if(!isScope(elseCode)){
 					 elseCode = value_marker + " " + elseCode;
@@ -504,7 +500,7 @@ function lispCompile2(code) {
 				if(!isScope(thenCode)){
 					 thenCode = value_marker + " " + thenCode;
 				}
-				js = js + `if(${conditionCode}){${thenCode}}else{${elseCode}}}`
+				js = js + `if(${conditionCode}){${thenCode}}else{${elseCode}${isConditionScope ? "}" : ""}} `
 
 				
 				return js;
@@ -534,8 +530,19 @@ function lispCompile2(code) {
 				
 				return lispCompile(newcode)
         }
-        args = operands.map(op => lispCompile(op)).join(",")
-        
+        args = operands.map(op => lispCompile(op))
+        if(args.some(isScope)){
+				let callargs = args.map((x,i) => "arg"+i)
+				let argCall = args.map((x,i) => {
+					 if(isScope(x)){
+						  return "var arg" + i + ";" + x.replaceAll(value_marker, "arg" + i + "=") + ";";
+						  
+					 }else{
+						  return "let arg" + i + "=" + x + ";";
+					 }
+				});
+				return `{${argCall.join("")} ${value_marker} ${operator.jsname}(${callargs.join(",")})}`
+		  }
         return `${operator.jsname}(${args})`;
     }
 	 }finally{
