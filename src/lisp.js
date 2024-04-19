@@ -40,6 +40,7 @@ op_leftshift = (x, y) => x << y;
 op_rightshift = (x, y) => x >> y;
 op_xor = (x, y) => x ^ y;
 mod = (x, y) => x % y
+not = (x) => !x
 len = (x) => (x && x.length) || 0
 list = (...x) => x
 makehashmap = () => new Map();
@@ -151,6 +152,7 @@ _op_lt = (a,b) => a < b
 _op_gt = (a,b) => a > b
 concat = (...lst)=> len(lst) == 0 ? [] : lst[0].concat(...lst.slice(1))
 __makesym = (a) => sym(a)
+_typeof = (a) => typeof a
 
 
 const loopSym = sym("loop");
@@ -163,7 +165,7 @@ const lambdaSym = sym("_lambda");
 const defMacroSym = sym("setmacro");
 const orSym = sym("or");
 const andSym = sym("and");
-const blockSym = sym("block");
+const blockSym = sym("_block");
 const returnFromSym = sym("return-from")
 const jsSym = sym("%js")
 const quoteSym = lisp.quote_sym;
@@ -171,7 +173,6 @@ const quasiQuoteSym = lisp.quasiquote_sym;
 const quasiUnQuoteSym = lisp.quasiunquote_sym;
 const quasiUnQuoteSpliceSym = lisp.quasiunquotesplice_sym;
 const restSym = sym("&rest")
-const typeOfSym = sym("type-of")
 const declareSym = sym("declare")
 const defvarSym = sym("defvar");
 const defConstSym = sym("defconstant");
@@ -193,6 +194,13 @@ function quotedJs(code){
 
 }
 
+function unscope(code){
+	 if(isScope(code)){
+		  return `(()=>{var tmp_unscope; ${code.replaceAll(value_marker, "tmp_unscope =")}; return tmp_unscope})()`
+	 }
+	 return code
+}
+
 function unquoteToJs(code){
 	 if(code == null){
 		  return "null"
@@ -204,10 +212,10 @@ function unquoteToJs(code){
 		  }
 		  if(code[0] == quasiUnQuoteSpliceSym){
 				
-				return `usplice(${lispCompile(code[1])})`;
+				return `usplice(${unscope(lispCompile(code[1]))})`;
 		  }
 		  if(code[0] == quasiUnQuoteSym){
-				return lispCompile(code[1])
+				return unscope(lispCompile(code[1]))
 		  }
 		  const innerCode = code.map(elem => unquoteToJs(elem)).join(',');
 		  return `ulist(${innerCode})`;
@@ -224,7 +232,6 @@ function unquoteToJs(code){
 }
 
 function scope(items){
-	 console.log("scope:  ", items)
 	 for(let i = 0; i < items.length; i++){
 		  if(i == items.length -1){
 				if(isScope(items[i])){
@@ -241,11 +248,10 @@ function scope(items){
       
 	 }
 	 let a =  items.map(i => i + ";").join("")
-	 console.log(a)
 	 return a
 }
 
-const value_marker = "__LAST__"
+const value_marker = "__VALUEMARKER__"
 function isScope(code){
 	 return typeof(code) == 'string' && code.includes(value_marker)
 }
@@ -259,15 +265,16 @@ function lispCompileLet(variables, body){
 		  }
         const [left, right] = updateExpr;
 		  let r = lispCompile2(right)
-		  console.log(">> ", r)
 		  if(isScope(r)){
-				return `{let ${left.jsname};${r.replaceAll(value_marker, left.jsname)}`
+				return `{let ${left.jsname};${r.replaceAll(value_marker, left.jsname + "=")}`
 		  }else{
 				code = `{let ${left.jsname} = ${r}`
 		  }
         return code;
     });
-    
+    if(body.length == 0){
+		  body = [[]]
+	 }
 	 if(body.length == 1 && variables.length == 0){
 		  return `${lispCompile(body[0])}`
 	 }
@@ -289,7 +296,6 @@ function lispCompile(code, assignto){
 
 	 if(isScope(result) && assignto){
 		  const fin = result.replace(value_marker, assignto);
-		  console.log(fin)
 		  return fin
 	 }
 
@@ -333,11 +339,11 @@ function lispCompile2(code) {
 		  let updateCode = lispCompileLet([], update);
 		  let conditionCode = lispCompile(condition);
 		  if(!isScope(updateCode)){
-				updateCode = value_marker + "=" + updateCode
+				updateCode = value_marker + updateCode
 		  }
 		  if(isScope(conditionCode)){
-				conditionCode = conditionCode.replaceAll(value_marker, "condition")
-				return `for () { var condition; ${conditionCode}; if(!condition){break;} ${updateCode} }}`;
+				conditionCode = conditionCode.replaceAll(value_marker, "condition =")
+				return `while(true) { var condition; ${conditionCode}; if(!condition){break;} ${updateCode}}`;
 		  }
         return `for (;${conditionCode};) {  ${updateCode}; }`;
 	 case jsSym:
@@ -353,22 +359,29 @@ function lispCompile2(code) {
 			return outstr;
 				
 		  }
-	 case typeOfSym:
-		  {
-				return `typeof ${lispCompile(operands[0])}`;
-		  }
-		  
+	 	  
     case blockSym:{
         const [sym, ...body] = operands;
-        const bodyCode = body.map(updateExpr => 'tmp =(' + lispCompile(updateExpr) +')').join(';');
+        let bodyCode = lispCompile(body[0])
+		  
+		  if(!isScope(bodyCode)){
+				
+				bodyCode = value_marker + " " + bodyCode
+				
+		  }
         
-        return `(()=>{let tmp = null;const ${sym.jsname} = {};
-         try{${bodyCode}}catch(ex){if(ex.id === ${sym.jsname}){return ex.value;}else{throw ex;}} return tmp;})()`
+        return `const ${sym.jsname} = {};try{${bodyCode}}catch(ex){if(ex.id === ${sym.jsname}){${value_marker} ex.value;}else{raise(ex);}}`
     }
     case returnFromSym:{
         const [sym, value] = operands;
+		  let valuef = lispCompile(value);
+		  let pre = ""
+		  if(isScope(valuef)){
+				pre = "var tmpValue;" + valuef.replaceAll(value_marker,"tmpValue =") + ";";
+				valuef = "tmpValue";
+		  }
         
-        return `(()=> {throw {id:${sym.jsname}, value:${lispCompile(value)}, type: "return-from" }})()`;
+        return `${pre} raise({id:${sym.jsname}, value:${valuef}, type: "return-from" })`;
     }
     case lambdaSym:
         {
@@ -392,19 +405,15 @@ function lispCompile2(code) {
 
             let bodyCode = lispCompileLet([], body)
 				if(isScope(bodyCode)){
-					 bodyCode = "{"+ bodyCode.replaceAll(value_marker, "return") + "}"
+					 bodyCode = "{ var lambdaResult;"+ bodyCode.replaceAll(value_marker, "lambdaResult=") + "return lambdaResult}"
 				}
             let lmb = `(${argstr}) => ${bodyCode}`;
+				console.log(lmb)
 				
 				return lmb
 		  }
 	 case prognSym:
 		  return lispCompileLet([], operands)
-    case notSym:
-        {
-            const [left] = operands;
-            return `(!${lispCompile(left)})`;
-        }
     case quoteSym:
         {
             const [quoted] = operands
@@ -438,7 +447,6 @@ function lispCompile2(code) {
 				}
 				//WriteCodeToLog(code2 + ";")
 				let result = eval?.(code2);
-				console.log("result: ", valueCode)
 				if(typeof(result) == "function" && result.assoc_id){
 					result.lispname = sym
 					//result.lispargs = assoc[result.assoc_id][0]
@@ -456,6 +464,7 @@ function lispCompile2(code) {
         {
 				const [sym, code] = operands;
 				const macroCode = lispCompile(code)
+				
 				macroValue = eval(macroCode);
 				
 				macroLookup.set(sym, macroValue)
@@ -483,8 +492,15 @@ function lispCompile2(code) {
 				let conditionCode = lispCompile(condition);
 				let thenCode = lispCompile(thenClause);
 				let elseCode = elseClause == null ? "null" : lispCompile(elseClause);
-
+				
+				if(thenCode === null || thenCode === ""){
+					 thenCode = "null"
+				}
+				if(elseCode === null || elseCode === ""){
+					 elseCode = "null"
+				}
 				if(!isScope(conditionCode) && !isScope(thenCode) && !isScope(elseCode)){
+					 
 					 return `(${conditionCode} ? ${thenCode} : ${elseCode})`
 				}
 			   let js = ""
@@ -513,7 +529,7 @@ function lispCompile2(code) {
 				const [varSym, handlerBody] = handler;
 				const bodyCode = lispCompile(body);
 				const handlerBodyCode = lispCompile(handlerBody);
-				return `(()=>{try{return ${bodyCode}}catch(${varSym.jsname}){ if(${varSym.jsname}.type === "return-from") throw ${varSym.jsname}; return ${handlerBodyCode}}})()`
+				return `try{${isScope(bodyCode) ? bodyCode : value_marker + " " + bodyCode}}catch(${varSym.jsname}){ if(${varSym.jsname}.type === "return-from") raise(${varSym.jsname}); ${isScope(handlerBodyCode) ? handlerBodyCode : value_marker +" " + handlerBodyCode}}`
 				
 		  }
         // Add more cases for other operators as needed
@@ -525,7 +541,6 @@ function lispCompile2(code) {
         if (macroLookup.has(operator)) {
 				let macroFcn = macroLookup.get(operator)
 				let newcode = null;
-				
 				newcode = macroFcn(...operands)
 				
 				return lispCompile(newcode)
@@ -614,8 +629,8 @@ async function LispEvalBlock(code, file) {
 		  //WriteCodeToLog("()=> " + js +";")
 		  println(["value code:", ast, "=>", js , "<< "])
 		  
-		  let f = Function(js)
-		  const result = f();
+		  const result = eval?.("() => "+ js)()
+		  console.log("result: ", result)
 		  if(result != null && typeof(result) == "object" && result.type == "load"){
 
 				const data = await loadFileAsync(result.value)

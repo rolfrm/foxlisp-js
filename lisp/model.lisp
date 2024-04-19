@@ -64,9 +64,9 @@
 (defvar model::baked-models (makehashmap))
 (defun pushvec(array vec index)
   (set index (* index 3))
-  (set (th array index) (th vec 0))
-  (set (th array (+ index 1)) (th vec 1))
-  (set (th array (+ index 2)) (th vec 2))
+  (setnth array index (th vec 0))
+  (setnth array (+ index 1) (th vec 1))
+  (setnth array (+ index 2) (th vec 2))
   )
 
 (defun model::combine-models (models)

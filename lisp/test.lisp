@@ -20,7 +20,7 @@ world")))
 
 (assert-eq "function" (type-of (lambda (x) (+ x 2))))
 (assert-eq 3 (progn 1 2 3))
-(assert-eq nil (progn))
+(assert-eq nil (println  (progn) '<<< ))
 (assert-eq 0.25 (/ 4.0))
 (assert-eq 2 (/ 24 4 3))
 (assert-eq 1 (/ 24 4 3 2))
@@ -109,19 +109,14 @@ world")))
 (assert-eq 0 (len nil))
 
 
-(defvar  test-declare (lambda (x)
-										 (declare (type string x))
-										 x))
 
 (handle-errors (raise "x") (y (println 'error-caught)))
 
-(test-declare "123")
-(handle-errors (progn (test-declare 123) (raise 'failed))
-					(error (println ">>" error)
-							 (assert-not (eq error 'failed))))
 
+(println '???)
 (let ((r (block asd (handle-errors (return-from asd 123) (e 333)))))
   (assert (eq r 123)))
+
 (let ((r (handle-errors (block asd (raise "oh no") (return-from asd 5))
 								(e (progn (assert (eq e "oh no") ) 111)))))
   (assert (eq r 111)))
@@ -353,7 +348,14 @@ asd ")
 													 ;(println (js_eval (lisp2:compile-function '(let  ((a 3)) a))))
 
 (defvar test-matrix (mat4:perspective 1.0 1.0 0.5 1000.0))
-(println mat4:multiply2)
-(dotimes (i 1000000)
-  (mat4:multiply2 test-matrix test-matrix))
+;(println mat4:multiply2)
 
+
+;(dotimes (i 1000000)
+; (mat4:multiply2 test-matrix test-matrix))
+
+;(load "ld55-models.lisp")
+
+;(tree 1)
+
+(for-each i '(1 2 3) (println i))

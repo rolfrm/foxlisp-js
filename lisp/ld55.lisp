@@ -179,6 +179,7 @@
 									 (+ winloc-x (* r (math:sin a))) 0 (+ winloc-y (* r (math:cos a)))) 0.0 a))
 		
 		))
+  (println cultists)
   )
 
 (defvar shapes (list))
@@ -271,6 +272,20 @@
 (defun <> (min value max)
   (and (< min value) (> max value)))
 (defvar last-time (getTime))
+
+(defun draw-cultists()
+  ;(println 'start!)
+  ;(println cultists)
+  ($ with-prefix model:)
+  (dotimes (i (length cultists))
+
+	 ($ let ((cultist-npc (nth cultists i)) (pos (car cultist-npc))))
+	 ($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
+	 ($ rotation (cadr cultist-npc) 0 1 0)
+	 (cultist)
+	 )
+  )
+
 (defun animation-loop ()
 
   
@@ -305,6 +320,7 @@
 													 ;(play-sound walking-sound)
 		
 		(reload-game)
+		
 		)
 	 (when (> player-charge 8.0)
 		(play-sound diiiu-sound)
@@ -318,6 +334,7 @@
 			 )
 		  (stop-sound walking-sound))
 	 (set move-vec (vec3:mul-scalar move-vec (* delta 0.3)))
+	 
 	 (when (> (vec3:length move-vec) 0)
 		(set move-vec (mat4:apply (mat4:rotation (* (- move-angle view-angle) math:2pi) (vec3:new 0 1 0)) (vec3:new 0.25 0 0.0)))
 		(set move-angle (- move-angle view-angle))
@@ -352,6 +369,7 @@
 		  )
 		)
 	 
+	 
 	 ;(println bullets)
 	 (for-each bullet bullets
 				  ($ let ((pos (car bullet))
@@ -365,13 +383,15 @@
 				  (setnth bullet 2 t)
 				  )
 	 (set bullets (where bullets (lambda (x) (> (nth (nth x 0) 1) 4.0))))
+	 ;(println cultists)
 	 (for-each cultist cultists
+				  
 				  ($ let ((p (car cultist))
-							 (d (vec3:sub player-loc p))
-							 (dl (vec3:length d))
-							 (dn (vec3:normalize d))
-							 (a (/ (math:atan2 (vec3:z dn) (vec3:x dn)) math:2pi))
-							 ))
+						  (d (vec3:sub player-loc p))
+						  (dl (vec3:length d))
+						  (dn (vec3:normalize d))
+						  (a (/ (math:atan2 (vec3:z dn) (vec3:x dn)) math:2pi))
+						  ))
 				  
 				  (setnth p 1 (heightmap (nth p 0) (nth p 2)))
 				  (let ((target (if (< dl 15) a (getnth cultist 2))))
@@ -382,12 +402,12 @@
 					 ))
 	 (key:clear-events)
 	 
-
     ;; lets make some funky clear-color based on time:
     (gl.clearColor 1.0 1.0 1.0 1.0)
     (gl.clear gl.COLOR_BUFFER_BIT)
     (with-prefix model: 
-    (with-draw on-draw    
+		(with-draw on-draw
+		  
         (rgb 1 0 1 
 				 (offset 0.0 -3.0 -15.0
 							
@@ -400,15 +420,12 @@
                 ($ rotation xrot 0 1 0)
                 (high-bird player-dist) 
 					 )
-
-				  (for-each cultist-npc cultists
-							($ let ((pos (car cultist-npc))))
-							($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
-							($ rotation (cadr cultist-npc) 0 1 0)
-							(cultist))
+				  
+				  
+				  (draw-cultists)
 				  (offset winloc-x (heightmap winloc-x winloc-y) winloc-y
 							 (pentagram))
-					
+				  					
 					;(println bullets)
 
 					(for-each bullet bullets
@@ -422,7 +439,8 @@
 					
 
 					(dotimes (offset -3 4)
-					($ dotimes (offsety -3 4))
+					  ($ dotimes (offsety -3 4))
+					  
 					(let (
           				(zone (+ offset (round (/ (nth player-loc 0) 40))))
 							(zone2 (+ offsety (round (/ (nth player-loc 2) 40))))
@@ -452,7 +470,7 @@
 											 (tree zonei (math:random 4 12))
 								  )
 
-						))
+									))
 					 
 					 (dotimes (i 10)
 						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
@@ -472,6 +490,7 @@
 								  )
 
 						)
+					 
 					 (dotimes (i 20)
 						! dotimes (j 3)
 						
@@ -489,6 +508,7 @@
 									(flower (nth colors j))
 
 									))
+					 
 
 					 (dotimes (i 10)
 						
@@ -641,8 +661,8 @@
 (animation-loop)
 ;(modelling-loop)
 (defvar triangle (polygon:new
-						 (list -1 -1 0
-						 1 -1 0
+						 (list -0.5 -0.5 0
+						 1 -0.5 0
 						 -1 1 0
 						 1 1 0)))
 (defun sdf-loop  ()
@@ -654,4 +674,6 @@
 
   ! requestAnimationFrame sdf-loop
   )
+
+
 ;(sdf-loop)
