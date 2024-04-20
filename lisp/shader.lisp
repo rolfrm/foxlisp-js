@@ -33,7 +33,7 @@ void main() {
     float fogOffset = 0.5;
     float depth2 = gl_FragCoord.z / gl_FragCoord.w;
     if(depth2 > fogOffset){
-        fogAmount = (depth2 - fogOffset) * 0.003;
+        fogAmount = (depth2 - fogOffset) * 0.0001;
         if(fogAmount > 1.0){
           fogAmount  = 1.0;
         }

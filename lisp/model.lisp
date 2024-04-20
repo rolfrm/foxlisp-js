@@ -86,11 +86,40 @@
 		(set result (float32-array-sized size))
 		
 		
-        (for-each item models 
+      (for-each item models
+					 (println '>>> (car (car item)))
+					 (if (eq (car (car item)) 'polygon-strip-color)
+						  (let ((model-verts (float32-array-from2 (cadr (car item))))
+								  (vert-color (float32-array-from2 (caddr (car item))))
+								  (transform (cadr item))
+								  (color (caddr item)))
+							 (unless result-color
+								(set result-color (float32-array-sized size)))
+							 (mat4:applyn transform model-verts)
+							 (set any-color '(1 1 1))
+						 	 (when (> k 0)
+								(pushvec result (subarray result (* 3 (- k 1)) 3) k)
+								(incf k)
+                        (pushvec result v k)
+								(incf k)
+                        (when color 
+                          (pushvec result-color (subarray result-color (* 3 (- k 3)) 3) (- k 2))
+                          (pushvec result-color (subarray vert-color 0 3) (- k 1))
+                          ))
+								
+							 (dotimes (i 0 (length model-verts) 3)
+								(dotimes (j 3)
+								  (setnth result (+ (* 3 k) j) (nth model-verts (+ j i)))
+								  (setnth result-color (+ (* 3 k) j) (nth vert-color (+ i j)))
+								  )
+								(incf k)
+								)
+							 )
              ;(println 'adding item)
             (let ((model-verts (float32-array-from2 (caddr (car item))))
                   (transform (cadr item))
                   (color (caddr item)))
+				  
                 (when color (set any-color color))
                 (unless color (set color any-color))
                 (mat4:applyn transform model-verts)
@@ -116,7 +145,7 @@
 								(incf k)
                     ))
             )
-				)
+				))
 		  
 		  (let ((flr result)
 				  (flc result-color))
@@ -468,9 +497,8 @@
   (model:draw model::fronttile))
 
 
-(defun gen-heightmap (l x y x2 y2 step)
-  ! let ((vertexes (list))
-			)
+(defun gen-heightmap (l x y x2 y2 step colorf)
+  ! let ((vertexes (list)) (colors nil))
   (dotimes (i x (+ x2) step)
 	 	 (let ((len (length vertexes)))
 		(when (> len 0)
@@ -480,7 +508,6 @@
 	 	  (push vertexes (+ i step))
 		  (push vertexes (l (+ i step) y ))
 		  (push vertexes y)
-		
 		  )
 		)
 
@@ -491,11 +518,24 @@
 		(push vertexes i)
 		(push vertexes (l i j))
 		(push vertexes j)
-	 	
 		)
 	 )
-  vertexes
- 
+  (if colorf
+		(progn
+		  (set colors (list))
+		  (dotimes (i 0 (length vertexes) 3)
+			 (let ((color (colorf (nth vertexes i) (nth vertexes (+ i 1)) (nth vertexes (+ i 2)))))
+				(dotimes (j 3)
+				  (push colors (nth color j)))
+				))
+		  
+		  (list 'polygon-strip-color
+				  (float32-array-from vertexes)
+				  (float32-array-from colors)))
+		  
+		
+		(list 'polygon :3d-triangle-strip
+													vertexes))
 )
 
 (defvar model::noisemap (list))

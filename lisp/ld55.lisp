@@ -463,20 +463,27 @@
 							 (bake-keyed (+ (+ zone 1000) (* (+ zone2 1000) 10000))
 											 (rgb2 (vec3-interpolate 0.0 ground-light ground-dark)
 													 (draw
-													  (list 'polygon :3d-triangle-strip
-															  (gen-heightmap heightmap
+													  		  (gen-heightmap heightmap
 																				  (+ (* zone 40))
 																				  (+ (* zone2 40))
 																				  (+ (* (+ zone 1) 40) 0)
 																				  (+ (* (+ zone2 1) 40) 0)
-																				  1)))
+																				  1
+																				  (lambda (x y z)(if (< y -1)
+																											'(0.8.0 8.0 0.6)
+
+																											(if (> y 60)
+																												 '(0.7 0.7 0.7)
+																												 '(0.6 1.0 0.65))))
+
+																				  ))
 													 )
 											 
-					 (dotimes (i 10)
+					 (dotimes (i 20)
 						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
 								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
 								  (s (math:random 1.0 1.3))))
-						! when (> (heightmap x y) -4)
+						! when (and (> (heightmap x y) -4) (< (heightmap x y) 63))
 						(offset  x (heightmap x y) y
 									(scale s s s
 											 (tree zonei (math:random 4 12))
