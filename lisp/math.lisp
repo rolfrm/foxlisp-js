@@ -58,6 +58,10 @@
     )
 )
 
+(defun mat3x4:new()
+  (float32-array-sized 12)
+  )
+
 (defun mat4:identity()
     (mat4:new 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1))
 
@@ -108,33 +112,9 @@
 			 (setnth v 2 z))
 		  (vec3:new x y z))))
 
-(defvar code222 "
 
-(m, v)=>{
-    
-    const x = m[0] * v[0] + m[4] * v[1] + m[8] * v[2]+ m[12];
-    const y = m[1] * v[0] + m[5] * v[1] + m[9] * v[2]+ m[13];
-    const z = m[2] * v[0] + m[6] * v[1] + m[10] * v[2]+ m[14];
-    const w = m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15];
-   if (w != 0.0){
-     v[0] = x / w;
-     v[1] = y / w;
-     v[2] = z / w;
-   }else{
-     v[0] = x;
-     v[1] = y;
-     v[2] = z;
-  
-   }
-   return v;
-}
-
-")
-
-
-(defvar code::mat4:applyn "
-
-(m, v)=>{
+;; todo: w is generally always 1 for affine transformations. 
+(defvar code::mat4:applyn "(m, v)=>{
     const verts = v.length;
     for(let i = 0; i < verts; i += 3){
     const x = m[0] * v[i] + m[4] * v[i+1] + m[8] * v[i+2]+ m[12];
@@ -151,11 +131,6 @@
      v[i+2] = z;
    }}}
 ")
-
-
-
-(defvar __mat4_apply2 (js_eval code222))
-(set mat4:apply __mat4_apply2)
 (defvar mat4:applyn (js_eval code::mat4:applyn))
 
 
@@ -211,7 +186,3 @@
         (set outstr (concat outstr newline))
         )
     (println outstr)))
-
-
-
-(println "mat4:" (mat4:new))

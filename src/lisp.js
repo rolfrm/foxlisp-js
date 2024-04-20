@@ -251,12 +251,10 @@ function scope(items){
 	 return a
 }
 
-const value_marker = "__VALUEMARKER__"
+const value_marker = "__>>VALUEMARKER<<__"
 function isScope(code){
 	 return typeof(code) == 'string' && code.includes(value_marker)
 }
-
-getReturnCode = () => "return ";
 
 function lispCompileLet(variables, body){
 	 const  varCode = variables.map(updateExpr => {
@@ -345,7 +343,7 @@ function lispCompile2(code) {
 				conditionCode = conditionCode.replaceAll(value_marker, "condition =")
 				return `while(true) { var condition; ${conditionCode}; if(!condition){break;} ${updateCode}}`;
 		  }
-        return `for (;${conditionCode};) {  ${updateCode}; }`;
+        return `while (${conditionCode}) {  ${updateCode}; }`;
 	 case jsSym:
 		  {
 			let outstr = "";
@@ -570,7 +568,7 @@ lisp_reader = function(code) {
 }
 
 function lispCompileAst(ast){
-    js = "'use strict'; return "+ lispCompile(lisp_reader(ast))
+    js = "'use strict'\n; return "+ lispCompile(lisp_reader(ast))
     //console.log("ast: ", ast)
     //console.log("js: ", js)
     return Function(js)
@@ -607,9 +605,8 @@ async function LispEvalBlock(code, file) {
 		  }
 		  code = next;
 		  var js;
-		  var prevGet = getReturnCode;
+		  
 		  try{
-				//getReturnCode = () => "returnValue = ";
 				js = lispCompile(lisp_reader(ast));
 				if(isScope(js)){
 					 js = js.replaceAll(value_marker, "returnValue =");
@@ -643,14 +640,14 @@ async function LispEvalBlock(code, file) {
 	 }
 }
 
+// do-eval can be used to eval as single line of code.
 function do_eval(code){
-	 return eval?.(code)
+	 code = "return " + code.trim()
+	 const func = new Function(code)
+	 return func()
 }
 
 js_eval = do_eval
-
-
-
 
 lisp.lisp.eval = evalLisp
 lisp.lisp.LispEvalBlock = LispEvalBlock

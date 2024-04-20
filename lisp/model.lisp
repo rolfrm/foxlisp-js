@@ -41,7 +41,7 @@
 ))
 
 (defvar flatten::code "
-   (arrays) => {
+(arrays) => {
      let size = 0
      for(let i = 0; i < arrays.length; i++){
        size += arrays[i].length;
