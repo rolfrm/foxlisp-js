@@ -1,0 +1,37 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative&display=swap');
+
+body {
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    height: 100vh;
+	 font-family: 'Cinzel Decorative', sans-serif;
+	 line-height: 1.0;
+}
+
+#level, #distance {
+  display: inline; /* Set the display property to inline */
+}
+
+#app {
+    display: grid;
+	 grid-template-columns: 1fr auto;
+	 gap: 20px
+			align-items: center;
+	 margin: 0 auto;
+	 
+}
+#webgl-canvas {
+
+}
+#controls {
+	 
+    flex-direction: column;
+	 margin: 5px;
+}
+
+
+canvas {
+    border: 1px solid; /* Optional: Add border for better visibility */
+}

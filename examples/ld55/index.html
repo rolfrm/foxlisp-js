@@ -1,0 +1,44 @@
+<html>  
+    <head>
+        <meta charset="utf-8"/>
+        <script src="bundle.js"></script>
+        <link rel="stylesheet" href="styles.css">
+        
+    </head>
+    <body>
+      <div id="app">
+        <script>
+          document.addEventListener('DOMContentLoaded', async function() 
+          {
+            await lisp.LispEvalBlock("(loadfile \"lisp/lisp.lisp\")")
+            await lisp.LispEvalBlock("(loadfile \"lisp/ld55.lisp\")")
+            
+          });
+        </script>
+
+		  <canvas id="webgl-canvas" width="800" height="600"></canvas>
+		  <div id="controls">
+			 <h3> High-Bird 2: The Summoning </h3>
+			 You have been summoned. You can try following the wisps.
+			 <p>They look like this:    ▫  ▫▫   (the mountain is this way)
+
+			 <h4>Progress</h4>
+			 level: <span id="level" style="display: inline;"> </span> <p>
+			 
+			   Difficulty: <span id="distance"> </span> m
+            <h3>Controls</h3>
+            <ul>
+                <li><strong>a:</strong> move left</li>
+                <li><strong>d:</strong> move right</li>
+                <li><strong>w/arrow up:</strong> move forward</li>
+                <li><strong>s/arrow down:</strong> move backwards</li>
+                <li><strong>q/arrow left:</strong> turn left</li>
+                <li><strong>e/arrow right:</strong> turn right</li>
+					 <li><strong>Space:</strong> Reset level (for emergencies only)</li>
+            </ul>
+			 <p
+				<p><small style="font-family: monospace;">Game by github.com/rolfrm for Ludum Dare 55.  Music by Suno.ai. </small></p>
+        </div>
+      </div>
+    </body>
+</html>  
