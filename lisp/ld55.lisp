@@ -66,7 +66,7 @@
 (defvar gl (get-context webgl-canvas "webgl"))
 (assert gl)
 
-(defvar perspective (mat4:perspective 1.2 1.0 3.0 2000.0))
+(defvar perspective (mat4:perspective 1.2 1.0 0.01 2000.0))
 ;(defvar perspective (mat4:orthographic -10 10 -10 10 -30 30))
 
 (gl.enable gl.CULL_FACE)
@@ -158,6 +158,7 @@
 (defvar map-seed (math:random -1000.0 1000.0))
 (defvar level-counter 1)
 (defun reload-game ()
+  (model::resample-noise)
   (set level-counter-obj.innerHTML level-counter)
   ;(set win-dist (+ win-dist 100))
   (set distance-obj.innerHTML win-dist)
@@ -227,6 +228,8 @@
 
 (set-loop background-sound)
 (set-loop walking-sound)
+
+
 (defun heightmap (x y)
   (max
 	(hill x y 0 0 10 2)
@@ -234,13 +237,22 @@
 	;(hill x y -20 -25 10 0)
 	(hill x y winloc-x winloc-y 10 100)
   (+	
-	(* 1.0 (math:sin (+ map-seed (* x 0.5))) (math:cos ! + map-seed (* y 0.5)))
-	(* 2.0 (math:sin (+ map-seed (* x 0.3))) (math:cos ! + map-seed (* y 0.3)))
-	(* 5.0 (math:sin (+ map-seed (* x 0.1))) (math:cos ! + map-seed  (* y 0.1)))
-	(* 10.0 (math:sin (+ map-seed(* x 0.02))) (math:cos ! + map-seed  (* y 0.02)))
-	(* 20.0 (math:sin (+ map-seed (* x 0.002))) (math:cos ! + map-seed (* y 0.002)))
-
-	)))
+	;(* 1.0 (model:noisef (+ map-seed (* x 0.5))) (model:noisef ! + map-seed (* y 0.5)))
+	;(* 2.0 (+ (model:noisef (+ map-seed (* x 0.3))) (model:noisef ! + map-seed (* y 0.3))))
+	;(* 5.0 (+ (model:noisef (+ map-seed (* x 0.1))) (model:noisef ! + map-seed  (* y 0.1))))
+	;(* 10.0 (+ (model:noisef (+ map-seed (* x 0.05))) (model:noisef ! + map-seed  (* y 0.05))))
+	;(* 20.0 (+ (model:noisef (+ map-seed (* x 0.025))) (model:noisef ! + map-seed (* y 0.025))))
+	;(* 40.0 (+ (model:noisef (+ map-seed (* x 0.0125))) (model:noisef ! + map-seed (* y 0.0125))))
+	;(* 2.0 ! model:2dnoise (* 0.3 x) (* 0.3 y))
+	;(* 4.0 ! model:2dnoise (* 0.1 x) (* 0.1 y))
+	(* 8.0 ! model:2dnoise (* 0.07 x) (* 0.07 y))
+	(* 16.0 ! model:2dnoise (* 0.035 x) (* 0.035 y))	
+	(* 16.0 ! model:2dnoise (* 0.016 x) (* 0.016 y))	
+	(* 32.0 ! model:2dnoise (* 0.008 x) (* 0.008 y))
+	(* 32.0 ! model:2dnoise (* 0.004 x) (* 0.004 y))
+	(* 32.0 ! model:2dnoise (* 0.002 x) (* 0.002 y))
+	(* 32.0 ! model:2dnoise (* 0.001 x) (* 0.001 y))
+)))
 
 ;; rotate towards target. now and target are in turns.
 (defun slow-turn (now target step)
@@ -333,10 +345,10 @@
 			 (play-sound walking-sound)
 			 )
 		  (stop-sound walking-sound))
-	 (set move-vec (vec3:mul-scalar move-vec (* delta 0.3)))
+	 (set move-vec (vec3:mul-scalar move-vec (* delta 2)))
 	 
 	 (when (> (vec3:length move-vec) 0)
-		(set move-vec (mat4:apply (mat4:rotation (* (- move-angle view-angle) math:2pi) (vec3:new 0 1 0)) (vec3:new 0.25 0 0.0)))
+		(set move-vec (mat4:apply (mat4:rotation (* (- move-angle view-angle) math:2pi) (vec3:new 0 1 0)) (vec3:new 0.2 0 0.0)))
 		(set move-angle (- move-angle view-angle))
 		)
     (set xrot move-angle)
@@ -409,9 +421,9 @@
 		(with-draw on-draw
 		  
         (rgb 1 0 1 
-				 (offset 0.0 -3.0 -15.0
+				 (offset 0.0 -2.0 1.0
 							
-				 (rotation -0.10 1 0 0
+				 (rotation -0.01 1 0 0
             (rotation view-angle 0 1 0
             
 							 (offset (- (vec3:x player-loc)) (- (vec3:y player-loc))  (- (vec3:z player-loc))
@@ -438,8 +450,8 @@
 								 )
 					
 
-					(dotimes (offset -3 4)
-					  ($ dotimes (offsety -3 4))
+					(dotimes (offset -10 10)
+					  ($ dotimes (offsety -10 10))
 					  
 					(let (
           				(zone (+ offset (round (/ (nth player-loc 0) 40))))
@@ -455,9 +467,9 @@
 															  (gen-heightmap heightmap
 																				  (+ (* zone 40))
 																				  (+ (* zone2 40))
-																				  (+ (* (+ zone 1) 40) -1)
+																				  (+ (* (+ zone 1) 40) 0)
 																				  (+ (* (+ zone2 1) 40) 0)
-																				  2)))
+																				  1)))
 													 )
 											 
 					 (dotimes (i 10)

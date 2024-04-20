@@ -339,8 +339,8 @@ asd ")
 (println (slice (list 1 2 3) 1 2))
 (defvar test-matrix (mat4:perspective 1.0 1.0 0.5 1000.0))
 
-(dotimes (i 30000000)
-  (mat4:multiply test-matrix test-matrix))
+;(dotimes (i 30000000)
+;  (mat4:multiply test-matrix test-matrix))
 
 (for-each i '(1 2 3) (println i))
 
@@ -348,3 +348,11 @@ asd ")
   (x)
   (println y)
   (assert (eq 6 y)))
+
+(assert-eq 7 (op_or 1 (op_or 2 4)))
+(assert-eq 4 (op_and 12 5))
+(println (op_and -5 (* 0x1FFF)))
+(println (model:noisef 1.5))
+
+(dotimes (i 100)
+  (println i (model:2dnoise (* i 0.1) (* i 0.1))))

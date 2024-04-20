@@ -498,4 +498,42 @@
  
 )
 
+(defvar model::noisemap (list))
 
+(defun model::resample-noise ()
+  (set model::noisemap (list))
+  (dotimes (i 0x2000)
+	 (push model::noisemap (math:random -1.0 1.0))
+	 ))
+(model::resample-noise)
+
+(defun model:noisef(x)
+  (let ((b (floor x))
+		  (a (- x b))
+		  (b2 (op_and b 0x1FFF))
+		  (c (op_and (+ 1 b2) 0x1FFF))
+		  (p1 (th model::noisemap b2))
+		  (p2 (th model::noisemap c)))
+	 
+	 (+ (* p1 (- 1 a)) (* p2 a))
+	 
+  ))
+
+(defun model:sample2d(x y)
+  (th model::noisemap  (op_and 0x1FFF (+ (* 659 (floor x)) (* 1069 (floor y))))))
+
+(defun model:2dnoise(x y)
+  (let ((bx (floor x))
+		  (by (floor y))
+		  (ax (- x bx))
+		  (ay (- y by))
+		  (a1 (model:sample2d x y))
+		  (a2 (model:sample2d (+ x 1) y))
+		  (a3 (model:sample2d x  (+ y 1)))
+		  (a4 (model:sample2d (+ x 1) (+ y 1)))
+		  (p1 (+ (* a1  (- 1.0 ax)) (* a2 ax)))
+		  (p2 (+ (* a3  (- 1.0 ax)) (* a4 ax)))
+		  )
+	 
+	 (+ (* p1 (- 1.0 ay)) (* p2 ay))))
+	 

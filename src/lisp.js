@@ -39,6 +39,8 @@ op_mul = (x, y) => x * y
 op_leftshift = (x, y) => x << y;
 op_rightshift = (x, y) => x >> y;
 op_xor = (x, y) => x ^ y;
+op_or = (x,y) => x|y;
+op_and = (x,y) => x&y;
 mod = (x, y) => x % y
 not = (x) => !x
 len = (x) => (x && x.length) || 0
