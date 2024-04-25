@@ -356,3 +356,12 @@ asd ")
 
 (dotimes (i 100)
   (println i (model:2dnoise (* i 0.1) (* i 0.1))))
+
+(load "sdf.lisp")
+(println (sphere (vec3:new 0 0 0) (vec3:new 1 1 1) 1.0))
+
+
+(let ((pts (list)) (sizes (list))
+		(sdf (lambda (c) (sphere c (vec3:new 0 0 0) 1.0))))
+  (sdf-points pts sizes sdf (vec3:new 0 0 0) 5.0)
+  (println pts))

@@ -69,6 +69,15 @@
   (setnth array (+ index 2) (th vec 2))
   )
 
+(defun pushvec2(dst src dst-index src-index)
+  (set dst-index (* dst-index 3))
+  (set src-index (* src-index 3))
+  (setnth dst dst-index (th src src-index))
+  (setnth dst (+ dst-index 1) (th src (+ 1 src-index)))
+  (setnth dst (+ dst-index 2) (th src (+ 2 src-index)))
+  )
+
+
 (defun model::combine-models (models)
     (let ((result nil)
           (result-color nil)
@@ -87,7 +96,7 @@
 		
 		
       (for-each item models
-					 (println '>>> (car (car item)))
+					 
 					 (if (eq (car (car item)) 'polygon-strip-color)
 						  (let ((model-verts (float32-array-from2 (cadr (car item))))
 								  (vert-color (float32-array-from2 (caddr (car item))))
@@ -98,13 +107,13 @@
 							 (mat4:applyn transform model-verts)
 							 (set any-color '(1 1 1))
 						 	 (when (> k 0)
-								(pushvec result (subarray result (* 3 (- k 1)) 3) k)
+								(pushvec2 result result k (- k 1))
 								(incf k)
-                        (pushvec result v k)
+                        (pushvec2 result model-verts k 0)
 								(incf k)
                         (when color 
-                          (pushvec result-color (subarray result-color (* 3 (- k 3)) 3) (- k 2))
-                          (pushvec result-color (subarray vert-color 0 3) (- k 1))
+                          (pushvec2 result-color result-color k (- k 2))
+								  (pushvec2 result-color result-color k (- k 1))
                           ))
 								
 							 (dotimes (i 0 (length model-verts) 3)
@@ -124,19 +133,19 @@
                 (unless color (set color any-color))
                 (mat4:applyn transform model-verts)
                 (dotimes (i (/ (length model-verts) 3))
-                    (let ((v (subarray model-verts (* i 3) 3)))
+                    (progn
                         (when (and (eq i 0) (> k 0))
                         ;; todo: check that the last two are not equal to the next two.
-                          (pushvec result (subarray result (* 3 (- k 1)) 3) k)
+                          (pushvec2 result result k (- k 1))
 								  (incf k)
-                          (pushvec result v k)
+                          (pushvec2 result model-verts k i)
 								  (incf k)
                           (when color 
-                            (pushvec result-color (subarray result-color (* 3 (- k 3)) 3) (- k 2))
+                            (pushvec2 result-color result-color (- k 2) (- k 3))
                             (pushvec result-color color (- k 1)))
                           )
-                        
-                        (pushvec result v k)
+
+								(pushvec2 result model-verts k i)
 								
                         (when color
 								  (unless result-color
@@ -342,10 +351,7 @@
                (y2 (* radius (math:cos phi2)))
                (z2 (* radius (math:sin phi2) (math:sin theta))))
 				(let ((seg (list x1 y1 z1 x2 y2 z2)))
-				  ;(println seg)
-				  
 				  (set vertex-list (concat (list z2 y2 x2 z1 y1 x1) vertex-list))
-				  ;(println '>> vertex-list)
 
 				  )))
 		  )
@@ -386,13 +392,11 @@
             (y (* xy (math:sin sectorAngle)))
             (x2 (* xy2 (math:cos sectorAngle)))
             (y2 (* xy2 (math:sin sectorAngle))))
-            ;(println i j)
+            
             (when (and (eq 0 j) (> i 0))
                 ;make degenerate triangle
-                ;(println 'degenerate: x y z x y z2)
                 (set vertices (concat vertices (list x y z x2 y2 z2)))
             )
-            ;(println x y z x2 y2 z2)
         (set vertices (concat vertices (list x y z x2 y2 z2)))
         )))
       )

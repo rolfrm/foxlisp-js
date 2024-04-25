@@ -11,22 +11,15 @@
 (defvar wood-foilage-dark (vec3:new 0.3 0.5 0.4))
 (defvar wood-foilage-light (vec3:new 0.5 0.7 0.3))
 
-(defvar ground-dark (vec3:new 0.2 0.4 0.2))
-(defvar ground-light (vec3:new 0.4 0.6 0.2))
+(defvar ground-dark (vec3:new 0.3 0.4 0.35))
+(defvar ground-light (vec3:new 0.45 0.6 0.3))
 
 (defvar foilage-day '(0.5 1.0 0.5))
 
-(defun tree (a height random)
+(defun tree (a height)
   (set a (or a 0.0))
   (set height (or height 4.0))
   ($ let ((treescale (* height 0.5))))
-  (when random
-	 (set random (model::generate-sphere-2 8 8 1))
-	 (model:vertex-process random
-								  (lambda (v)
-									 (setnth v 0 (+ (getnth v 0) (math:random -0.2 0.2)))
-								  )
-	 ))
 
   (with-prefix model:
 	 (offset 0.0 0 0.0
@@ -35,8 +28,11 @@
 					  (upcube))
 				(rgb2 (vec3-interpolate a wood-foilage-light wood-foilage-dark) 
 						! offset 0 height 0
-						! scale treescale treescale treescale 
-                 (draw (or random model::sphere12)))
+						! scale treescale treescale treescale
+						(offset 0 -1 0
+						(scale 1 1.9 1
+								 (offset 0 1 0 
+											(draw model::sphere12)))))
 				)
 	 ))
 

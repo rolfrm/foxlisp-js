@@ -4,6 +4,7 @@
 (load "model.lisp")
 (load "keys.lisp")
 (load "ld55-models.lisp")
+(load "sdf.lisp")
 ;; this part must be called to initialize gl
 (defun get-element-by-id (item id)
     (item.getElementById id)
@@ -101,15 +102,10 @@
 
 (defvar bullets (list))
 (defun shoot-bullet (loc dir)
-  ;(println 'shoot-pew-pew loc dir)
   (push bullets (list loc dir 0))
   )
 
-(defvar cultists (list
-
-						)	
-
-  )
+(defvar cultists (list))
 
 (defvar nonrandom (list))
 (dotimes (i 1000)
@@ -159,6 +155,7 @@
 (defvar level-counter 1)
 (defun reload-game ()
   (model::resample-noise)
+  (set zone-assets (makehashmap))
   (set level-counter-obj.innerHTML level-counter)
   ;(set win-dist (+ win-dist 100))
   (set distance-obj.innerHTML win-dist)
@@ -229,8 +226,18 @@
 (set-loop background-sound)
 (set-loop walking-sound)
 
+(defun clamp(v1 v v2)
+  (max v1 (min v v2)))
+
+(defun heightmap-flatness (x y)
+  (clamp 0.1 (+ 1 (* 2 (model:2dnoise (* 0.004 x) (* 0.004 y)))) 1.0))
+(defun tree-density (x y)
+  (* (heightmap-flatness x y) 10.0)
+  )
 
 (defun heightmap (x y)
+  ($ let ((flatness (clamp 0.0 (+ 1 (* 2 (model:2dnoise (* 0.004 x) (* 0.004 y)))) 1.0))))
+  
   (max
 	(hill x y 0 0 10 2)
 	;(hill x y 50 1 10 20)
@@ -245,14 +252,39 @@
 	;(* 40.0 (+ (model:noisef (+ map-seed (* x 0.0125))) (model:noisef ! + map-seed (* y 0.0125))))
 	;(* 2.0 ! model:2dnoise (* 0.3 x) (* 0.3 y))
 	;(* 4.0 ! model:2dnoise (* 0.1 x) (* 0.1 y))
-	(* 8.0 ! model:2dnoise (* 0.07 x) (* 0.07 y))
-	(* 16.0 ! model:2dnoise (* 0.035 x) (* 0.035 y))	
-	(* 16.0 ! model:2dnoise (* 0.016 x) (* 0.016 y))	
+	;(* 4.0 ! model:2dnoise (* 0.07 x) (* 0.07 y))
+	;(* 4.0 ! model:2dnoise (* 0.035 x) (* 0.035 y))
+	(* (* flatness 2.0) ! model:2dnoise (* 0.064 x) (* 0.064 y))
+	(* (* flatness 4.0) ! model:2dnoise (* 0.032 x) (* 0.032 y))
+	(* (* flatness 8.0) ! model:2dnoise (* 0.016 x) (* 0.016 y))
+	(* (* flatness 12.0) ! model:2dnoise (* 0.008 x) (* 0.008 y))
+	(* (* flatness 12.0) ! model:2dnoise (* 0.008 (+ 65512.31 x)) (* 0.008 (+ y 9535153.32)))
+	(* (* flatness 12.0) ! model:2dnoise (* 0.008 (+ 312321.54 x)) (* 0.008 (+ y 355311.321)))
+	;(* 32.0 ! model:2dnoise (* 0.004 x) (* 0.004 y))
+	
+  (* 0 (* 8.0 ! model:2dnoise (* 0.07 x) (* 0.07 y))
+  (* 16.0 ! model:2dnoise (* 0.035 x) (* 0.035 y))	
+  (* 16.0 ! model:2dnoise (* 0.016 x) (* 0.016 y))
+	
 	(* 32.0 ! model:2dnoise (* 0.008 x) (* 0.008 y))
 	(* 32.0 ! model:2dnoise (* 0.004 x) (* 0.004 y))
 	(* 32.0 ! model:2dnoise (* 0.002 x) (* 0.002 y))
 	(* 32.0 ! model:2dnoise (* 0.001 x) (* 0.001 y))
+	)
 )))
+
+(defun heightmap-colors(x y z)
+  (if (< y -1)
+		
+		'(0.8 0.8 0.6)
+		
+		(if (> y 60)
+			 (if (< (model:2dnoise (+ 10 x) (+ z 10)) 0.0)
+				  '(0.7 0.7 0.7)
+				  '(0.75 0.75 0.75))
+			 (if (< (model:2dnoise x z) 0.0)
+				  ground-dark
+				  ground-light))))
 
 ;; rotate towards target. now and target are in turns.
 (defun slow-turn (now target step)
@@ -298,6 +330,28 @@
 	 )
   )
 
+(defvar zone-assets (makehashmap))
+
+(defun zoneof(x y)
+  ! let ((zone (round (/ x 40)))
+			(zone2 (round (/ y 40)))
+			(id (+ (+ 1000 zone) (* (+ zone2 1000) 10000))))
+  id)
+  
+
+(defun get-zone-assets(zoneid)
+  (let ((zonemap  (hashmap-get zone-assets zoneid)))
+	 (unless zonemap
+		(set zonemap (list))
+		(set zonemap.trees (list))
+		(set zonemap.rocks (list))
+		(set zonemap.wisps (list (list 0 0) (list 0 0 1)))
+		(hashmap-set zone-assets zoneid zonemap)
+		)
+	 
+	 zonemap
+	 ))
+
 (defun animation-loop ()
 
   
@@ -328,7 +382,7 @@
     (when (or (key:down 'key:s) (key:down 'key:arrow-down))
 		(set move-angle (* delta 0.25))
       (set move-vec (vec3:new 0 0 1)))
-	 (when (key:on-down 'key:space)
+	 (when (key:on-down 'key:r)
 													 ;(play-sound walking-sound)
 		
 		(reload-game)
@@ -353,15 +407,62 @@
 		)
     (set xrot move-angle)
 	 (set player-angle move-angle)
+	 (setnth player-loc 1 (max -7 (+ 0 (heightmap (vec3:x player-loc) (vec3:z player-loc)))))
+	 (set prev-loc player-loc)
 	 (let ((next-loc (vec3:add player-loc move-vec))
-			 (next-depth (heightmap (nth next-loc 0) (nth next-loc 2)))
-			 )
-		(when (> next-depth -8)
-		  (set player-loc next-loc)))
+			 
+			 (next-depth (heightmap (nth next-loc 0) (nth next-loc 2))))
+		(set player-loc next-loc)
+		(when (< next-depth -8)
+		  (set player-loc prev-loc)
+		  )
+		(let ((px (nth player-loc 0))
+				(py (nth player-loc 2))
+				(assets (get-zone-assets (zoneof px py))))
+		  
+		  (for-each tree assets.trees
+						(let ((x (nth tree 0)) (y (nth tree 1))
+								(dx (- x px))
+								(dy (- y py))
+								(d (math:sqrt (+ (* dx dx) (* dy dy)))))
+						  
+						  (when (< d 1.0)
+							 (println 'collision>> d x y player-loc)
+						  (set player-loc prev-loc)
+						  
 
+						  )))
+
+		  (for-each rock assets.rocks
+						! let ((x (nth rock 0)) (y (nth rock 1))
+								 (dx (- x px))
+								 (dy (- y py))
+								 (z (nth rock 2))
+								 (d (- z (math:sqrt (+ (* dx dx) (* dy dy)))))
+								 )
+						! when (> d 0.0)
+						(println 'rock! rock player-loc dx dy d)
+						(setnth player-loc 1 (+ d (nth next-loc 1)))
+						
+						)
+		  (dotimes (i (length assets.wisps))
+			 ! let ((wisp (nth assets.wisps i))(x (nth wisp 0)) (y (nth wisp 1))
+					  (dx (- x px))
+					  (dy (- y py))
+					  (d (math:sqrt (+ (* dx dx) (* dy dy))))
+					  )
+			 (when (< d 2.0)
+				(setnth wisp 2 0)
+				)
+
+			 )
+
+		  ))
 	 
+	 	 
 	 (set player-dist (+ player-dist (* 0.1 (vec3:length move-vec))))
-    (setnth player-loc 1 (max -7 (heightmap (vec3:x player-loc) (vec3:z player-loc))))
+    
+;	 (setnth player-loc 1 50)
 	 ;(println 'player player-loc)
     (let ((r (mat4:rotation (* math:pi 2 move-angle) (vec3:new 0 1 0)))
           (ld (mat4:apply r (vec3:new 1 0 0)))
@@ -416,14 +517,15 @@
 	 
     ;; lets make some funky clear-color based on time:
     (gl.clearColor 1.0 1.0 1.0 1.0)
+    ;(gl.clearColor 0.0 0.0 0.0 1.0)
     (gl.clear gl.COLOR_BUFFER_BIT)
     (with-prefix model: 
 		(with-draw on-draw
 		  
         (rgb 1 0 1 
-				 (offset 0.0 -2.0 1.0
+				 (offset 0.0 -5.0 -10.0
 							
-				 (rotation -0.01 1 0 0
+				 (rotation -0.02 1 0 0
             (rotation view-angle 0 1 0
             
 							 (offset (- (vec3:x player-loc)) (- (vec3:y player-loc))  (- (vec3:z player-loc))
@@ -456,53 +558,139 @@
 					(let (
           				(zone (+ offset (round (/ (nth player-loc 0) 40))))
 							(zone2 (+ offsety (round (/ (nth player-loc 2) 40))))
-							(zonei (+ 0.5 (* 0.5 (math:sin (/ zone 2.0))))))
+							(zonei (+ 0.5 (* 0.5 (math:sin (/ zone 2.0)))))
+							(zoneid (+ (+ zone 1000) (* (+ zone2 1000) 10000)))
+							(assets (get-zone-assets zoneid))
+							)
+					  
 							
 					  
 					  (rgb 1 1 1
-							 (bake-keyed (+ (+ zone 1000) (* (+ zone2 1000) 10000))
+							 (bake-keyed zoneid
 											 (rgb2 (vec3-interpolate 0.0 ground-light ground-dark)
 													 (draw
-													  		  (gen-heightmap heightmap
+													  (gen-heightmap (lambda (x y)
+																			 (let ((z (heightmap x y)))
+																				(if (< z -0.3)
+																					 -100
+																					 (if (> (model:2dnoise (* 0.01 x) (* 0.01 y)) -0.6) z -100)
+																					 
+																					 )))
 																				  (+ (* zone 40))
 																				  (+ (* zone2 40))
 																				  (+ (* (+ zone 1) 40) 0)
 																				  (+ (* (+ zone2 1) 40) 0)
-																				  1
-																				  (lambda (x y z)(if (< y -1)
-																											'(0.8.0 8.0 0.6)
+																				  2
+																				  ;heightmap-colors
+																				  )
+													  )
 
-																											(if (> y 60)
-																												 '(0.7 0.7 0.7)
-																												 '(0.6 1.0 0.65))))
-
-																				  ))
 													 )
+											 (rgb2 (vec3:new 0.9 0.9 1)
+													 (draw
+													  (gen-heightmap (lambda (x y)
+																			 (let ((z (+ 0.3 (heightmap x y))))
+																				(if (< z -0.3)
+																					 -100
+																					 (if (< (model:2dnoise (* 0.01 x) (* 0.01 y)) -0.5) z -100)
+																					 )))
+																				  (+ (* zone 40))
+																				  (+ (* zone2 40))
+																				  (+ (* (+ zone 1) 40) 0)
+																				  (+ (* (+ zone2 1) 40) 0)
+																				  2
+																				  ;heightmap-colors
+																				  )
+													  )
+
+													 )
+											 (rgb2 (vec3:new 0.8 0.8 0.5)
+													 (draw
+													  (gen-heightmap (lambda (x y)
+																			 (let ((z (heightmap x y)))
+																				(if (> z 0)
+																					 0
+																					 (+ z 0.2))
+																				))
+																				  (+ (* zone 40))
+																				  (+ (* zone2 40))
+																				  (+ (* (+ zone 1) 40) 0)
+																				  (+ (* (+ zone2 1) 40) 0)
+																				  2
+																				  ;heightmap-colors
+																				  )
+													  )
+
+													 )
+
 											 
-					 (dotimes (i 20)
+					 (dotimes (i (floor (tree-density (* zone 2 20) (* zone2 20 2))))
 						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
 								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
 								  (s (math:random 1.0 1.3))))
-						! when (and (> (heightmap x y) -4) (< (heightmap x y) 63))
-						(offset  x (heightmap x y) y
-									(scale s s s
-											 (tree zonei (math:random 4 12))
-								  )
-
-									))
+						(when (and (> (heightmap x y) -4) (< (heightmap x y) 63))
+						  (offset  x (heightmap x y) y
+									  (scale s s s
+												(tree (+ (math:random -0.3 0.3) zonei) (math:random 4 12))
+												)
+									  
+									  )
+						  (push assets.trees (list x y))
+						))
 					 
 					 (dotimes (i 10)
 						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
 								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
-								  (s1 (math:random 0.5 1.3))
-								  (s2 (math:random 0.5 1.3))
-								  (s3 (math:random 0.5 1.3))
-								  (s4 (math:random 0.5 1.3))
+								  (s1 (math:random 0.5 3.3))
+								  (s2 (math:random 0.5 3.3))
+								  (s3 (math:random 0.5 3.3))
+								  (s4 (math:random 0.0 1.0))
 
 								  ))
-						(offset  x (heightmap x y) y
+						(push assets.rocks (list x y s2))
+						(offset  x (- (heightmap x y) 0.2) y
 									(scale s1 s2 s3
 											 (rgb 0.3 0.3 0.3
+													(rotate s4 0 1 0
+															  (sphere5)
+															  )))
+								  )
+
+						)
+
+					 (dotimes (i 3)
+						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
+								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+								  (s1 (math:random 4.5 8.3))
+								  (s2 (math:random 4.5 8.3))
+								  (s3 (math:random 4.5 8.3))
+								  (s4 (math:random 4.5 8.3))
+								  (smax (max s1 s2 s3))
+								  (z (- (heightmap x y) (* smax 0.2)))
+								  ))
+						! unless (< (heightmap x y) -1)
+						(offset  x z y
+									(scale s1 s2 s3
+											 (rgb 0.3 0.5 0.25
+													(rotate s4 0 1 0
+															  (sphere5)
+															  )))
+								  )
+
+						)
+					 (dotimes (i 3)
+						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
+								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+								  (s1 (math:random 4.5 8.3))
+								  (s2 (math:random 4.5 8.3))
+								  (s3 (math:random 4.5 8.3))
+								  (s4 (math:random 4.5 8.3))
+
+								  ))
+						(push assets.rocks (list x y (* 0.3 s2)))
+						(offset  x (- (heightmap x y) (* s2 0.7)) y
+									(scale s1 s2 s3
+											 (rgb 0.5 0.5 0.5
 													(rotate s4 0 1 0
 															  (sphere5)
 															  )))
@@ -551,16 +739,20 @@
 								)
 					
 							 ;; draw arrow
-					(dotimes (i 2)
-					  ($ let ((x (+ (math:random -0.1 0.1)
+					(dotimes (i (length assets.wisps))
+					  ($ let ((wisp (nth assets.wisps i))
+								 (x (+ (math:random -0.1 0.1)
 										 (math:nonrandom (+ zone (* 13 zone2) (* i 19)) -20.0 20.0)
 										 (* zone 20 2)))
 								 (y (+ (math:random -0.1 0.1)
 										 (math:nonrandom (+ zone (* 13 zone2) (* i 19)) -20.0 20.0)
 										 (* zone2 20 2)))
 								  (z (+ 0.2 (heightmap x y)))
-								  ))
-						($ when (> z -2.0))
+								 ))
+					  
+					  ($ when (and (nth wisp 2) (> z -2.0)))
+					  (setnth wisp 0 x)
+					  (setnth wisp 1 y)
 						($ let ((dx (- winloc-x x))
 								  (dy (- winloc-y y))
 								  (d (math:sqrt (+ (* dx dx) (* dy dy))))
@@ -640,7 +832,7 @@
 			  (scale -500 -500 -500
 						($ rgb 0.5 0.9 1.0)
 						(sphere12))
-		($ offset 0 0 -50)
+		($ offset 0 0 -80)
 		($ scale 1 1 1)
 		($ rotation (+ -0.2 yrot) 1 0 0)
 		($ rotation xrot 0 1 0)
@@ -650,21 +842,29 @@
 		  (offset -1000 (* 10 (+ 0 (math:sin (* 10 time-component)))) -1000
 			(rgb 0 0 1
 				  (scale 2000 1 2000
-							(tile))))
+							;(tile)
+							)))
 			
 
 		  (bake
 					 
-			(rgb 0 1 0
+			(rgb 1 1 1
 			(draw
 			 
-			 (list 'polygon :3d-triangle-strip
-					 (gen-heightmap heightmap
+			 (gen-heightmap heightmap
 										 (+ (* -20 40))
 										 (+ (* -20 40))
 										 (+ (* (+ 20 1) 40) -1)
 										 (+ (* (+ 20 1) 40) 0)
-										 1))))
+										 1
+										 (lambda (x y z)
+											(vec3:mul-scalar
+											 (vec3:new 1 1 1)
+											 (* (+ y 50) 0.01)
+
+											 ))
+
+										 )))
 			
 													 ;(tree)
 													 ;(cultist-modelling))
@@ -676,20 +876,104 @@
   
   ))
 
-;(requestAnimationFrame animation-loop)
 (animation-loop)
 ;(modelling-loop)
-(defvar triangle (polygon:new
+(defvar triangle (polygon:new-points
 						 (list -0.5 -0.5 0
-						 1 -0.5 0
-						 -1 1 0
-						 1 1 0)))
+						 0.2 -0.5 0
+						 -0.2 0.2 0
+						 0.2 0.2 0)
+						 (list 4 5 6 7)
+						 (list 1 0 1 1 1 0 0 1 1 1 1 0)
+						 ))
+(defvar model1 0)
+(set xrot 1.0)
+(defvar zoomt -10)
+(defvar rotm (mat4:identity))
 (defun sdf-loop  ()
-  ! let ((shader ! shader:get-sdf))
+  (unless model1
+	 (let ((pts (list)) (sizes (list)) (color (list))
+			 (sdf (lambda (p) (min
+									 (sphere p (vec3:new 0 0 -1.2) 0.15)
+									 (sphere p (vec3:new 0 -10 0.0) 10)
+										  (sphere p (vec3:new 0 0 0) 0.5)
+										  (sphere p (vec3:new 0 0 1) 0.7)
+										  (sphere p (vec3:new 0 0 2) 1.2)
+										  ))))
+		(sdf-points pts sizes sdf (vec3:new 0 0 0) 10.0 0.01)
+		(dotimes (i (length pts))
+		  (let ((p (nth pts i))
+				  (c (vec3:new 1 1 0))
+				  )
+			 (when (< (sphere p (vec3:new 0 0 -1.2) 0.15) 0.0)
+				  (set c (vec3:new 0 0 1))
+				  )
+			 (when (< (sphere p (vec3:new 0 -10 0.0) 10) 0.0)
+				  (set c (vec3:new 0 1 0))
+				  )
+			 (when (< (sphere p (vec3:new 0 0 2.0) 1.2) 0.0)
+				  (set c (vec3:new 1 0 0))
+				  )
+			 (when (< (sphere p (vec3:new 0 0 1.0) 0.7) 0.0)
+				(set c (vec3:new 1 0 1))
+				)
+			 (push color (nth c 0))
+			 (push color (nth c 1))
+			 (push color (nth c 2))
+
+		  ))
+		(set model1 (polygon:new-points (float32-array-flatten pts)
+												  (Float32Array.from sizes)
+												  (Float32Array.from color)))
+		(println 'sizes: model1.sizes.length)
+		(println 'model1 model1)
+		))
+
+  (set xrot 0.0)
+  (set yrot 0.0)
+  (when (hashmap-get keydown 'key:a)
+        (set xrot (- xrot 0.04)))
+
+  (when (hashmap-get keydown 'key:d)
+    (set xrot (+ xrot 0.04)))
+  (when (hashmap-get keydown 'key:w)
+        (set yrot (- yrot 0.04)))
+
+  (when (hashmap-get keydown 'key:s)
+    (set yrot (+ yrot 0.04)))
+
+  (when (hashmap-get keydown 'key:arrow-up)
+    (set zoomt (- zoomt 0.04)))
+  (when (hashmap-get keydown 'key:arrow-down)
+    (set zoomt (+ zoomt 0.04)))
+
+  
+  
+  (when xrot
+	 (let ((rot (mat4:rotation xrot (vec3:new 0 1 0))))
+		(set rotm (mat4:multiply rot rotm ))
+	 ))
+  (when yrot
+	 (let ((rot (mat4:rotation yrot (vec3:new 1 0 0))))
+		(set rotm (mat4:multiply rot rotm ))
+	 ))
+
+  
+  
+  ! let ((shader ! shader:get-sdf)
+			(perspective (mat4:perspective 1.2 1.0 0.01 2000.0))
+			(tr (mat4:translate 0 0 zoomt))
+			(m (mat4:multiply tr (mat4:multiply rotm (mat4:scale 0.4 0.4 0.4))))
+			)
+
+  
   (shader:use shader)
+  (shader:set-model shader m)
+  (shader:set-model-view shader (mat4:multiply perspective m))
   (gl.clearColor 0.1 0.1 0.5 1.0)
   (gl.clear ! + gl.COLOR_BUFFER_BIT gl.DEPTH_BUFFER_BIT)
-  (polygon:draw triangle)
+  
+  (polygon:draw model1)
 
   ! requestAnimationFrame sdf-loop
   )

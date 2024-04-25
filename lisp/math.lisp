@@ -136,6 +136,8 @@
 
 
 (defun mat4:translation (x y z)
+  (mat4:new 1 0 0 0 0 1 0 0 0 0 1 0 x y z 1))
+(defun mat4:translate (x y z)
     (mat4:new 1 0 0 0 0 1 0 0 0 0 1 0 x y z 1))
 
 (defun mat4:perspective (fov aspect near far)
