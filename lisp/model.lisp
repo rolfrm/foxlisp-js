@@ -577,7 +577,7 @@
   )
 
 (defmacro cinterpolate(x1 x2 mu)
-  `(interpolate ,x1 ,x2 (* (- 1.0 (math:cos (* ,mu math:pi))) 0.5))
+  `(interpolate ,x1 ,x2 (* (- 1.0 (Math.cos (* ,mu math:pi))) 0.5))
   )
 
 (defun soft-interpolate (x1 x2 mu)
@@ -588,7 +588,7 @@
   (let ((bx (floor x))
 		  (by (floor y))
 		  (ax (- x bx))
-		  (axcos (* (- 1.0 (math:cos (* ax math:pi))) 0.5))
+		  (axcos (* (- 1.0 (Math.cos (* ax math:pi))) 0.5))
 		  (ay (- y by))
 		  (a1 (model:sample2d x y))
 		  (a2 (model:sample2d (+ x 1) y))

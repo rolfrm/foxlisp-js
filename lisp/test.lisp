@@ -339,8 +339,6 @@ asd ")
 (println (slice (list 1 2 3) 1 2))
 (defvar test-matrix (mat4:perspective 1.0 1.0 0.5 1000.0))
 
-;(dotimes (i 30000000)
-;  (mat4:multiply test-matrix test-matrix))
 
 (for-each i '(1 2 3) (println i))
 
@@ -369,3 +367,15 @@ asd ")
 (let ((test-items (list 1 2 3 4 5 6)))
   (set (th test-items 3) 10)
   (assert-eq (nth test-items 3) 10))
+
+(dotimes! (i 5)
+  (println i))
+
+(let ((a (mat4:new))
+		(b (mat4:new)))
+  (dotimes (i 16000)
+	 (mat4:multiplyi a test-matrix test-matrix)
+
+	 ))
+
+;(println (mat4::multiply-code 'a 'm1 'm2))

@@ -258,7 +258,8 @@ function isScope(code){
 	 return typeof(code) == 'string' && code.includes(value_marker)
 }
 
-function lispCompileLet(variables, body){
+function lispCompileLet(variables, body, isConst){
+	 
 	 const  varCode = variables.map(updateExpr => {
 		  if(updateExpr.length != 2){
 				throw new Error("The expression (xyz) is malformed." + updateExpr.toString());

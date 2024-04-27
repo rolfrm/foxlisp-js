@@ -5,13 +5,13 @@
     (%js "new Float32Array([arr[offset], arr[offset + 1] , arr[offset + 2]])"))
 
 (defun vec3:x(v)
-    (nth v 0))
+    (th v 0))
 
 (defun vec3:y(v) 
-    (nth v 1))
+    (th v 1))
 
 (defun vec3:z(v)
-    (nth v 2))
+    (th v 2))
 
 (defun vec3:length(v)
     (math:sqrt (+ (* (vec3:x v) (vec3:x v)) 
@@ -67,20 +67,31 @@
 
 (defmacro mat4:get (m row col)
     `(th ,m (+ ,row (* ,col 4)))
-)
-(defun mat4:set (m row col val)
-  (setnth m (+ row (* col 4)) val))
+	 )
+
+(defmacro mat4:set (m row col val)
+  `(set (th ,m (+ ,row (* ,col 4))) ,val))
 
 (defun mat4:multiply (a b)
+  
   (let ((result (mat4:new)))
     
-    (dotimes (i 4)
-      (dotimes (j 4)
+    (dotimes! (i 4)
+      (dotimes! (j 4)
         (let ((sum 0.0))
-          (dotimes (k 4)
+          (dotimes! (k 4)
             (set sum (+ sum (* (mat4:get a i k) (mat4:get b k j)))))
           (mat4:set result i j sum))))
     result))
+
+(defun mat4:multiplyi (result a b)
+  (dotimes! (i 4)
+				(dotimes! (j 4)
+							 (let ((sum 0.0))
+								(dotimes! (k 4)
+											 (set sum (+ sum (* (mat4:get a i k) (mat4:get b k j)))))
+								(mat4:set result i j sum))))
+  0)
 
 
 

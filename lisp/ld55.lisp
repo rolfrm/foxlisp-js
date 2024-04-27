@@ -230,11 +230,14 @@
   (max v1 (min v v2)))
 
 (defun heightmap-flatness (x y)
-  ;(clamp 0.1 (+ 1 (* 2 (model:2dnoise (* 0.004 x) (* 0.004 y)))) 1.0)
-  1.0
+  (clamp 0.1 (+ 1 (* 2 (model:2dnoise (* 0.004 x) (* 0.004 y)))) 1.0)
+  ;1.0
   )
 (defun tree-density (x y)
   (* (heightmap-flatness x y) 10.0)
+  )
+(defun is-flat(x y)
+  (< (heightmap-flatness x y) 0.2)
   )
 
 (defun heightmap (x y)
@@ -580,7 +583,9 @@
           				(zone (+ offset (floor (/ (nth player-loc 0) chunk-size))))
 							(zone2 (+ offsety (floor (/ (nth player-loc 2) chunk-size))))
 							(zonei (+ 0.5 (* 0.5 (math:sin (/ zone 2.0)))))
-							(zoneid (+ (+ zone 1000) (* (+ zone2 1000) 10000)))
+							  (zoneid (+ (+ zone 1000) (* (+ zone2 1000) 10000)))
+							  (chunk-x (* zone chunk-size))
+							  (chunk-y (* zone2 chunk-size))
 							(assets (get-zone-assets zoneid))
 							)
 					  
@@ -675,8 +680,19 @@
 															  (sphere5)
 															  )))
 								  )
-
 						)
+					 
+					 (when (and (< (math:random 0 40) 1.0) (is-flat chunk-x chunk-y))
+						
+						($ let ((x (+ chunk-x (math:random 0 chunk-size)))
+								  (y (+ chunk-y (math:random 0 chunk-size)))))
+						(println 'house x y)
+						(rgb 0 0 0
+							  ($ offset x (heightmap x y) y)
+							  ($ scale 4 100 4)
+							  (upcube)
+
+							  ))
 
 					 (dotimes (i 3)
 						($ let ((x (+ (math:random 0.0 chunk-size) (* zone chunk-size)))
