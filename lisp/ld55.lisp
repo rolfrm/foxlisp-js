@@ -333,8 +333,8 @@
 (defvar zone-assets (makehashmap))
 
 (defun zoneof(x y)
-  ! let ((zone (round (/ x 40)))
-			(zone2 (round (/ y 40)))
+  ! let ((zone (floor (/ x 40)))
+			(zone2 (floor (/ y 40)))
 			(id (+ (+ 1000 zone) (* (+ zone2 1000) 10000))))
   id)
   
@@ -419,6 +419,7 @@
 		(let ((px (nth player-loc 0))
 				(py (nth player-loc 2))
 				(assets (get-zone-assets (zoneof px py))))
+		  
 		  
 		  (for-each tree assets.trees
 						(let ((x (nth tree 0)) (y (nth tree 1))
@@ -552,12 +553,13 @@
 								 )
 					
 
-					(dotimes (offset -10 10)
-					  ($ dotimes (offsety -10 10))
+					(dotimes (offset -10 11)
+					  ($ dotimes (offsety -10 11))
 					  
-					(let (
-          				(zone (+ offset (round (/ (nth player-loc 0) 40))))
-							(zone2 (+ offsety (round (/ (nth player-loc 2) 40))))
+					  (let (
+							  (chunk-size 40)
+          				(zone (+ offset (floor (/ (nth player-loc 0) chunk-size))))
+							(zone2 (+ offsety (floor (/ (nth player-loc 2) chunk-size))))
 							(zonei (+ 0.5 (* 0.5 (math:sin (/ zone 2.0)))))
 							(zoneid (+ (+ zone 1000) (* (+ zone2 1000) 10000)))
 							(assets (get-zone-assets zoneid))
@@ -576,12 +578,11 @@
 																					 (if (> (model:2dnoise (* 0.01 x) (* 0.01 y)) -0.6) z -100)
 																					 
 																					 )))
-																				  (+ (* zone 40))
-																				  (+ (* zone2 40))
-																				  (+ (* (+ zone 1) 40) 0)
-																				  (+ (* (+ zone2 1) 40) 0)
+																				  (+ (* zone chunk-size))
+																				  (+ (* zone2 chunk-size))
+																				  (+ (* (+ zone 1) chunk-size) 0)
+																				  (+ (* (+ zone2 1) chunk-size) 0)
 																				  2
-																				  ;heightmap-colors
 																				  )
 													  )
 
@@ -594,10 +595,10 @@
 																					 -100
 																					 (if (< (model:2dnoise (* 0.01 x) (* 0.01 y)) -0.5) z -100)
 																					 )))
-																				  (+ (* zone 40))
-																				  (+ (* zone2 40))
-																				  (+ (* (+ zone 1) 40) 0)
-																				  (+ (* (+ zone2 1) 40) 0)
+																				  (+ (* zone chunk-size))
+																				  (+ (* zone2 chunk-size))
+																				  (+ (* (+ zone 1) chunk-size) 0)
+																				  (+ (* (+ zone2 1) chunk-size) 0)
 																				  2
 																				  ;heightmap-colors
 																				  )
@@ -612,10 +613,10 @@
 																					 0
 																					 (+ z 0.2))
 																				))
-																				  (+ (* zone 40))
-																				  (+ (* zone2 40))
-																				  (+ (* (+ zone 1) 40) 0)
-																				  (+ (* (+ zone2 1) 40) 0)
+																				  (+ (* zone chunk-size))
+																				  (+ (* zone2 chunk-size))
+																				  (+ (* (+ zone 1) chunk-size) 0)
+																				  (+ (* (+ zone2 1) chunk-size) 0)
 																				  2
 																				  ;heightmap-colors
 																				  )
@@ -624,9 +625,9 @@
 													 )
 
 											 
-					 (dotimes (i (floor (tree-density (* zone 2 20) (* zone2 20 2))))
-						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
-								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+					 (dotimes (i (floor (tree-density (* zone chunk-size) (* zone2 chunk-size))))
+						($ let ((x (+ (math:random 0.0 chunk-size) (* zone chunk-size)))
+								  (y (+ (math:random 0.0 chunk-size) (* zone2 chunk-size)))
 								  (s (math:random 1.0 1.3))))
 						(when (and (> (heightmap x y) -4) (< (heightmap x y) 63))
 						  (offset  x (heightmap x y) y
@@ -639,8 +640,8 @@
 						))
 					 
 					 (dotimes (i 10)
-						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
-								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+						($ let ((x (+ (math:random 0.0 chunk-size) (* zone chunk-size)))
+								  (y (+ (math:random 0.0 chunk-size) (* zone2 chunk-size)))
 								  (s1 (math:random 0.5 3.3))
 								  (s2 (math:random 0.5 3.3))
 								  (s3 (math:random 0.5 3.3))
@@ -659,8 +660,8 @@
 						)
 
 					 (dotimes (i 3)
-						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
-								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+						($ let ((x (+ (math:random 0.0 chunk-size) (* zone chunk-size)))
+								  (y (+ (math:random 0.0 chunk-size) (* zone2 chunk-size)))
 								  (s1 (math:random 4.5 8.3))
 								  (s2 (math:random 4.5 8.3))
 								  (s3 (math:random 4.5 8.3))
@@ -679,8 +680,8 @@
 
 						)
 					 (dotimes (i 3)
-						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
-								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+						($ let ((x (+ (math:random 0.0 chunk-size) (* zone chunk-size)))
+								  (y (+ (math:random 0.0 chunk-size) (* zone2 chunk-size)))
 								  (s1 (math:random 4.5 8.3))
 								  (s2 (math:random 4.5 8.3))
 								  (s3 (math:random 4.5 8.3))
@@ -702,8 +703,8 @@
 						! dotimes (j 3)
 						
 						($ let ((colors '((0.3 0.3 0.8) (0.8 0.8 0.3) (0.8 0.3 0.3)))
-								  (x (+ (math:random -20.0 20.0) (* zone 20 2)))
-								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+								  (x (+ (math:random 0.0 chunk-size) (* zone chunk-size)))
+								  (y (+ (math:random 0.0 chunk-size) (* zone2 chunk-size)))
 								  (s1 (math:random 0.5 1.3))
 								  (s2 (math:random 0.5 1.3))
 								  (s3 (math:random 0.5 1.3))
@@ -719,8 +720,8 @@
 
 					 (dotimes (i 10)
 						
-						($ let ((x (+ (math:random -20.0 20.0) (* zone 20 2)))
-								  (y (+ (math:random -20.0 20.0) (* zone2 20 2)))
+						($ let ((x (+ (math:random 0.0 chunk-size) (* zone chunk-size)))
+								  (y (+ (math:random 0.0 chunk-size) (* zone2 chunk-size)))
 								  (z (+ 0.2 (heightmap x y)))
 								  ))
 						($ when (> z -2.0))
@@ -734,7 +735,7 @@
 
 							 (offset (* zone 20 2) -4 (* zone2 20 2)
 								($ rgb 0.3 0.3 0.7)
-								($ scale 40 10 40)
+								($ scale chunk-size 10 chunk-size)
 								(tile)
 								)
 					
@@ -742,11 +743,11 @@
 					(dotimes (i (length assets.wisps))
 					  ($ let ((wisp (nth assets.wisps i))
 								 (x (+ (math:random -0.1 0.1)
-										 (math:nonrandom (+ zone (* 13 zone2) (* i 19)) -20.0 20.0)
-										 (* zone 20 2)))
+										 (math:nonrandom (+ zone (* 13 zone2) (* i 19)) 0.0 chunk-size)
+										 (* zone chunk-size)))
 								 (y (+ (math:random -0.1 0.1)
-										 (math:nonrandom (+ zone (* 13 zone2) (* i 19)) -20.0 20.0)
-										 (* zone2 20 2)))
+										 (math:nonrandom (+ zone (* 13 zone2) (* i 19)) 0.0 chunk-size)
+										 (* zone2 chunk-size)))
 								  (z (+ 0.2 (heightmap x y)))
 								 ))
 					  
@@ -800,8 +801,6 @@
 )
 
 
-
-
 (defun modelling-loop ()
   (set time-component (+ time-component 0.01))
   (let ((shader (shader:get-default)))
@@ -818,8 +817,6 @@
 
   (when (hashmap-get keydown 'key:s)
     (set yrot (+ yrot 0.01)))
-
-
 
   (key:clear-events)
   
@@ -838,18 +835,15 @@
 		($ rotation xrot 0 1 0)
 		;($ offset 0 -2 0)
 		(progn ;bake
-		  ($ scale 0.1 0.1 0.1)
-		  (offset -1000 (* 10 (+ 0 (math:sin (* 10 time-component)))) -1000
-			(rgb 0 0 1
-				  (scale 2000 1 2000
-							;(tile)
-							)))
-			
-
+		  ($ scale 1 1 1)
+		  (rgb 1 1 1
+				 
+				 )
 		  (bake
-					 
-			(rgb 1 1 1
-			(draw
+			(rgb 1 0 1
+				  
+				  
+			(when t (draw
 			 
 			 (gen-heightmap heightmap
 										 (+ (* -20 40))
@@ -864,7 +858,7 @@
 
 											 ))
 
-										 )))
+										 ))))
 			
 													 ;(tree)
 													 ;(cultist-modelling))
@@ -878,14 +872,7 @@
 
 (animation-loop)
 ;(modelling-loop)
-(defvar triangle (polygon:new-points
-						 (list -0.5 -0.5 0
-						 0.2 -0.5 0
-						 -0.2 0.2 0
-						 0.2 0.2 0)
-						 (list 4 5 6 7)
-						 (list 1 0 1 1 1 0 0 1 1 1 1 0)
-						 ))
+
 (defvar model1 0)
 (set xrot 1.0)
 (defvar zoomt -10)
