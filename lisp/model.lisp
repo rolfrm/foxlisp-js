@@ -64,17 +64,17 @@
 (defvar model::baked-models (makehashmap))
 (defun pushvec(array vec index)
   (set index (* index 3))
-  (setnth array index (th vec 0))
-  (setnth array (+ index 1) (th vec 1))
-  (setnth array (+ index 2) (th vec 2))
+  (set (th array index) (th vec 0))
+  (set (th array (+ index 1)) (th vec 1))
+  (set (th array (+ index 2)) (th vec 2))
   )
 
 (defun pushvec2(dst src dst-index src-index)
   (set dst-index (* dst-index 3))
   (set src-index (* src-index 3))
-  (setnth dst dst-index (th src src-index))
-  (setnth dst (+ dst-index 1) (th src (+ 1 src-index)))
-  (setnth dst (+ dst-index 2) (th src (+ 2 src-index)))
+  (set (th dst dst-index) (th src src-index))
+  (set (th dst (+ dst-index 1)) (th src (+ 1 src-index)))
+  (set (th dst (+ dst-index 2)) (th src (+ 2 src-index)))
   )
 
 
@@ -118,8 +118,8 @@
 								
 							 (dotimes (i 0 (length model-verts) 3)
 								(dotimes (j 3)
-								  (setnth result (+ (* 3 k) j) (nth model-verts (+ j i)))
-								  (setnth result-color (+ (* 3 k) j) (nth vert-color (+ i j)))
+								  (set (th result (+ (* 3 k) j)) (th model-verts (+ j i)))
+								  (set (th result-color (+ (* 3 k) j)) (th vert-color (+ i j)))
 								  )
 								(incf k)
 								)
@@ -564,20 +564,39 @@
   ))
 
 (defun model:sample2d(x y)
-  (th model::noisemap  (op_and 0x1FFF (+ (* 659 (floor x)) (* 1069 (floor y))))))
+  (th model::noisemap (op_and 0x1FFF (+ (* 659 (floor x)) (* 1069 (floor y))))))
+
+
+
+(defmacro interpolate(x1 x2 mu)
+  `(+ (* ,x1 (- 1 ,mu)) (* ,x2 ,mu))
+  )
+
+(defun cosine-interpolate(x1 x2 mu)
+  (interpolate x1 x2 (* (- 1.0 (math:cos (* mu math:pi))) 0.5))
+  )
+
+(defmacro cinterpolate(x1 x2 mu)
+  `(interpolate ,x1 ,x2 (* (- 1.0 (math:cos (* ,mu math:pi))) 0.5))
+  )
+
+(defun soft-interpolate (x1 x2 mu)
+  (cosine-interpolate x1 x2 mu)
+)
 
 (defun model:2dnoise(x y)
   (let ((bx (floor x))
 		  (by (floor y))
 		  (ax (- x bx))
+		  (axcos (* (- 1.0 (math:cos (* ax math:pi))) 0.5))
 		  (ay (- y by))
 		  (a1 (model:sample2d x y))
 		  (a2 (model:sample2d (+ x 1) y))
 		  (a3 (model:sample2d x  (+ y 1)))
 		  (a4 (model:sample2d (+ x 1) (+ y 1)))
-		  (p1 (+ (* a1  (- 1.0 ax)) (* a2 ax)))
-		  (p2 (+ (* a3  (- 1.0 ax)) (* a4 ax)))
+		  (p1 (interpolate a1 a2 axcos))
+		  (p2 (interpolate a3 a4 axcos))
 		  )
 	 
-	 (+ (* p1 (- 1.0 ay)) (* p2 ay))))
+	 (cinterpolate p1 p2 ay)))
 	 

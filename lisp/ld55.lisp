@@ -230,13 +230,15 @@
   (max v1 (min v v2)))
 
 (defun heightmap-flatness (x y)
-  (clamp 0.1 (+ 1 (* 2 (model:2dnoise (* 0.004 x) (* 0.004 y)))) 1.0))
+  ;(clamp 0.1 (+ 1 (* 2 (model:2dnoise (* 0.004 x) (* 0.004 y)))) 1.0)
+  1.0
+  )
 (defun tree-density (x y)
   (* (heightmap-flatness x y) 10.0)
   )
 
 (defun heightmap (x y)
-  ($ let ((flatness (clamp 0.0 (+ 1 (* 2 (model:2dnoise (* 0.004 x) (* 0.004 y)))) 1.0))))
+  ($ let ((flatness (heightmap-flatness x y))))
   
   (max
 	(hill x y 0 0 10 2)
@@ -251,9 +253,9 @@
 	;(* 20.0 (+ (model:noisef (+ map-seed (* x 0.025))) (model:noisef ! + map-seed (* y 0.025))))
 	;(* 40.0 (+ (model:noisef (+ map-seed (* x 0.0125))) (model:noisef ! + map-seed (* y 0.0125))))
 	;(* 2.0 ! model:2dnoise (* 0.3 x) (* 0.3 y))
-	;(* 4.0 ! model:2dnoise (* 0.1 x) (* 0.1 y))
-	;(* 4.0 ! model:2dnoise (* 0.07 x) (* 0.07 y))
-	;(* 4.0 ! model:2dnoise (* 0.035 x) (* 0.035 y))
+	(* 1.0 ! model:2dnoise (* 0.2 x) (* 0.2 y))
+	(* 2.0 ! model:2dnoise (* 0.07 x) (* 0.07 y))
+	(* 2.0 ! model:2dnoise (* 0.035 x) (* 0.035 y))
 	(* (* flatness 2.0) ! model:2dnoise (* 0.064 x) (* 0.064 y))
 	(* (* flatness 4.0) ! model:2dnoise (* 0.032 x) (* 0.032 y))
 	(* (* flatness 8.0) ! model:2dnoise (* 0.016 x) (* 0.016 y))
@@ -271,6 +273,23 @@
 	(* 32.0 ! model:2dnoise (* 0.002 x) (* 0.002 y))
 	(* 32.0 ! model:2dnoise (* 0.001 x) (* 0.001 y))
 	)
+)))
+(defun heightmap2 (x y)
+  ($ let ((flatness (heightmap-flatness x y))))
+  
+  (max
+	;(hill x y 0 0 10 100)
+  (+	
+
+	;(* 2.0 ! model:2dnoise (* 0.07 x) (* 0.07 y))
+	;(* 2.0 ! model:2dnoise (* 0.035 x) (* 0.035 y))
+	;(* (* flatness 2.0) ! model:2dnoise (* 0.064 x) (* 0.064 y))
+	;(* (* flatness 4.0) ! model:2dnoise (* 0.032 x) (* 0.032 y))
+	;(* (* flatness 8.0) ! model:2dnoise (* 0.016 x) (* 0.016 y))
+	;(* (* flatness 10.0) ! model:2dnoise (* 0.032 x) (* 0.032 y))
+	(* (* flatness 20.0) ! model:2dnoise (* 0.016 (+ 65512.31 x)) (* 0.016 (+ y 9535153.32)))
+	(* (* flatness 50.0) ! model:2dnoise (* 0.008 (+ 312321.54 x)) (* 0.008 (+ y 355311.321)))
+
 )))
 
 (defun heightmap-colors(x y z)
@@ -835,7 +854,7 @@
 		($ rotation xrot 0 1 0)
 		;($ offset 0 -2 0)
 		(progn ;bake
-		  ($ scale 1 1 1)
+		  ($ scale 0.4 0.4 0.4)
 		  (rgb 1 1 1
 				 
 				 )
@@ -846,14 +865,15 @@
 			(when t (draw
 			 
 			 (gen-heightmap heightmap
-										 (+ (* -20 40))
-										 (+ (* -20 40))
-										 (+ (* (+ 20 1) 40) -1)
-										 (+ (* (+ 20 1) 40) 0)
-										 1
+										 (+ (* -20 10))
+										 (+ (* -20 10))
+										 (+ (* (+ 20 1) 10) -1)
+										 (+ (* (+ 20 1) 10) 0)
+										 0.5
 										 (lambda (x y z)
+											
 											(vec3:mul-scalar
-											 (vec3:new 1 1 1)
+											 (vec3:new 0.2 0.0 (* 6.0 (+ 1.0 (math:cos (* 2.0 y)))))
 											 (* (+ y 50) 0.01)
 
 											 ))

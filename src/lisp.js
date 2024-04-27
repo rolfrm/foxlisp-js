@@ -474,11 +474,19 @@ function lispCompile2(code) {
     case setSym:
         const [variable, value] = operands;
 		  let result = lispCompile(value)
+		  let leftHand = variable.jsname
+		  if(Array.isArray(variable)){
+				leftHand = lispCompile(variable)
+				if(isScope(leftHand)){
+					 throw "left hand of set cannot be a scope"
+				}
+		  }
+		  
 		  if(isScope(result)){
-				result = result.replaceAll(value_marker, value_marker + variable.jsname + "=")
+				result = result.replaceAll(value_marker, value_marker + leftHand + "=")
 				
 		  }else{
-            result = variable.jsname + "=" + result;
+            result = leftHand + "=" + result;
 		  }
 		  return result;
     case letSym: {

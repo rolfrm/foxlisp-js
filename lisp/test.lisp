@@ -365,3 +365,7 @@ asd ")
 		(sdf (lambda (c) (sphere c (vec3:new 0 0 0) 1.0))))
   (sdf-points pts sizes sdf (vec3:new 0 0 0) 5.0)
   (println pts))
+
+(let ((test-items (list 1 2 3 4 5 6)))
+  (set (th test-items 3) 10)
+  (assert-eq (nth test-items 3) 10))
