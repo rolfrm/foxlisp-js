@@ -75,7 +75,7 @@ class ParserCondition {
   
     if (input.length > 0) {
       const nextchr = input[0];
-      if (/\s|\)|\(/.test(nextchr)) {
+        if (/\s|;|\)|\(/.test(nextchr)) {
   
       } else {
         return [null, null];

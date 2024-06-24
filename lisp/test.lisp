@@ -31,6 +31,8 @@ world")))
 (assert-eq 6 (* 1 2 3))
 (assert-eq 1 (*))
 (assert-eq 0 (+))
+(assert-eq 5 (+ 3;
+					 2))
 
 (println (lambda (x y &rest args) (list x y args)))
 
