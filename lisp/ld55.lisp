@@ -549,12 +549,12 @@
 				 (offset 0.0 -5.0 -10.0
 							
 				 (rotate -0.02 1 0 0
-            (rotate view-angle 0 1 0
+            (rotate-y view-angle
             
 							 (offset (- (vec3:x player-loc)) (- (vec3:y player-loc))  (- (vec3:z player-loc))
 
               (offset (vec3:x player-loc) (vec3:y player-loc) (vec3:z player-loc)
-                ($ rotate xrot 0 1 0)
+                ($ rotate-y xrot)
                 (high-bird player-dist) 
 					 )
 				  

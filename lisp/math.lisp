@@ -247,21 +247,7 @@
 
 	 ))
 
-(defun mat4:rotateX (m rad)
-  (let ((cosA (math:cos rad))
-        (sinA (math:sin rad))
-		  (m3 (mat4:clone m))
-		  (m2 (mat4::pop-or-create)))
-	 (mat4::assign m2 
-     1 0 0 0
-     0 cosA sinA 0
-     0 (- 0 sinA) cosA 0
-     0 0 0 1)
-	 
-	 (mat4:multiplyi m m3 m2)
-	 (mat4:dispose m3)
-	 (mat4:dispose m2)
-	 ))
+
 (defun mat4::isunity(expr)
   expr.unity)
 (defmacro mat4:multiply! (m &rest args)
@@ -298,16 +284,38 @@
 	  0
 	  )))
 
-(defun mat4:rotateX (m rad)
-  (const ((cosA (math:cos rad))
-        (sinA (math:sin rad))
-		  )
-	 (mat4:multiply! m
-     1 0 0 0
-     0 cosA sinA 0
-     0 (- 0 sinA) cosA 0
-     0 0 0 1)
+
+(defun mat4:rotate-x (m rad)
+  (let ((cosA (math:cos rad))
+        (sinA (math:sin rad)))
+	 (mat4:multiply! m 
+						  1 0 0 0
+						  0 cosA sinA 0
+						  0 (- 0 sinA) cosA 0
+						  0 0 0 1)
 	 ))
+
+(defun mat4:rotate-y (m rad)
+  (let ((cosA (math:cos rad))
+        (sinA (math:sin rad)))
+	 (mat4:multiply! m 
+						  cosA 0 sinA 0
+						  0 1 0 0
+						  (- 0 sinA) 0 cosA 0
+						  0 0 0 1)
+	 ))
+
+(defun mat4:rotate-z (m rad)
+  (let ((cosA (math:cos rad))
+        (sinA (math:sin rad)))
+	 (mat4:multiply! m 
+						  cosA sinA 0 0
+						  (- 0 sinA) cosA 0 0
+						  0 0 1 0
+						  0 0 0 1)
+	 ))
+
+
 
 (defun mat4:translate (m x y z)
   (mat4:multiply! m
@@ -322,6 +330,14 @@
             0 y 0 0 
             0 0 z 0 
             0 0 0 1))
+
+
+(defun mat4:scale (m x y z)
+  (mat4:multiply! m
+						x 0 0 0 
+						0 y 0 0 
+						0 0 z 0 
+						0 0 0 1))
 
 
 (defun mat4:print (m)

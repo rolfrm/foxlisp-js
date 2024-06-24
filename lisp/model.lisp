@@ -15,6 +15,36 @@
        (set model:transform prev-rotation)
 		 ))
 
+
+(defmacro model:rotate-x (angle &rest body)
+    `(let ((prev model:transform))
+       (set model:transform (mat4:clone model:transform))
+       (mat4:rotate-x model:transform (* ,angle 2 math:pi))
+       ,@body
+		 (mat4:dispose model:transform)
+		 (set model:transform prev)
+		 
+		 ))
+
+(defmacro model:rotate-y (angle &rest body)
+    `(let ((prev model:transform))
+       (set model:transform (mat4:clone model:transform))
+       (mat4:rotate-y model:transform (* ,angle 2 math:pi))
+       ,@body
+		 (mat4:dispose model:transform)
+       (set model:transform prev)
+		 ))
+
+(defmacro model:rotate-z (angle &rest body)
+    `(let ((prev model:transform))
+       (set model:transform (mat4:clone model:transform))
+       (mat4:rotate-z model:transform (* ,angle 2 math:pi))
+       ,@body
+		 (mat4:dispose model:transform)
+       (set model:transform prev)
+		 ))
+
+
 (defun float32-array-flatten (v)
   (let ((size 0)
 		  (k 0)
@@ -235,21 +265,13 @@
 	  (set model:transform prev)
     ))
 
-(defmacro model:offset0 (x y z &rest body)
-  `(progn
-	  (mat4:translatei model:transform ,x ,y ,z)
-	  ,@body
-	  (mat4:translatei model:transform (- 0 ,x) (- 0 ,y) (- 0 ,z))
-	  ))
-
-
 (defmacro model:scale (x y z &rest body)
-    `(let ((m (mat4:scaling  ,x ,y ,z))
-          (prev-model model:transform))
-        
-        (set model:transform (mat4:multiply model:transform m))
-        ,@body
-        (set model:transform prev-model)))
+  `(let ((prev model:transform))
+     (set model:transform (mat4:clone model:transform))
+	  (mat4:scale model:transform ,x ,y ,z)
+     ,@body
+	  (mat4:dispose model:transform)
+     (set model:transform prev)))
 
 (defmacro model:with-color (r g b &rest body)
     `(let ((prev-color model:color))
