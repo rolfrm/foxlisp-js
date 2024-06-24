@@ -347,7 +347,7 @@
 
 	 ($ let ((cultist-npc (nth cultists i)) (pos (car cultist-npc))))
 	 ($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
-	 ($ rotation (cadr cultist-npc) 0 1 0)
+	 ($ rotate (cadr cultist-npc) 0 1 0)
 	 (cultist)
 	 )
   )
@@ -548,13 +548,13 @@
         (rgb 1 0 1 
 				 (offset 0.0 -5.0 -10.0
 							
-				 (rotation -0.02 1 0 0
-            (rotation view-angle 0 1 0
+				 (rotate -0.02 1 0 0
+            (rotate view-angle 0 1 0
             
 							 (offset (- (vec3:x player-loc)) (- (vec3:y player-loc))  (- (vec3:z player-loc))
 
               (offset (vec3:x player-loc) (vec3:y player-loc) (vec3:z player-loc)
-                ($ rotation xrot 0 1 0)
+                ($ rotate xrot 0 1 0)
                 (high-bird player-dist) 
 					 )
 				  
@@ -807,14 +807,7 @@
 							  (offset x (+ 1 z) y
 										 (scale 0.2 0.2 0.2
 												  (upcube))
-										 ))
-						)
-		 					 
-							 
-							 )
-					  
-
-					  ))
+										 ))))))
 
 					(offset 50 20 1
 								($ rgb 0.2 0.2 0.2)
@@ -866,8 +859,8 @@
 						(sphere12))
 		($ offset 0 0 -80)
 		($ scale 1 1 1)
-		($ rotation (+ -0.2 yrot) 1 0 0)
-		($ rotation xrot 0 1 0)
+		($ rotate (+ -0.2 yrot) 1 0 0)
+		($ rotate xrot 0 1 0)
 		;($ offset 0 -2 0)
 		(progn ;bake
 		  ($ scale 0.4 0.4 0.4)
@@ -986,7 +979,7 @@
   ! let ((shader ! shader:get-sdf)
 			(perspective (mat4:perspective 1.2 1.0 0.01 2000.0))
 			(tr (mat4:translate 0 0 zoomt))
-			(m (mat4:multiply tr (mat4:multiply rotm (mat4:scale 0.4 0.4 0.4))))
+			(m (mat4:multiply tr (mat4:multiply rotm (mat4:scaling 0.4 0.4 0.4))))
 			)
 
   

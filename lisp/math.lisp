@@ -52,36 +52,64 @@
 )
 
 (defun mat4:new (&rest args)
-    (if (eq 0 (length args))
-        (float32-array-sized 16)
-        (float32-array-from args)
-    )
-)
+  (if (eq 0 (length args))
+      (float32-array-sized 16)
+      (float32-array-from args)))
+
+(defvar mat4::stack (list))
+
+(defun mat4:dispose (m)
+  (when (< (len mat4::stack) 100)
+	 (push mat4::stack m)))
+
+(defun mat4:clone(matrix)
+  (if (len mat4::stack)
+	 (let ((r (pop mat4::stack)))
+		(r.set matrix)
+		r)
+	 (Float32Array.from matrix)))
+
+(defun mat4::pop-or-create()
+  (if (length mat4::stack)
+		(pop mat4::stack)
+		(float32-array-sized 16)))
+
+(defmacro mat4::assign(matrix &rest args)
+  `(let ((m ,matrix))
+	  
+	  ,@(let ((lst (list))
+				 (index 0))
+			(for-each item args
+						 (push lst `(set (th m ,index) ,item))
+						 (incf index))
+			(dotimes (i (- 16 index))
+			  			 (push lst `(set (th m ,index) 0.0))
+						 (incf index))
+			lst)))
 
 (defun mat3x4:new()
-  (float32-array-sized 12)
-  )
+  (float32-array-sized 12))
 
 (defun mat4:identity()
     (mat4:new 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1))
 
 (defmacro mat4:get (m row col)
-    `(th ,m (+ ,row (* ,col 4)))
-	 )
+    `(th ,m (+ ,row (* ,col 4))))
 
 (defmacro mat4:set (m row col val)
   `(set (th ,m (+ ,row (* ,col 4))) ,val))
 
-(defun mat4:multiply (a b)
-  
-  (let ((result (mat4:new)))
-    
-    (dotimes! (i 4)
-      (dotimes! (j 4)
-        (let ((sum 0.0))
-          (dotimes! (k 4)
-            (set sum (+ sum (* (mat4:get a i k) (mat4:get b k j)))))
-          (mat4:set result i j sum))))
+
+(defun mat4:multiply (ia ib)
+  (let ((result  (%js "new Float32Array(16)"))
+		  (a ia)
+		  (b ib))
+    (dotimes! (j 4)
+	  (dotimes! (i 4)
+		 (let ((sum 0.0))
+         (dotimes! (k 4)
+				(set sum (+ sum (* (mat4:get a i k) (mat4:get b k j)))))
+         (mat4:set result i j sum))))
     result))
 
 (defun mat4:multiplyi (result a b)
@@ -93,8 +121,10 @@
 								(mat4:set result i j sum))))
   0)
 
-
-
+(defmacro mat4:* (&rest matrixes)
+  (if (length (cdr matrixes))
+		`(mat4:multiply ,(car matrixes) (mat4:* ,@(cdr matrixes)))
+		(car matrixes)))
 (defun mat4:apply (m v in-place)
   (let ((w (or (+ (* (mat4:get m 3 0) (vec3:x v)) 
 						(* (mat4:get m 3 1) (vec3:y v)) 
@@ -123,7 +153,6 @@
 			 (setnth v 2 z))
 		  (vec3:new x y z))))
 
-
 ;; todo: w is generally always 1 for affine transformations. 
 (defvar code::mat4:applyn "(m, v)=>{
     const verts = v.length;
@@ -144,12 +173,13 @@
 ")
 (defvar mat4:applyn (js_eval code::mat4:applyn))
 
-
-
 (defun mat4:translation (x y z)
   (mat4:new 1 0 0 0 0 1 0 0 0 0 1 0 x y z 1))
-(defun mat4:translate (x y z)
-    (mat4:new 1 0 0 0 0 1 0 0 0 0 1 0 x y z 1))
+
+(defun mat4:translatei (m x y z)
+  (set (th m 12) (+ (* (th m 0) x) (* (th m 4) y) (* (th m 8) z) (th m 12)))
+  (set (th m 13) (+  (* (th m 1) x) (* (th m 5) y) (* (th m 9) z) (th m 13)))
+  (set (th m 14) (+ (* (th m 2) x) (* (th m 6) y) (* (th m 10) z) (th m 14 ))))
 
 (defun mat4:perspective (fov aspect near far)
   (let ((fov-rad fov)
@@ -184,11 +214,115 @@
      (- (* (vec3:z axis-vector) (vec3:x axis-vector) invCosA) (* (vec3:y axis-vector) sinA)) (+ (* (vec3:z axis-vector) (vec3:y axis-vector) invCosA) (* (vec3:x axis-vector) sinA)) (+ cosA (* (vec3:z axis-vector) (vec3:z axis-vector) invCosA)) 0
      0 0 0 1)))
 
-(defun mat4:scale (x y z)
+(defun mat4:rotate (m angle axis-vector)
+  (set axis-vector (vec3:normalize axis-vector))
+  (let ((rad angle) 
+         (cosA (math:cos rad))
+         (sinA (math:sin rad))
+        (invCosA (- 1 cosA))
+		  (m3 (mat4:clone m))
+		  (m2 (mat4::pop-or-create)))
+	 (mat4::assign m2 
+						(+ cosA (* (vec3:x axis-vector) (vec3:x axis-vector) invCosA))
+						(- (* (vec3:x axis-vector) (vec3:y axis-vector) invCosA) (* (vec3:z axis-vector) sinA))
+						(+ (* (vec3:x axis-vector) (vec3:z axis-vector) invCosA) (* (vec3:y axis-vector) sinA))
+						0
+						
+						(+ (* (vec3:y axis-vector) (vec3:x axis-vector) invCosA)
+							(* (vec3:z axis-vector) sinA))
+						(+ cosA (* (vec3:y axis-vector) (vec3:y axis-vector) invCosA))
+						(- (* (vec3:y axis-vector) (vec3:z axis-vector) invCosA) (* (vec3:x axis-vector) sinA))
+						0
+						
+						(- (* (vec3:z axis-vector) (vec3:x axis-vector) invCosA) (* (vec3:y axis-vector) sinA))
+						(+ (* (vec3:z axis-vector) (vec3:y axis-vector) invCosA) (* (vec3:x axis-vector) sinA))
+						(+ cosA (* (vec3:z axis-vector) (vec3:z axis-vector)
+									  invCosA))
+						0
+						0 0 0 1)
+
+	 (mat4:multiplyi m m3 m2)
+	 (mat4:dispose m3)
+	 (mat4:dispose m2)
+
+	 ))
+
+(defun mat4:rotateX (m rad)
+  (let ((cosA (math:cos rad))
+        (sinA (math:sin rad))
+		  (m3 (mat4:clone m))
+		  (m2 (mat4::pop-or-create)))
+	 (mat4::assign m2 
+     1 0 0 0
+     0 cosA sinA 0
+     0 (- 0 sinA) cosA 0
+     0 0 0 1)
+	 
+	 (mat4:multiplyi m m3 m2)
+	 (mat4:dispose m3)
+	 (mat4:dispose m2)
+	 ))
+(defun mat4::isunity(expr)
+  expr.unity)
+(defmacro mat4:multiply! (m &rest args)
+  (let ((calls (list))
+		  (loads (list))
+		  (used-cells (list 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+		  )
+	  (dotimes (j 4)
+	    (dotimes (i 4)
+		  (let ((karg (list)))
+		  (dotimes (k 4)
+			 (let ((arg (nth args (+ k (* j 4)))))
+				(unless (eq arg 0)
+				  (let ((expr `(* ,(string->symbol (concat "m" (+ i (* 4 k)))) ,arg)))
+					 (when (eq arg 1)
+						(set expr.unity 1))
+					 (set expr.reads (+ i (* 4 k)))
+					 (push karg expr
+							 )))))
+		  (unless  (and (eq (length karg) 1)
+							 (let ((expr (car karg)))
+								(and expr.unity (eq expr.reads (+ i (* j 4))))))
+			 (for-each x karg
+						  (setnth used-cells x.reads 1)
+						  )
+			 (push calls `(set (th m ,(+ i (* j 4))) (+ ,@karg)))))))
+	  (dotimes (i 16)
+		 (when (nth used-cells i)
+			(push loads `(,(string->symbol (concat "m" i)) (th ,m ,i)))))
+	  
+	 (println '>>>>> 'multiply!  used-cells loads)
+  `(const (,@loads)
+	  ,@calls
+	  0
+	  )))
+
+(defun mat4:rotateX (m rad)
+  (const ((cosA (math:cos rad))
+        (sinA (math:sin rad))
+		  )
+	 (mat4:multiply! m
+     1 0 0 0
+     0 cosA sinA 0
+     0 (- 0 sinA) cosA 0
+     0 0 0 1)
+	 ))
+
+(defun mat4:translate (m x y z)
+  (mat4:multiply! m
+     1 0 0 0
+     0 1 0 0
+     0 0 1 0
+     x y z 1)
+	 )
+
+(defun mat4:scaling (x y z)
   (mat4:new x 0 0 0 
             0 y 0 0 
             0 0 z 0 
             0 0 0 1))
+
 
 (defun mat4:print (m)
   (let ((outstr ""))

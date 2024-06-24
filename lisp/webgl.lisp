@@ -119,16 +119,16 @@
 (defvar xrot 0.0)
 (defvar cam-loc (vec3:new 0 0 0))
 (defun animation-loop ()
-    (set time-component (+ time-component 0.01))
+    (set time-component (+ time-component 0.002))
     (let ((shader (shader:get-default)))
         (shader:use shader)
     )
     (when (hashmap-get keydown 'key:a)
-        (set xrot (- xrot 0.1))
+        (set xrot (- xrot 0.01))
         (println xrot)
     )
     (when (hashmap-get keydown 'key:d)
-        (set xrot (+ xrot 0.1))
+        (set xrot (+ xrot 0.01))
         (println xrot)
     )
 
@@ -155,29 +155,32 @@
         (rgb 1 0 1 
 				 (offset 0.0 -2.0 -5.0
 							
-				 (rotation -0.2 1 0 0
-            (rotation (- xrot) 0 1 0
+				 (rotate -0.1 1 0 0
+            (rotate (- xrot) 0 1 0
             
               (offset (- (vec3:x cam-loc)) (- (vec3:y cam-loc))  (- (vec3:z cam-loc))
 							 (scale -500 -500 -500
-									  ($ rgb 0.5 0.9 1.0)
+									  ($ rgb 0.5 0.9 0.0)
 									  (sphere12))
 
               (offset (vec3:x cam-loc) (vec3:y cam-loc) (vec3:z cam-loc)
-                ($ rotation xrot 0 1 0)
+                ($ rotate xrot 0 1 0)
                 ($ offset 0 1 -1)
-                ($ rgb 1 1 0.2)
-                 (sphere12) 
+                ($ rgb 1 0.4 0.2)
+                (sphere12)
+					 (offset -3 0 0
+					 (rotate time-component 0 0 1
+								(offset 5 0 0 (sphere12))))
               )
 
-               (rotation time-component 0 1 0
+               (rotate time-component 0 1 0
                    
 
                 (offset 0 3 3
                       (rgb 1 0 0
                          (dotimes (i 2)
                            ($ scale 1 1 (if (eq i 0) 1 -1))
-                           ($ rotation (math:sin (* 10 time-component)) 1 0 0) 
+                           ($ rotate (math:sin (* 10 time-component)) 1 0 0) 
 									($ offset 0 0 0.5)
 									($ rgb 0 0 1) 
 									($ scale 1 0.01 1)

@@ -15,3 +15,24 @@ function WriteCodeToLog(code) {
 }
 writeCodetoLog = WriteCodeToLog
 loadFileAsync = load_file;
+
+loadWat = null;
+
+const wabt = require('./extern/wabt.js');
+
+(async () => {
+    // Initialize wabt
+    const wabtModule = await wabt();
+
+    // Parse the WAT code to get a WABT module
+	 loadWat = function (watCode){
+		  
+		  const parsedWat = wabtModule.parseWat('inline', watCode, {});
+		  const {buffer} = parsedWat.toBinary({})
+		  const mod = new WebAssembly.Module(buffer);
+		  const instance = new WebAssembly.Instance(mod, {});
+		  return instance
+	 }
+
+	
+})();

@@ -91,7 +91,7 @@
   ;; beak
   (rgb 1 1 0.4
 		 ($ offset 0.8 -1 0)
-		 ($ rotation 0.25 0 0 1)
+		 ($ rotate 0.25 0 0 1)
 		 ($ scale 0.5 0.9 0.5
 			 (pyramid)))
 
@@ -106,7 +106,7 @@
 		 (offset 0.8 -0.3 0
 					($ scale 0.2 (* blink 0.35) 0.2)
 					($ bake)
-					($ rotation 0.25 0 0 1)
+					($ rotate 0.25 0 0 1)
 					
 					(model:tile-centered)))
 
@@ -130,7 +130,7 @@
 	 ($ offset 0 0 (+ (* i 0.8) -0.4))
 	 ($ rgb 1 1 0)
 	 ($ offset 0 -3 0)
-	 ($ rotation (* 0.1 (* (- i 0.5)) (math:sin (* 16 time))) 0 0 1)
+	 ($ rotate (* 0.1 (* (- i 0.5)) (math:sin (* 16 time))) 0 0 1)
 	 ($ scale 0.2 2 0.2)
 	 ( downcube))
 

@@ -5,14 +5,6 @@
     1 1 1)))
 (defvar model:transform (mat4:identity))
 (defvar model:color nil)
-(defmacro model:rotation (angle x y z &rest body)
-    `(let ((m (mat4:rotation (* ,angle 2 math:pi) (vec3:new ,x ,y ,z)))
-           (prev-rotation model:transform))
-        
-       (set model:transform (mat4:multiply model:transform m))
-       (progn ,@body)
-       (set model:transform prev-rotation)
-		 ))
 
 (defmacro model:rotate (angle x y z &rest body)
     `(let ((m (mat4:rotation (* ,angle 2 math:pi) (vec3:new ,x ,y ,z)))
@@ -183,7 +175,7 @@
                 (baked (list))
                 (baker (lambda (model) 
                     ;(println 'baking model)
-                    (push baked (list model model:transform model:color))
+                    (push baked (list model (mat4:clone model:transform) model:color))
                     ))
                   (current-drawer model:drawer)
                 )
@@ -234,35 +226,46 @@
     ))
 
 (defmacro model:offset (x y z &rest body)
-    `(let ((m (mat4:translation  ,x ,y ,z))
-          (prev-translation model:transform))
-        
-        (set model:transform (mat4:multiply model:transform m))
-        (progn ,@body)
-        (set model:transform prev-translation)
+  
+  `(let ((prev model:transform))
+	  (set model:transform (mat4:clone model:transform))
+     (mat4:translate model:transform ,x ,y ,z)
+     ,@body
+	  (mat4:dispose model:transform)
+	  (set model:transform prev)
     ))
+
+(defmacro model:offset0 (x y z &rest body)
+  `(progn
+	  (mat4:translatei model:transform ,x ,y ,z)
+	  ,@body
+	  (mat4:translatei model:transform (- 0 ,x) (- 0 ,y) (- 0 ,z))
+	  ))
+
+
 (defmacro model:scale (x y z &rest body)
-    `(let ((m (mat4:scale  ,x ,y ,z))
+    `(let ((m (mat4:scaling  ,x ,y ,z))
           (prev-model model:transform))
         
         (set model:transform (mat4:multiply model:transform m))
-        (progn ,@body)
-        (set model:transform prev-model)
-    ))
+        ,@body
+        (set model:transform prev-model)))
+
 (defmacro model:with-color (r g b &rest body)
     `(let ((prev-color model:color))
         (set model:color (vec3:new ,r ,g ,b))
-        (progn ,@body)
-        (set model:color prev-color)
-    ))
+        ,@body
+        (set model:color prev-color)))
 
 (defmacro model:rgb (r g b &rest body)
-    `(model:with-color ,r ,g ,b ,@body)
-)
+    `(model:with-color ,r ,g ,b ,@body))
 
 (defmacro model:rgb2 (lst &rest body)
-    `(model:with-color (vec3:x ,lst) (vec3:y ,lst) (vec3:z ,lst) ,@body)
-)
+  `(model:with-color
+		 (vec3:x ,lst)
+	  (vec3:y ,lst)
+	  (vec3:z ,lst)
+	  ,@body))
 
 
 (defvar model:drawer (lambda (m) (println 'no-drawer-model: m)))
@@ -270,69 +273,51 @@
 (defmacro model:with-draw (f &rest body)
    `(let ((current-drawer model:drawer))
     (set model:drawer ,f)
-    (progn ,@body)
-    (set model:drawer current-drawer)
-   )
-)
+    ,@body
+    (set model:drawer current-drawer)))
 
 (defun model:draw (model)
-    ;(println 'drawdrawdraw model)
-    (model:drawer model)
-)
+    (model:drawer model))
 
 (defun model:cube ()
     (model:bake 
     (dotimes (i 4)
-        (model:rotation (* i 0.25) 1.0 0.0 0.0
+        (model:rotate (* i 0.25) 1.0 0.0 0.0
             (model:draw model:square))
     )
     (dotimes (i 2)
-        (model:rotation (+ (* i 0.5) 0.25) 0.0 1.0 0.0
-            (model:draw model:square))
-    ))
-)
+        (model:rotate (+ (* i 0.5) 0.25) 0.0 1.0 0.0
+							 (model:draw model:square)))))
 
 (defun model:red-cube ()
     (model:with-color 1.0 0.0 0.0
-        (model:cube)
-    )
-	 )
+        (model:cube)))
 
 (defun model:vertex-access (model)
   (if (eq (cadr model) :3d-triangle-strip)
 		(caddr model)
 		(if (eq (car model) 'polygon-strip-color)
 			 (cadr model)
-			 (raise "unable access vertexes") 
-		)
-
-  ))
+			 (raise "unable access vertexes"))))
 
 (defun model:color-access (model)
   (if (eq (cadr model) :3d-triangle-strip)
 		nil
 		(if (eq (car model) 'polygon-strip-color)
 			 (caddr model)
-			 (raise "unable access vertexes") 
-		)))
-
+			 (raise "unable access vertexes"))))
 
 (defun model:vertex-process (model vertex-process)
   (let ((a (model:vertex-access model)))
 	 (dotimes (i 0 (length a) 3)
 		(let ((v (slice a i 3)))
-		  (vertex-process v)
-		  ))))
+		  (vertex-process v)))))
 
 (defun model:process-colors(model color-process base-color)
   (let ((a (model:vertex-color-access model)))
 	 (unless a
-		(set model (list 'polygon-strip-color (float32-array-from (model:vertex-access model))
-		
-
-  )))))
+		(set model (list 'polygon-strip-color (float32-array-from (model:vertex-access model)))))))
   
-
 (defun model::generate-sphere (radius steps)
   (let ((vertex-list (list))
          (step-phi (/ math:pi steps))
@@ -400,9 +385,7 @@
         (set vertices (concat vertices (list x y z x2 y2 z2)))
         )))
       )
-      (list 'polygon :3d-triangle-strip  vertices)
-      
-      ))
+      (list 'polygon :3d-triangle-strip  vertices)))
 
 (defun model:cylinder (radius height steps)
     (let ((vertices '())
@@ -421,25 +404,17 @@
             )
         )
         (set vertices (concat vertices (list (nth vertices 0) (nth vertices 1) half-height (nth vertices 3) (nth vertices 4) half-height (nth vertices 0) (nth vertices 1) (- half-height) (nth vertices 3) (nth vertices 4) (- half-height)))
-        (list 'polygon :3d-triangle-strip vertices)
-    )
-))
+        (list 'polygon :3d-triangle-strip vertices))))
 
 (defvar model::sphere12 (model::generate-sphere-2 8 8 1))
 (defvar model::sphere5 (model::generate-sphere-2 5 5 1))
 (defun model:sphere12 ()
-    ;(model:with-color 1 1 1
-    (model:bake 
-        (model:draw model::sphere12))
-	 )
-
-
+  (model:bake 
+   (model:draw model::sphere12)))
 
 (defun model:sphere ()
-    ;(model:with-color 1 1 1
     (model:bake 
-        (model:draw model::sphere12))
-)
+        (model:draw model::sphere12)))
 (defun model:sphere5 ()
     (model:bake 
         (model:draw model::sphere5)))
@@ -475,6 +450,7 @@
   ($ model:offset 0.0 0.5 0.0)
   ($ model:scale 0.5 0.5 0.5) 
   (model:cube))
+
 (defun model:downcube ()
   ($ model:bake)
   ($ model:offset 0.0 -0.5 0.0)
@@ -482,16 +458,16 @@
   (model:cube))
 
 (defun model:right-tile()
-  (model:offset 0.0 -0.0 -0.5
-    (model:tile)))
+  ($ model:offset 0.0 -0.0 -0.5)
+  (model:tile))
 
 (defun model:z-tile()
-  (model:offset -0.5 -0.0 -0.0
-    (model:tile)))
+  ($ model:offset -0.5 -0.0 -0.0)
+  (model:tile))
 
 (defun model:tile-centered ()
-  (model:offset -0.5 0.0 -0.5
-    (model:tile)))
+  ($ model:offset -0.5 0.0 -0.5)
+  (model:tile))
 
 (defvar model::fronttile '(polygon :3d-triangle-strip (0 0 0
 																		 1 0 0 
@@ -504,15 +480,15 @@
 (defun gen-heightmap (l x y x2 y2 step colorf)
   ! let ((vertexes (list)) (colors nil))
   (dotimes (i x (+ x2) step)
-	 	 (let ((len (length vertexes)))
-		(when (> len 0)
-		  (push vertexes (nth vertexes (- len 3)))
-		  (push vertexes (nth vertexes (- len 2)))
-		  (push vertexes (nth vertexes (- len 1)))
-	 	  (push vertexes (+ i step))
-		  (push vertexes (l (+ i step) y ))
-		  (push vertexes y)
-		  )
+	 (let ((len (length vertexes)))
+		($ when (> len 0))
+		(push vertexes (nth vertexes (- len 3)))
+		(push vertexes (nth vertexes (- len 2)))
+		(push vertexes (nth vertexes (- len 1)))
+	 	(push vertexes (+ i step))
+		(push vertexes (l (+ i step) y ))
+		(push vertexes y)
+		
 		)
 
 	 (dotimes (j y (+ y2 1) step)
