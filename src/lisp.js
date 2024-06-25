@@ -13,19 +13,20 @@ function issym(x){
 
 
 quotes = []
-quotes_lookup = new Map();
+quotes_lookup = {}
 function _getQuote(id) {
     return quotes[id]
 }
 getQuote = _getQuote
 function setQuote(newQuote){
-	 if(quotes_lookup.has(newQuote)) {
-		  return quotes_lookup.get(newQuote);
+	 let existing = quotes_lookup[newQuote]
+	 if(existing) {
+		  return existing
 	 }
     let id = quotes.length;
     quotes.length += 1
     quotes[id] = newQuote
-	 quotes_lookup.set(newQuote, id)
+	 quotes_lookup[newQuote] = id
     return id
 }
 
@@ -443,7 +444,7 @@ function lispCompile2(code) {
 					 }
 					 
 					 const id = setQuote(quoted)
-					 return `getQuote(${id})`
+					 return `quotes[${id}]`
 				}
 		  case quasiQuoteSym:
 				{
@@ -657,7 +658,10 @@ async function LispEvalBlock(code, file) {
 		  }
 
 		  // there are two ways of doing this, which may be the same
-		  eval?.("function currentEval() "+  js)
+		  let ncode = "function currentEval()" + js;
+		  console.log(ncode)
+		  eval?.(ncode)
+		  
 		  const result = currentEval();
 		  //const result = eval?.("() => " + js)()
 		  

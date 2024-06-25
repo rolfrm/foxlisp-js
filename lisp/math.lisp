@@ -69,7 +69,7 @@
 (defvar mat4::stack (list))
 
 (defun mat4:dispose (m)
-  (when (< (len mat4::stack) 100)
+  (when (< (len mat4::stack) 1000)
 	 (push mat4::stack m)))
 
 (defun mat4:clone(matrix)
@@ -77,7 +77,9 @@
 	 (let ((r (pop mat4::stack)))
 		(r.set matrix)
 		r)
-	 (Float32Array.from matrix)))
+	 (progn
+		(println 'new-matrix)
+		(Float32Array.from matrix))))
 
 (defun mat4::pop-or-create()
   (if (length mat4::stack)

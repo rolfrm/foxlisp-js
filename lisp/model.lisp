@@ -6,8 +6,26 @@
 (defvar model:transform (mat4:identity))
 (defvar model:color nil)
 
+(defvar model::chain-functions (makehashmap))
+(for-each item '((model:rotate-x model:rotate-x-i)
+					  (model:rotate-y model:rotate-y-i)
+					  (model:rotate-z model:rotate-z-i)
+					  (model:offset model:offset-i)
+					  (model:scale model:scale-i))
+			 (hashmap-set model::chain-functions (car item) (cadr item)))
+
+(defun model::gen-chain-body(body)
+  (if (eq (length body) 1)
+		(let ((inplace-f (hashmap-get model::chain-functions (caar body))))
+		  (if inplace-f
+				`((,inplace-f ,@(cdr (car body))))
+				body))
+		body))
+  
+
 (defmacro model:rotate (angle x y z &rest body)
-    `(let ((m (mat4:rotation (* ,angle 2 math:pi) (vec3:new ,x ,y ,z)))
+  (set body (model::gen-chain-body body))
+  `(let ((m (mat4:rotation (* ,angle 2 math:pi) (vec3:new ,x ,y ,z)))
            (prev-rotation model:transform))
         
        (set model:transform (mat4:multiply model:transform m))
@@ -15,34 +33,98 @@
        (set model:transform prev-rotation)
 		 ))
 
+(defmacro model:rotate-i (angle x y z &rest body)
+  (set body (model::gen-chain-body body))
+  `(progn
+	  (mat4:rotate angle (vec3:new ,x ,y ,z))
+    ,@body))
+
 
 (defmacro model:rotate-x (angle &rest body)
+  (set body (model::gen-chain-body body))
     `(let ((prev model:transform))
        (set model:transform (mat4:clone model:transform))
        (mat4:rotate-x model:transform (* ,angle 2 math:pi))
        ,@body
 		 (mat4:dispose model:transform)
-		 (set model:transform prev)
-		 
-		 ))
+		 (set model:transform prev)))
+
+(defmacro model:rotate-x-i (angle &rest body)
+  (set body (model::gen-chain-body body))
+  
+  `(progn
+	  (mat4:rotate-x model:transform (* ,angle 2 math:pi))
+     ,@body
+	  ))
+
 
 (defmacro model:rotate-y (angle &rest body)
-    `(let ((prev model:transform))
+  (set body (model::gen-chain-body body))
+  
+  `(let ((prev model:transform))
        (set model:transform (mat4:clone model:transform))
        (mat4:rotate-y model:transform (* ,angle 2 math:pi))
-       ,@body
+		 ,@body
 		 (mat4:dispose model:transform)
-       (set model:transform prev)
-		 ))
+       (set model:transform prev)))
+
+(defmacro model:rotate-y-i (angle &rest body)
+  
+  (set body (model::gen-chain-body body))
+  `(progn
+	  (mat4:rotate-y model:transform (* ,angle 2 math:pi))
+     ,@body))
 
 (defmacro model:rotate-z (angle &rest body)
-    `(let ((prev model:transform))
-       (set model:transform (mat4:clone model:transform))
-       (mat4:rotate-z model:transform (* ,angle 2 math:pi))
-       ,@body
-		 (mat4:dispose model:transform)
-       (set model:transform prev)
-		 ))
+  (set body (model::gen-chain-body body))
+  `(let ((prev model:transform))
+     (set model:transform (mat4:clone model:transform))
+     (mat4:rotate-z model:transform (* ,angle 2 math:pi))
+     ,@body
+	  (mat4:dispose model:transform)
+     (set model:transform prev)))
+
+(defmacro model:rotate-z-i (angle &rest body)
+  (set body (model::gen-chain-body body))
+  `(progn
+	  (mat4:rotate-z model:transform (* ,angle 2 math:pi))
+     ,@body
+	  ))
+
+(defmacro model:offset (x y z &rest body)
+  (set body (model::gen-chain-body body))
+  `(let ((prev model:transform))
+	  (set model:transform (mat4:clone model:transform))
+     (mat4:translate model:transform ,x ,y ,z)
+     ,@body
+	  (mat4:dispose model:transform)
+	  (set model:transform prev)
+    ))
+
+
+(defmacro model:offset-i (x y z &rest body)
+  (set body (model::gen-chain-body body))
+  `(progn
+	  (mat4:translate model:transform ,x ,y ,z)
+     ,@body))
+
+
+(defmacro model:scale (x y z &rest body)
+  (set body (model::gen-chain-body body))
+  `(let ((prev model:transform))
+     (set model:transform (mat4:clone model:transform))
+	  (mat4:scale model:transform ,x ,y ,z)
+     ,@body
+	  (mat4:dispose model:transform)
+     (set model:transform prev)))
+
+(defmacro model:scale-i (x y z &rest body)
+  (set body (model::gen-chain-body body))
+  `(progn
+	  (mat4:scale model:transform ,x ,y ,z)
+     ,@body
+	  ))
+
 
 
 (defun float32-array-flatten (v)
@@ -185,16 +267,12 @@
 			 (if any-color 
               (list 'polygon-strip-color flr flc)
               (list 'polygon :3d-triangle-strip flr)
-				  ))
-        
-        
-		  )
-	 )
+				  ))))
+
 (defmacro model:bake-keyed (key &rest model)
     `(let ((prev-transform model:transform)
            (prev-color model:color)
-           (thismodel ',model)
-			  (key ,key)
+           (key ,key)
            (current (hashmap-get model::baked-models key)))
 		 ;(println 'bake-keyed key current )
         (unless current
@@ -225,8 +303,7 @@
 (defmacro model:bake (&rest model)
     `(let ((prev-transform model:transform)
            (prev-color model:color)
-           (thismodel ',model)
-			  (key ,(if (eq (car model) :key) (cadr model) (list 'quote model)))
+           (key ,(if (eq (car model) :key) (cadr model) (list 'quote model)))
            (current (hashmap-get model::baked-models key)))
         (unless current
             (set model:transform (mat4:identity))
@@ -245,31 +322,14 @@
               
               (set current (model::combine-models baked))
 													 ;(println 'baked: current)
-              (hashmap-set model::baked-models thismodel current)
+              (hashmap-set model::baked-models ',model current)
               )
-            
+            (mat4:dispose model:transform)
 				(set model:transform prev-transform)
         (set model:color prev-color))
         (model:draw current)
     ))
 
-(defmacro model:offset (x y z &rest body)
-  
-  `(let ((prev model:transform))
-	  (set model:transform (mat4:clone model:transform))
-     (mat4:translate model:transform ,x ,y ,z)
-     ,@body
-	  (mat4:dispose model:transform)
-	  (set model:transform prev)
-    ))
-
-(defmacro model:scale (x y z &rest body)
-  `(let ((prev model:transform))
-     (set model:transform (mat4:clone model:transform))
-	  (mat4:scale model:transform ,x ,y ,z)
-     ,@body
-	  (mat4:dispose model:transform)
-     (set model:transform prev)))
 
 (defmacro model:with-color (r g b &rest body)
     `(let ((prev-color model:color))
@@ -465,6 +525,7 @@
                                                   1 0 1)))
 (defun model:tile () (model:draw model::tile))
 
+(defvar model::upcube 'model::upcube)
 (defun model:upcube ()
   ($ model:bake)
   ($ model:offset 0.0 0.5 0.0)
@@ -590,3 +651,4 @@
 	 
 	 (cinterpolate p1 p2 ay)))
 	 
+(println 'done-model.lisp)

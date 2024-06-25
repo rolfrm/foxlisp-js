@@ -779,17 +779,6 @@
 												  (upcube))
 										 ))))))
 
-					(offset 50 20 1
-								($ rgb 0.2 0.2 0.2)
-								($ scale 5 5 5)
-													 ;(upcube)
-								)
-					 (offset -20 0 -25
-								($ rgb 0.2 0.2 0.2)
-								($ scale 10 10 10)
-								;(upcube)
-								)
-
                 
                 ))))))
     )
