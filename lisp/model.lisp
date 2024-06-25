@@ -236,7 +236,7 @@
             (let (
                 (baked (list))
                 (baker (lambda (model) 
-                    (push baked (list model model:transform model:color))
+                    (push baked (list model (mat4:clone model:transform) model:color))
                     ))
                   (current-drawer model:drawer)
                 )
