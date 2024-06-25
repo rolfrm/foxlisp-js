@@ -482,5 +482,6 @@ asd ")
 	 (mat4:rotate-x m2 1.0)))
 
 (println mat4:translate)
+(println (* (math:sin 1.0) (math:cos 1.0)))
 ;(println 'mat4:translate mat4:translate)
 ;(println 'm2 m2)
