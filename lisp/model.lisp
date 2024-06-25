@@ -127,6 +127,7 @@
 							 (unless result-color
 								(set result-color (float32-array-sized size)))
 							 (mat4:applyn transform model-verts)
+							 (mat4:dispose transform)
 							 (set any-color '(1 1 1))
 						 	 (when (> k 0)
 								(pushvec2 result result k (- k 1))
@@ -141,11 +142,8 @@
 							 (dotimes (i 0 (length model-verts) 3)
 								(dotimes (j 3)
 								  (set (th result (+ (* 3 k) j)) (th model-verts (+ j i)))
-								  (set (th result-color (+ (* 3 k) j)) (th vert-color (+ i j)))
-								  )
-								(incf k)
-								)
-							 )
+								  (set (th result-color (+ (* 3 k) j)) (th vert-color (+ i j))))
+								(incf k)))
              ;(println 'adding item)
             (let ((model-verts (float32-array-from2 (caddr (car item))))
                   (transform (cadr item))
@@ -154,6 +152,7 @@
                 (when color (set any-color color))
                 (unless color (set color any-color))
                 (mat4:applyn transform model-verts)
+					 (mat4:dispose transform)
                 (dotimes (i (/ (length model-verts) 3))
                     (progn
                         (when (and (eq i 0) (> k 0))
@@ -215,7 +214,6 @@
               (set model:drawer current-drawer)
               
               (set current (model::combine-models baked))
-													 ;(println 'baked: current)
               (hashmap-set model::baked-models key current)
               )
             
