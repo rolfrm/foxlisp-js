@@ -40,7 +40,8 @@ op_leftshift = (x, y) => x << y;
 op_rightshift = (x, y) => x >> y;
 op_xor = (x, y) => x ^ y;
 op_or = (x,y) => x|y;
-op_and = (x,y) => x&y;
+op_and = (x,y) => x&y
+
 mod = (x, y) => x % y
 not = (x) => !x
 len = (x) => (x && x.length) || 0
@@ -118,7 +119,6 @@ function println_impl(obj){
 				return "null";
 		  }
 		  if(obj.type == "symbol"){
-				console.log(obj)
 				return obj.value;
 		  }
 		  if(typeof obj === "string") {
@@ -450,9 +450,7 @@ function lispCompile2(code) {
 					 const [quoted] = operands
 					 const code = unquoteToJs(quoted)
 					 return code;
-
 				}
-				
 		  case defvarSym:
 				{
 					 
@@ -466,11 +464,10 @@ function lispCompile2(code) {
 					 if(isScope(valueCode)){
 						  code2 = `${sym.jsname} = null;${valueCode.replaceAll(value_marker, sym.jsname + "=")}`
 					 }
-					 //WriteCodeToLog(code2 + ";")
+					 
 					 let result = eval?.(code2);
 					 if(typeof(result) == "function" && result.assoc_id){
 						  result.lispname = sym
-						  //result.lispargs = assoc[result.assoc_id][0]
 					 }
 					 return `${sym.jsname}`
 				}
@@ -625,8 +622,9 @@ function evalLisp(code){
 eval2 = evalLisp
 loadFileAsync = null
 loadcontext = ""
+currentEval = null
 async function LispEvalBlock(code, file) {
-	 
+	 "use strict";
 	 for(;;){
 		  
 		  const [ast, next] = parser.ParseLisp(code)
@@ -657,12 +655,12 @@ async function LispEvalBlock(code, file) {
 		  finally{
 
 		  }
+
+		  // there are two ways of doing this, which may be the same
+		  eval?.("function currentEval() "+  js)
+		  const result = currentEval();
+		  //const result = eval?.("() => " + js)()
 		  
-		  //WriteCodeToLog("()=> " + js +";")
-		  //println(["value code:", ast, "=>", js , "<< "])
-		  
-		  const result = eval?.("() => "+ js)()
-		  //console.log("result: ", result)
 		  if(result != null && typeof(result) == "object" && result.type == "load"){
 
 				const data = await loadFileAsync(result.value)

@@ -535,8 +535,7 @@
 		  
 		
 		(list 'polygon :3d-triangle-strip
-													vertexes))
-)
+				vertexes)))
 
 (defvar model::noisemap (list))
 
@@ -555,44 +554,39 @@
 		  (p1 (th model::noisemap b2))
 		  (p2 (th model::noisemap c)))
 	 
-	 (+ (* p1 (- 1 a)) (* p2 a))
-	 
-  ))
+	 (+ (* p1 (- 1 a)) (* p2 a))))
 
 (defun model:sample2d(x y)
   (th model::noisemap (op_and 0x1FFF (+ (* 659 (floor x)) (* 1069 (floor y))))))
 
-
+(defmacro model::sample2d(x y)
+  `(th model::noisemap (op_and 0x1FFF (+ (* 659 ,x) (* 1069 ,y)))))
 
 (defmacro interpolate(x1 x2 mu)
-  `(+ (* ,x1 (- 1 ,mu)) (* ,x2 ,mu))
-  )
+  `(+ (* ,x1 (- 1 ,mu)) (* ,x2 ,mu)))
 
 (defun cosine-interpolate(x1 x2 mu)
-  (interpolate x1 x2 (* (- 1.0 (math:cos (* mu math:pi))) 0.5))
-  )
+  (interpolate x1 x2 (* (- 1.0 (math:cos (* mu math:pi))) 0.5)))
 
 (defmacro cinterpolate(x1 x2 mu)
-  `(interpolate ,x1 ,x2 (* (- 1.0 (Math.cos (* ,mu math:pi))) 0.5))
-  )
+  `(interpolate ,x1 ,x2 (* (- 1.0 (Math.cos (* ,mu math:pi))) 0.5)))
 
 (defun soft-interpolate (x1 x2 mu)
-  (cosine-interpolate x1 x2 mu)
-)
+  (cosine-interpolate x1 x2 mu))
 
 (defun model:2dnoise(x y)
   (let ((bx (floor x))
 		  (by (floor y))
 		  (ax (- x bx))
+		  ; cosine interpolation 
 		  (axcos (* (- 1.0 (Math.cos (* ax math:pi))) 0.5))
 		  (ay (- y by))
-		  (a1 (model:sample2d x y))
-		  (a2 (model:sample2d (+ x 1) y))
-		  (a3 (model:sample2d x  (+ y 1)))
-		  (a4 (model:sample2d (+ x 1) (+ y 1)))
+		  (a1 (model::sample2d bx by))
+		  (a2 (model::sample2d (+ bx 1) by))
+		  (a3 (model::sample2d bx (+ by 1)))
+		  (a4 (model::sample2d (+ bx 1) (+ by 1)))
 		  (p1 (interpolate a1 a2 axcos))
-		  (p2 (interpolate a3 a4 axcos))
-		  )
+		  (p2 (interpolate a3 a4 axcos)))
 	 
 	 (cinterpolate p1 p2 ay)))
 	 

@@ -81,40 +81,32 @@
         (unless cached
             (let ((poly 
 						 (if (eq (car model) 'polygon-strip-color)
-                       (progn
-                         
-                         (polygon:new (nth model 1) (nth model 2)))
-                       (polygon:new (nth model 2))))
-                  )
+                       (polygon:new (nth model 1) (nth model 2))
+                       (polygon:new (nth model 2)))))
               
               (hashmap-set poly-cache model poly)
-              (set cached poly)
-              )
-            
-				)
+              (set cached poly)))
         (shader:set-color shader (vec3:x model:color) (vec3:y model:color) (vec3:z model:color) 1.0)
         (shader:set-model shader model:transform)
-        (shader:set-model-view shader (mat4:multiply perspective model:transform))
-        (polygon:draw cached)
-        )  
-	 )
-
+		  (let ((m (mat4:clone perspective)))
+			 (mat4:multiplyi m perspective model:transform)
+			 (shader:set-model-view shader m)
+			 (mat4:dispose m))
+        (polygon:draw cached)))
 
 (defvar bullets (list))
 (defun shoot-bullet (loc dir)
-  (push bullets (list loc dir 0))
-  )
+  (push bullets (list loc dir 0)))
 
 (defvar cultists (list))
 
 (defvar nonrandom (list))
 (dotimes (i 1000)
   (push nonrandom (math:random 0.0 1.0)))
+
 (defun math:nonrandom(seed start stop)
   (let ((r (mod (abs (+ 1453241232 seed)) 1000)))
-	 
-	 (+ start (* (nth nonrandom r) (- stop start))))
-	 )
+	 (+ start (* (nth nonrandom r) (- stop start)))))
 
 
 (defun pentagram ()
@@ -142,8 +134,7 @@
 	 ($ rotate a 0 1 0)
 	 ($ scale 0.1 0.1 (* r 0.65))
 	 ($ offset 0 0 -0.0)
-	 (upcube))
-  )
+	 (upcube)))
 
 
 (defvar winangle (math:random 0.0 math:2pi))
@@ -177,8 +168,7 @@
 									 (+ winloc-x (* r (math:sin a))) 0 (+ winloc-y (* r (math:cos a)))) 0.0 a))
 		
 		))
-  (println cultists)
-  )
+  (println cultists))
 
 (defvar shapes (list))
 (reload-game)
@@ -215,13 +205,11 @@
   (set sound.loop t))
 
 (defun play-sound(sound)
-  (sound.play)
-  )
+  (sound.play))
 
 (defun stop-sound (sound)
   (set sound.currentTime 0.5)
-  (sound.pause)
-  )
+  (sound.pause))
 
 (set-loop background-sound)
 (set-loop walking-sound)
@@ -230,15 +218,13 @@
   (max v1 (min v v2)))
 
 (defun heightmap-flatness (x y)
-  (clamp 0.1 (+ 1 (* 2 (model:2dnoise (* 0.004 x) (* 0.004 y)))) 1.0)
-  ;1.0
-  )
+  (clamp 0.1 (+ 1 (* 2 (model:2dnoise (* 0.004 x) (* 0.004 y)))) 1.0))
+
 (defun tree-density (x y)
-  (* (heightmap-flatness x y) 10.0)
-  )
+  (* (heightmap-flatness x y) 10.0))
+
 (defun is-flat(x y)
-  (< (heightmap-flatness x y) 0.2)
-  )
+  (< (heightmap-flatness x y) 0.2))
 
 (defun heightmap (x y)
   ($ let ((flatness (heightmap-flatness x y))))
@@ -275,8 +261,8 @@
 	(* 32.0 ! model:2dnoise (* 0.004 x) (* 0.004 y))
 	(* 32.0 ! model:2dnoise (* 0.002 x) (* 0.002 y))
 	(* 32.0 ! model:2dnoise (* 0.001 x) (* 0.001 y))
-	)
-)))
+	))))
+
 (defun heightmap2 (x y)
   ($ let ((flatness (heightmap-flatness x y))))
   
@@ -291,9 +277,7 @@
 	;(* (* flatness 8.0) ! model:2dnoise (* 0.016 x) (* 0.016 y))
 	;(* (* flatness 10.0) ! model:2dnoise (* 0.032 x) (* 0.032 y))
 	(* (* flatness 20.0) ! model:2dnoise (* 0.016 (+ 65512.31 x)) (* 0.016 (+ y 9535153.32)))
-	(* (* flatness 50.0) ! model:2dnoise (* 0.008 (+ 312321.54 x)) (* 0.008 (+ y 355311.321)))
-
-)))
+	(* (* flatness 50.0) ! model:2dnoise (* 0.008 (+ 312321.54 x)) (* 0.008 (+ y 355311.321))))))
 
 (defun heightmap-colors(x y z)
   (if (< y -1)
@@ -318,8 +302,6 @@
 		  		(if (< delta 0)
 					 (- now (min step (- delta)))
 					 (+ now (min step delta)))))))
-					 
-		
 
 (defvar getTime (js_eval "()=> Date.now()"))
 
@@ -337,20 +319,17 @@
 
 (defun <> (min value max)
   (and (< min value) (> max value)))
+
 (defvar last-time (getTime))
 
 (defun draw-cultists()
-  ;(println 'start!)
-  ;(println cultists)
   ($ with-prefix model:)
   (dotimes (i (length cultists))
 
 	 ($ let ((cultist-npc (nth cultists i)) (pos (car cultist-npc))))
 	 ($ offset (vec3:x pos) (vec3:y pos) (vec3:z pos))
 	 ($ rotate (cadr cultist-npc) 0 1 0)
-	 (cultist)
-	 )
-  )
+	 (cultist)))
 
 (defvar zone-assets (makehashmap))
 
@@ -359,7 +338,6 @@
 			(zone2 (floor (/ y 40)))
 			(id (+ (+ 1000 zone) (* (+ zone2 1000) 10000))))
   id)
-  
 
 (defun get-zone-assets(zoneid)
   (let ((zonemap  (hashmap-get zone-assets zoneid)))
@@ -368,48 +346,41 @@
 		(set zonemap.trees (list))
 		(set zonemap.rocks (list))
 		(set zonemap.wisps (list (list 0 0) (list 0 0 1)))
-		(hashmap-set zone-assets zoneid zonemap)
-		)
-	 
-	 zonemap
-	 ))
+		(hashmap-set zone-assets zoneid zonemap))
+	 zonemap))
 
 (defun animation-loop ()
-
   
     (let ((shader (shader:get-default)))
-        (shader:use shader)
-		  )
+      (shader:use shader))
 	 ($ let ((this-time (getTime)) (move-vec (vec3:new 0 0 0)) (move-angle player-angle) (xrot 0.0)
 		 (delta 1.0)))
 	 (set time-component  (+ time-component (* delta 0.01)))
     
 	 (set last-time this-time)
     (when (key:down 'key:a)
-		
       (set move-vec (vec3:new -1 0 0))
-		(set move-angle 0.5)
-		)
+		(set move-angle 0.5))
+	 
 	 (when (or (key:down 'key:q) (key:down 'key:arrow-left))
 		(incf view-angle (* 0.01 delta)))
+	 
 	 (when (or (key:down 'key:e) (key:down 'key:arrow-right))
-		(incf view-angle (* delta -0.01))
-		)
+		(incf view-angle (* delta -0.01)))
+	 
     (when (key:down 'key:d)
 		(set move-angle 0)
 		(set move-vec (vec3:new 1 0 0)))
-    (when (or (key:down 'key:arrow-up) (key:down 'key:w))
+
+	 (when (or (key:down 'key:arrow-up) (key:down 'key:w))
 		(set move-angle (* delta -0.25))
       (set move-vec (vec3:new 0 0 -1)))
-    (when (or (key:down 'key:s) (key:down 'key:arrow-down))
+
+	 (when (or (key:down 'key:s) (key:down 'key:arrow-down))
 		(set move-angle (* delta 0.25))
       (set move-vec (vec3:new 0 0 1)))
 	 (when (key:on-down 'key:r)
-													 ;(play-sound walking-sound)
-		
-		(reload-game)
-		
-		)
+		(reload-game))
 	 (when (> player-charge 8.0)
 		(play-sound diiiu-sound)
 		(incf level-counter 1)
@@ -606,7 +577,7 @@
 																				  (+ (* zone2 chunk-size))
 																				  (+ (* (+ zone 1) chunk-size) 0)
 																				  (+ (* (+ zone2 1) chunk-size) 0)
-																				  2
+																				  1
 																				  )
 													  )
 
@@ -623,7 +594,7 @@
 																				  (+ (* zone2 chunk-size))
 																				  (+ (* (+ zone 1) chunk-size) 0)
 																				  (+ (* (+ zone2 1) chunk-size) 0)
-																				  2
+																				  1
 																				  ;heightmap-colors
 																				  )
 													  )
@@ -641,7 +612,7 @@
 																				  (+ (* zone2 chunk-size))
 																				  (+ (* (+ zone 1) chunk-size) 0)
 																				  (+ (* (+ zone2 1) chunk-size) 0)
-																				  2
+																				  1
 																				  ;heightmap-colors
 																				  )
 													  )
