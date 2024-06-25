@@ -18,6 +18,13 @@
 		  (z (vec3:z v)))
     (math:sqrt (+ (* x x) (* y y) (* z z)))))
 
+(defun vec3:length-squared(v)
+  (let ((x (vec3:x v))
+		  (y (vec3:y v))
+		  (z (vec3:z v)))
+    (+ (* x x) (* y y) (* z z))))
+
+
 (defun vec3:normalize(v)
     (let ((len (vec3:length v)))
         (if (< len 0.00000001)
@@ -45,6 +52,9 @@
 
 (defun vec3:mul-scalar (v s)
     (vec3:new (* (vec3:x v) s) (* (vec3:y v) s) (* (vec3:z v) s)))
+
+(defun vec3:div-scalar (v s)
+    (vec3:new (/ (vec3:x v) s) (/ (vec3:y v) s) (/ (vec3:z v) s)))
 
 (defun vec3:dot (v1 v2)
     (+ (* (vec3:x v1) (vec3:x v2)) 
@@ -125,6 +135,37 @@
   (if (length (cdr matrixes))
 		`(mat4:multiply ,(car matrixes) (mat4:* ,@(cdr matrixes)))
 		(car matrixes)))
+
+(defmacro mat4:multiply! (m &rest args)
+  (let ((calls (list))
+		  (loads (list))
+		  (used-cells (list 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)))
+	 (dotimes (j 4)
+	   (dotimes (i 4)
+		  (let ((karg (list)))
+			 (dotimes (k 4)
+				(let ((arg (nth args (+ k (* j 4)))))
+				  (unless (eq arg 0)
+					 (let ((expr `(* ,(string->symbol (concat "m" (+ i (* 4 k)))) ,arg)))
+						(when (eq arg 1)
+						  (set expr.unity 1))
+						(set expr.reads (+ i (* 4 k)))
+						(push karg expr)))))
+			 (unless  (and (eq (length karg) 1)
+								(let ((expr (car karg)))
+								  (and expr.unity (eq expr.reads (+ i (* j 4))))))
+				(for-each x karg
+							 (setnth used-cells x.reads 1))
+				(push calls `(set (th m ,(+ i (* j 4))) (+ ,@karg)))))))
+	 (dotimes (i 16)
+		(when (nth used-cells i)
+		  (push loads `(,(string->symbol (concat "m" i)) (th ,m ,i)))))
+	 
+	 `(const (,@loads)
+				,@calls
+				0)))
+
+
 
 (defun mat4:apply (m v in-place)
   (let ((w (or (+ (* (mat4:get m 3 0) (vec3:x v)) 
@@ -225,69 +266,35 @@
      0 0 0 1)))
 
 (defun mat4:rotate (m angle axis-vector)
-  (set axis-vector (vec3:normalize axis-vector))
-  (let ((rad angle) 
+  (const ((l (vec3:length-squared axis-vector)))
+	 (if (not (eq l 1.0))
+		  (set axis-vector (vec3:div-scalar (math:sqrt l)))))
+  
+  (const ((rad angle) 
         (cosA (math:cos rad))
         (sinA (math:sin rad))
         (invCosA (- 1 cosA))
-		  (m3 (mat4:clone m))
-		  (m2 (mat4::pop-or-create)))
-	 (mat4::assign m2 
-						(+ cosA (* (vec3:x axis-vector) (vec3:x axis-vector) invCosA))
-						(- (* (vec3:x axis-vector) (vec3:y axis-vector) invCosA) (* (vec3:z axis-vector) sinA))
-						(+ (* (vec3:x axis-vector) (vec3:z axis-vector) invCosA) (* (vec3:y axis-vector) sinA))
-						0
-						
-						(+ (* (vec3:y axis-vector) (vec3:x axis-vector) invCosA)
-							(* (vec3:z axis-vector) sinA))
-						(+ cosA (* (vec3:y axis-vector) (vec3:y axis-vector) invCosA))
-						(- (* (vec3:y axis-vector) (vec3:z axis-vector) invCosA) (* (vec3:x axis-vector) sinA))
-						0
-						
-						(- (* (vec3:z axis-vector) (vec3:x axis-vector) invCosA) (* (vec3:y axis-vector) sinA))
-						(+ (* (vec3:z axis-vector) (vec3:y axis-vector) invCosA) (* (vec3:x axis-vector) sinA))
-						(+ cosA (* (vec3:z axis-vector) (vec3:z axis-vector)
-									  invCosA))
-						0
-						0 0 0 1)
-
-	 (mat4:multiplyi m m3 m2)
-	 (mat4:dispose m3)
-	 (mat4:dispose m2)))
-
-(defmacro mat4:multiply! (m &rest args)
-  (let ((calls (list))
-		  (loads (list))
-		  (used-cells (list 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+		  (x (vec3:x axis-vector))
+		  (y (vec3:y axis-vector))
+		  (z (vec3:z axis-vector))
 		  )
-	 (dotimes (j 4)
-	   (dotimes (i 4)
-		  (let ((karg (list)))
-			 (dotimes (k 4)
-				(let ((arg (nth args (+ k (* j 4)))))
-				  (unless (eq arg 0)
-					 (let ((expr `(* ,(string->symbol (concat "m" (+ i (* 4 k)))) ,arg)))
-						(when (eq arg 1)
-						  (set expr.unity 1))
-						(set expr.reads (+ i (* 4 k)))
-						(push karg expr
-								)))))
-			 (unless  (and (eq (length karg) 1)
-								(let ((expr (car karg)))
-								  (and expr.unity (eq expr.reads (+ i (* j 4))))))
-				(for-each x karg
-							 (setnth used-cells x.reads 1)
-							 )
-				(push calls `(set (th m ,(+ i (* j 4))) (+ ,@karg)))))))
-	 (dotimes (i 16)
-		(when (nth used-cells i)
-		  (push loads `(,(string->symbol (concat "m" i)) (th ,m ,i)))))
-	 
-	 (println '>>>>> 'multiply!  used-cells loads)
-	 `(const (,@loads)
-				,@calls
-				0
-				)))
+	 (mat4:multiply! m
+						(+ cosA (* x x invCosA))
+						(- (* x y invCosA) (* z sinA))
+						(+ (* x z invCosA) (* y sinA))
+						0
+						
+						(+ (* y x invCosA) (* z sinA))
+						(+ cosA (* y y invCosA))
+						(- (* y z invCosA) (* x sinA))
+						0
+						
+						(- (* z x invCosA) (* y sinA))
+						(+ (* z y invCosA) (* x sinA))
+						(+ cosA (* z z invCosA))
+						0
+						0 0 0 1)))
+
 
 
 (defun mat4:rotate-x (m rad)

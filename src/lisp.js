@@ -268,17 +268,25 @@ function isScope(code){
 
 function lispCompileLet(variables, body, isConst){
 	 const kw = isConst ? "const" : "let"
-	 const  varCode = variables.map(updateExpr => {
+	 let brackets = 0
+	 let usedNames = {}
+	 const varCode = variables.map(updateExpr => {
 		  if(updateExpr.length != 2){
 				throw new Error("The expression (xyz) is malformed." + println_impl(updateExpr));
 		  }
         const [left, right] = updateExpr;
 		  let r = lispCompile2(right)
 		  if(isScope(r)){
-				return `{${kw} ${left.jsname};${r.replaceAll(value_marker, left.jsname + "=")}`
+				code = `${kw} ${left.jsname};${r.replaceAll(value_marker, left.jsname + "=")}`
 		  }else{
-				code = `{${kw} ${left.jsname} = ${r}`
+				code = `${kw} ${left.jsname} = ${r}`
 		  }
+		  if(brackets == 0 || left.jsname in usedNames){
+				brackets += 1
+				usedNames = {}
+				code = "{" + code;
+		  }
+		  usedNames[left.jsname] = true
         return code;
     });
     if(body.length == 0){
@@ -287,7 +295,11 @@ function lispCompileLet(variables, body, isConst){
 	 if(body.length == 1 && variables.length == 0){
 		  return `${lispCompile(body[0])}`
 	 }
-	 return scope(varCode.concat(body.map(x => lispCompile(x)))) + variables.map(x => "}").join("")
+	 result = scope(varCode.concat(body.map(x => lispCompile(x))))
+	 for(let i = 0; i < brackets; i++){
+		  result = result + "}";
+	 }
+	 return result;
 }
 lmbmark = (id, f) => {
 	 f.assoc_id = id;
