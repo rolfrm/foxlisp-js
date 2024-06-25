@@ -94,7 +94,7 @@
 (defun mul-builder (args2)
  
   (if (> (length args2) 1)
-		(concat (list "(" (car args2) ")*(") (mul-builder (cdr args2)) (list ")"))
+		(concat (list "" (car args2) " * ") (mul-builder (cdr args2)) (list ""))
 		(if (eq (length args2) 0)
 			 (list 1)
 			 args2)))

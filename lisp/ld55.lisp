@@ -548,7 +548,7 @@
         (rgb 1 0 1 
 				 (offset 0.0 -5.0 -10.0
 							
-				 (rotate -0.02 1 0 0
+				 (rotate-x -0.02
             (rotate-y view-angle
             
 							 (offset (- (vec3:x player-loc)) (- (vec3:y player-loc))  (- (vec3:z player-loc))
@@ -676,8 +676,7 @@
 						(offset  x (- (heightmap x y) 0.2) y
 									(scale s1 s2 s3
 											 (rgb 0.3 0.3 0.3
-													(rotate s4 0 1 0
-															  (sphere5)
+													(rotate-y s4 (sphere5)
 															  )))
 								  )
 						)
@@ -708,7 +707,7 @@
 						(offset  x z y
 									(scale s1 s2 s3
 											 (rgb 0.3 0.5 0.25
-													(rotate s4 0 1 0
+													(rotate-y s4 1
 															  (sphere5)
 															  )))
 								  )
@@ -727,7 +726,7 @@
 						(offset  x (- (heightmap x y) (* s2 0.7)) y
 									(scale s1 s2 s3
 											 (rgb 0.5 0.5 0.5
-													(rotate s4 0 1 0
+													(rotate-y s4
 															  (sphere5)
 															  )))
 								  )

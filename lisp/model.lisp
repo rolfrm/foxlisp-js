@@ -302,11 +302,11 @@
 (defun model:cube ()
     (model:bake 
     (dotimes (i 4)
-        (model:rotate (* i 0.25) 1.0 0.0 0.0
+        (model:rotate-x (* i 0.25) 1.0
             (model:draw model:square))
     )
     (dotimes (i 2)
-        (model:rotate (+ (* i 0.5) 0.25) 0.0 1.0 0.0
+        (model:rotate-y (+ (* i 0.5) 0.25) 1.0
 							 (model:draw model:square)))))
 
 (defun model:red-cube ()

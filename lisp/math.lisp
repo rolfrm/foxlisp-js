@@ -273,43 +273,44 @@
   (const ((rad angle) 
         (cosA (math:cos rad))
         (sinA (math:sin rad))
-        (invCosA (- 1 cosA))
+        (icosA (- 1 cosA))
 		  (x (vec3:x axis-vector))
 		  (y (vec3:y axis-vector))
 		  (z (vec3:z axis-vector))
 		  )
 	 (mat4:multiply! m
-						(+ cosA (* x x invCosA))
-						(- (* x y invCosA) (* z sinA))
-						(+ (* x z invCosA) (* y sinA))
-						0
+						  (+ cosA (* x x icosA))
+						  (- (* x y icosA) (* z sinA))
+						  (+ (* x z icosA) (* y sinA))
+						  0
 						
-						(+ (* y x invCosA) (* z sinA))
-						(+ cosA (* y y invCosA))
-						(- (* y z invCosA) (* x sinA))
-						0
-						
-						(- (* z x invCosA) (* y sinA))
-						(+ (* z y invCosA) (* x sinA))
-						(+ cosA (* z z invCosA))
-						0
-						0 0 0 1)))
+						  (+ (* y x icosA) (* z sinA))
+						  (+ cosA (* y y icosA))
+						  (- (* y z icosA) (* x sinA))
+						  0
+						  
+						  (- (* z x icosA) (* y sinA))
+						  (+ (* z y icosA) (* x sinA))
+						  (+ cosA (* z z icosA))
+						  0
+						  0 0 0 1)))
 
 
 
 (defun mat4:rotate-x (m rad)
-  (let ((cosA (math:cos rad))
-        (sinA (math:sin rad)))
+  (const ((cosA (math:cos rad))
+			 (sinA (math:sin rad))
+			 (isinA (- 0 sinA)))
 	 (mat4:multiply! m 
 						  1 0 0 0
 						  0 cosA sinA 0
-						  0 (- 0 sinA) cosA 0
+						  0 isinA cosA 0
 						  0 0 0 1)))
 
 (defun mat4:rotate-y (m rad)
-  (let ((cosA (math:cos rad))
-        (sinA (math:sin rad)))
-	 (mat4:multiply! m 
+  (const ((cosA (math:cos rad))
+			 (sinA (math:sin rad)))
+	  (mat4:multiply! m 
 						  cosA 0 sinA 0
 						  0 1 0 0
 						  (- 0 sinA) 0 cosA 0
