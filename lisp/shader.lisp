@@ -1,7 +1,7 @@
 (defvar shader::vertex-shader-source "
 precision highp float;
 
-uniform mat4 modelView;
+uniform mat4 view;
 uniform mat4 model;
 
 attribute vec3 vertexes;
@@ -10,7 +10,7 @@ attribute vec3 vertexColor;
 varying  vec3 vertColor;
 varying float depth;
 void main() {
-    vec4 p = modelView * vec4(vertexes, 1.0);
+    vec4 p = view * model * vec4(vertexes, 1.0);
     vec4 p2 = model * vec4(vertexes, 1.0);
     
     gl_Position = p;
@@ -65,7 +65,7 @@ void main() {
             (set program-object.color (gl.getUniformLocation program "color"))
 				(set program-object.size (gl.getAttribLocation program "size"))
             (set program-object.model (gl.getUniformLocation program "model"))
-            (set program-object.modelView (gl.getUniformLocation program "modelView"))
+            (set program-object.view (gl.getUniformLocation program "view"))
             (set program-object.vertexColor (gl.getAttribLocation program "vertexColor"))
             program-object
         )))
@@ -74,35 +74,36 @@ void main() {
     (gl.useProgram shader.program)
     (gl.enableVertexAttribArray shader.vertexes)
     (gl.vertexAttribPointer shader.vertexes 3 gl.FLOAT false 0 0)
-    (gl.enableVertexAttribArray shader.vertexColor)
+	 (gl.enableVertexAttribArray shader.vertexColor)
     (gl.vertexAttribPointer shader.vertexColor 3 gl.FLOAT false 0 0)
+	 (set shader.current-color (list -1 -1 -1 -1))
 	 (when (> shader.size -1)
 		
-		(gl.enableVertexAttribArray shader.size)
-		(gl.vertexAttribPointer shader.size 1 gl.FLOAT false 0 0))
+		;(gl.enableVertexAttribArray shader.size)
+		;(gl.vertexAttribPointer shader.size 1 gl.FLOAT false 0 0)
+		))
 
-	 )
-    
+(defun shader::normalize-color(c)
+  (c.toFixed 2))
 
-(defun shader:set-color (shader r g b a) (gl.uniform4f shader.color r g b a))
+(defun shader:set-color (shader r g b a)
+  (gl.uniform4f shader.color r g b a))
+
 (defun shader:set-model (shader model) (gl.uniformMatrix4fv shader.model false model))
-(defun shader:set-model-view (shader modelView) (gl.uniformMatrix4fv shader.modelView false modelView))
+(defun shader:set-view (shader view-matrix) (gl.uniformMatrix4fv shader.view false view-matrix))
 
 (defvar shader::default nil)
 
 (defun shader:get-default()
-    (if shader::default
-        shader::default
-        (set shader::default (shader:new shader::vertex-shader-source shader::fragment-shader-source)))
-)
+  (if shader::default
+      shader::default
+      (set shader::default (shader:new shader::vertex-shader-source shader::fragment-shader-source)))
+  )
 
-
-          
-          
 (defvar shader::vertex-shader-source-sdf "
 precision highp float;
 
-uniform mat4 modelView;
+uniform mat4 view;
 uniform mat4 model;
 
 attribute vec3 vertexes;
@@ -111,7 +112,7 @@ attribute float size;
 varying vec3 c;
 void main() {
     c = vertexColor;
-    vec4 p = modelView * vec4(vertexes, 1.0);
+    vec4 p = view * model * vec4(vertexes, 1.0);
     vec4 p2 = model * vec4(vertexes, 1.0);
     if(p.w > 0.0){
        gl_PointSize = max(2.0, 550.0 * size / p.w) ;
@@ -140,6 +141,7 @@ void main() {
 (defvar shader::sdf nil)
 
 (defun shader:get-sdf()
+  
     (if shader::sdf
         shader::sdf
         (set shader::sdf (shader:new shader::vertex-shader-source-sdf shader::fragment-shader-source-sdf)))

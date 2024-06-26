@@ -25,14 +25,15 @@
 	 poly))
 
 (defun polygon:load (poly)
-    (unless poly.buffer 
-        (set poly.buffer (gl.createBuffer))
-        (set poly.colorBuffer (gl.createBuffer))
-		  (when (eq poly.type 'points)
-			 (set poly.sizeBuffer (gl.createBuffer))
-			 )
-        )
-    
+  (unless poly.buffer
+	 (set poly.buffer (gl.createBuffer))
+    (set poly.colorBuffer (gl.createBuffer))
+	 (when (eq poly.type 'points)
+		(set poly.sizeBuffer (gl.createBuffer))
+		)
+    )
+  (set polygon::bound-buffer poly.buffer)
+		
    (gl.bindBuffer gl.ARRAY_BUFFER poly.buffer)
    (gl.bufferData gl.ARRAY_BUFFER poly.vertices gl.STATIC_DRAW)
    (gl.bindBuffer gl.ARRAY_BUFFER poly.colorBuffer)
@@ -47,14 +48,14 @@
         (gl.deleteBuffer poly.buffer)
         (set poly.buffer nil)))
 
+(defvar polygon::bound -1)
 (defun polygon:draw (poly)
-    (unless poly.buffer 
-        (polygon:load poly)
-    )
-    (gl.bindBuffer gl.ARRAY_BUFFER poly.buffer)
-    (gl.vertexAttribPointer 0 3 gl.FLOAT false 0 0)
-    (gl.bindBuffer gl.ARRAY_BUFFER poly.colorBuffer)
-    (gl.vertexAttribPointer 1 3 gl.FLOAT false 0 0)
+  (unless poly.buffer
+    (polygon:load poly))
+  (gl.bindBuffer gl.ARRAY_BUFFER poly.buffer)
+  (gl.vertexAttribPointer 0 3 gl.FLOAT false 0 0)
+  (gl.bindBuffer gl.ARRAY_BUFFER poly.colorBuffer)
+  (gl.vertexAttribPointer 1 3 gl.FLOAT false 0 0)
     
 	 (if poly.sizeBuffer
 		  (progn

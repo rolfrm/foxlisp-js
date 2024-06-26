@@ -1,7 +1,7 @@
 (defun vec3:new(x y z)
-    (float32-array x y z))
+    (list x y z))
 (defun vec3:from-array(arr offset)
-    (%js "new Float32Array([arr[offset], arr[offset + 1] , arr[offset + 2]])"))
+    (%js "[arr[offset], arr[offset + 1] , arr[offset + 2]]"))
 
 (defun vec3:x(v)
     (th v 0))

@@ -298,36 +298,33 @@
 				(set model:transform prev-transform)
         (set model:color prev-color))
         (model:draw current)
-    ))
+		  ))
+
+(defun model::baker(baked)
+  (lambda (model) 
+	 (push baked (list model (mat4:clone model:transform) model:color))))
 
 (defmacro model:bake (&rest model)
-    `(let ((prev-transform model:transform)
-           (prev-color model:color)
-           (key ,(if (eq (car model) :key) (cadr model) (list 'quote model)))
+    `(let ((key ,(if (eq (car model) :key) (cadr model) (list 'quote model)))
            (current (hashmap-get model::baked-models key)))
-        (unless current
-            (set model:transform (mat4:identity))
-            (set model:color nil)
-            (let (
-                (baked (list))
-                (baker (lambda (model) 
-                    (push baked (list model (mat4:clone model:transform) model:color))
-                    ))
-                  (current-drawer model:drawer)
-                )
-            
-              (set model:drawer baker)
-              (progn ,@model)
-              (set model:drawer current-drawer)
-              
-              (set current (model::combine-models baked))
-													 ;(println 'baked: current)
-              (hashmap-set model::baked-models ',model current)
-              )
-            (mat4:dispose model:transform)
-				(set model:transform prev-transform)
-        (set model:color prev-color))
-        (model:draw current)
+       (unless current
+			(const ((prev-transform model:transform)
+					(prev-color model:color)
+					(prev-drawer model:drawer)
+					(baked (list)))
+           (set model:transform (mat4:identity))
+			  (set model:color nil)
+			  (set model:drawer (model::baker baked))
+			  ,@model
+			  (set model:drawer prev-drawer)
+			  (set current (model::combine-models baked))
+			  
+			  (hashmap-set model::baked-models key current)
+			  
+			  (mat4:dispose model:transform)
+			  (set model:transform prev-transform)
+			  (set model:color prev-color)))
+       (model:draw current)
     ))
 
 

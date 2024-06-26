@@ -67,7 +67,7 @@
 (defvar gl (get-context webgl-canvas "webgl"))
 (assert gl)
 
-(defvar perspective (mat4:perspective 1.2 1.0 0.01 2000.0))
+(defvar projection (mat4:perspective 1.2 1.0 0.01 2000.0))
 ;(defvar perspective (mat4:orthographic -10 10 -10 10 -30 30))
 
 (gl.enable gl.CULL_FACE)
@@ -75,6 +75,8 @@
 (gl.enable gl.DEPTH_TEST)
 (defvar poly-cache (makehashmap))
 (defvar shader (shader:get-default))
+(shader:set-view shader projection)
+
 (defun on-draw (model)
     
     (let ((cached (hashmap-get poly-cache model)))
@@ -88,10 +90,7 @@
               (set cached poly)))
         (shader:set-color shader (vec3:x model:color) (vec3:y model:color) (vec3:z model:color) 1.0)
         (shader:set-model shader model:transform)
-		  (let ((m (mat4:clone perspective)))
-			 (mat4:multiplyi m perspective model:transform)
-			 (shader:set-model-view shader m)
-			 (mat4:dispose m))
+		  
         (polygon:draw cached)))
 
 (defvar bullets (list))
