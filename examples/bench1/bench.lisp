@@ -3,85 +3,61 @@
 (load "shader.lisp")
 (load "model.lisp")
 (load "keys.lisp")
+
+(defun get-time ()
+  (%js "Date.now()"))
+
 ;; this part must be called to initialize gl
-(defun get-element-by-id (item id)
-    (item.getElementById id)
-)
+(model:initialize-gl "webgl-canvas")
+(defvar fps-display (document.getElementById "fps-display"))
+(defvar time (/ (get-time) 1000.0))
+(defvar last-time time)
+(defun update-time()
+  (set time (/ (get-time) 1000))
+  )
 
-(defun get-context (item contextname)
-    (item.getContext contextname)
-)
-(defvar webgl-canvas (get-element-by-id document "webgl-canvas"))
-
-
-;; gl must be defined!.
-(defvar gl (get-context webgl-canvas "webgl"))
-(assert gl)
-
-(defvar projection (mat4:perspective 1.5 1.0 2 1000.0))
-
-(gl.enable gl.CULL_FACE)
-(gl.cullFace gl.BACK)
-(gl.enable gl.DEPTH_TEST)
-(defvar poly-cache (makehashmap))
-(defvar shader (shader:get-default))
-(shader:set-view shader projection)
-(defun on-draw (model)
-    ;(println model)
-    (let ((cached (hashmap-get poly-cache model)))
-      (unless cached
-        (set cached 
-				 (if (eq (car model) 'polygon-strip-color)
-                 (polygon:new (nth model 1) (nth model 2))
-                 (polygon:new (nth model 2))))
-          
-        (hashmap-set poly-cache model cached))
-      
-      (shader:set-color shader (vec3:x model:color) (vec3:y model:color) (vec3:z model:color) 1.0)
-      (shader:set-model shader model:transform)
-		(polygon:draw cached)
-		))
-
-(defvar time 15.0)
+(defvar fps 15.0)
 (defun animation-loop ()
-    (set time (+ time 0.002))
-    (let ((shader (shader:get-default)))
-      (shader:use shader)
-		(set polygon::bound nil)
-		)
-	 
-	 
-    ;; lets make some funky clear-color based on time:
-    (gl.clearColor 0.1 0.1 0.1 1.0)
-    (gl.clear gl.COLOR_BUFFER_BIT)
-    (with-prefix model: 
-    (with-draw on-draw    
+  (set last-time time)
+  (update-time)
+  
+  ($ let ((time2 (/ time 100))
+			 (deltat (- time last-time))
+			 (fps2 (/ 1.0 deltat))
+			 ))
+  (set fps (+ (* 0.9 fps) (* 0.1 fps2)))
+  (set fps-display.innerHTML (fps.toFixed 2))
+	 (model:start-gl-draw)
+	 (with-prefix model: 
+    (with-draw model:on-draw    
       (rgb 1 0 1
-			  ($ offset -0 -0 -50)
-			  ($ rotate-y time)
-			  ($ rotate-x time)
-			  ($ rotate-z time)
-			  ($ rotate-x time)
-			  ($ rotate-y time)
-			  ;(bake
+			  ($ offset -0 -0 -25)
+			  ($ rotate-y time2)
+			  ($ rotate-x time2)
+			  ($ rotate-z time2)
+			  ($ rotate-x time2)
+			  ($ rotate-y time2)
+			  
 			  (dotimes (i 50)
 				 (dotimes (j 50)
 					(dotimes (k2 50)
 					($ offset (- i 25) (- j 25) (- k2 25))
-					($ scale 0.25 1.25 0.25)
-					($ rotate-x time)
-					($ rotate-y time)
-					($ rotate-x time)
+					($ scale 0.25 0.8 0.25)
+					;($ rotate-x time2)
+					($ rotate-y (* time 0.5 (/ j 15.0)))
+					;($ rotate-x time2)
 					($ rgb (math:sin (* j 0.3))
 						(math:cos (* k2 0.3))
-						(+ 0.5 (* 0.5 (math:sin time)))
+						(+ 0.5 (* 0.5 (math:sin time2)))
 						)
 					(bake
 					 ($ offset 0 -0.5 0)
 					 (upcube)))))
 
-			  ;)
+			  
 			  )))
+	 (gl.bindVertexArray nil)
+	 (set model::bound-va nil)
     (requestAnimationFrame animation-loop)
     
 )

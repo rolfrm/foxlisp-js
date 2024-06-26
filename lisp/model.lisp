@@ -5,6 +5,7 @@
     1 1 1)))
 (defvar model:transform (mat4:identity))
 (defvar model:color nil)
+(defvar model:projection (mat4:perspective 1.5 1.0 0.1 1000.0))
 
 (defvar model::chain-functions (makehashmap))
 (for-each item '((model:rotate-x model:rotate-x-i)
@@ -647,5 +648,40 @@
 		  (p2 (interpolate a3 a4 axcos)))
 	 
 	 (cinterpolate p1 p2 ay)))
-	 
-(println 'done-model.lisp)
+
+(defvar model::poly-cache (makehashmap))
+(defvar model::shader nil)
+
+(defun model:init-gl-draw()
+  (set model::shader (shader:get-default))
+  (gl.enable gl.CULL_FACE)
+  (gl.cullFace gl.BACK)
+  (gl.enable gl.DEPTH_TEST))
+
+(defun model:start-gl-draw()
+  (unless model::shader
+	 (model:init-gl-draw))
+  (shader:use model::shader)
+  (gl.clearColor 0.1 0.1 0.1 1.0)
+  (gl.clear gl.COLOR_BUFFER_BIT)
+  (shader:set-view model::shader model:projection))
+
+(defun model:on-draw (model)
+    (let ((cached (hashmap-get model::poly-cache model)))
+      (unless cached
+        (set cached 
+				 (if (eq (car model) 'polygon-strip-color)
+                 (polygon:new (nth model 1) (nth model 2))
+                 (polygon:new (nth model 2))))
+          
+        (hashmap-set model::poly-cache model cached))
+      
+      (shader:set-color model::shader (vec3:x model:color) (vec3:y model:color) (vec3:z model:color) 1.0)
+      (shader:set-model model::shader model:transform)
+		(polygon:draw cached)
+		))
+(defvar gl nil)
+(defun model:initialize-gl (canvas-id)
+  ($ let ((webgl-canvas (document.getElementById canvas-id))))
+  (set gl (webgl-canvas.getContext "webgl2"))
+  (assert gl))

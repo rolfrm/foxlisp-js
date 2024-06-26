@@ -77,22 +77,6 @@
 (defvar shader (shader:get-default))
 (shader:set-view shader projection)
 
-(defun on-draw (model)
-    
-    (let ((cached (hashmap-get poly-cache model)))
-        (unless cached
-            (let ((poly 
-						 (if (eq (car model) 'polygon-strip-color)
-                       (polygon:new (nth model 1) (nth model 2))
-                       (polygon:new (nth model 2)))))
-              
-              (hashmap-set poly-cache model poly)
-              (set cached poly)))
-        (shader:set-color shader (vec3:x model:color) (vec3:y model:color) (vec3:z model:color) 1.0)
-        (shader:set-model shader model:transform)
-		  
-        (polygon:draw cached)))
-
 (defvar bullets (list))
 (defun shoot-bullet (loc dir)
   (push bullets (list loc dir 0)))
@@ -513,7 +497,7 @@
     ;(gl.clearColor 0.0 0.0 0.0 1.0)
     (gl.clear gl.COLOR_BUFFER_BIT)
     (with-prefix model: 
-		(with-draw on-draw
+		(with-draw model:on-draw
 		  
         (rgb 1 0 1 
 				 (offset 0.0 -5.0 -10.0
