@@ -201,6 +201,7 @@
                (* (mat4:get m 2 2) (vec3:z v)) 
                (mat4:get m 2 3)) w))
         )
+	 
 	 (if in-place
 		  (progn
 			 (setnth v 0 x)
@@ -269,11 +270,14 @@
 (defun mat4:camera-look-at(eye center up)
   ($ let ((f (vec3:normalize (vec3:- center eye)))
 			 (s (vec3:normalize (vec3:cross f up)))
-			 (t (vec3:cross s f))))
-  (mat4:new (vec3:x s) (vec3:x t) (- (vec3:x f)) 0.0
-				(vec3:y s) (vec3:y t) (- (vec3:y f)) 0.0
-				(vec3:z s) (vec3:z t) (- (vec3:z f)) 0.0
-				(vec3:x eye) (vec3:y eye) (vec3:z eye) 1.0))
+			 (t (vec3:cross s f))
+			 (m (mat4:new (vec3:x s) (vec3:x t) (- (vec3:x f)) 0.0
+							  (vec3:y s) (vec3:y t) (- (vec3:y f)) 0.0
+							  (vec3:z s) (vec3:z t) (- (vec3:z f)) 0.0
+							  0 0 0 1))))
+  (mat4:translate m (- (vec3:x eye)) (- (vec3:y eye)) (- (vec3:z eye)))
+  m)
+				
 (defun mat4:transpose-mat3 (m)
   (swap (th m 1) (th m 4))
   (swap (th m 2) (th m 8))

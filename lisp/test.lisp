@@ -537,10 +537,18 @@ asd ")
 		(assert (not (mat4:is-identity m3)))
 		(assert (mat4:is-identity (mat4:* m3 m3i)))
 		(assert (mat4:is-identity (mat4:* m3i m3)))
-		
 		)))
 
 
-(println 'minus-one (- 1))
-(println mat4:camera-look-at)
-(println mat4:invert)
+(let ((p (mat4:perspective 1.1 1.5 0.1 1000.0))
+		(cm (mat4:camera-look-at (vec3:new 1 2 3) (vec3:new 10 11 8) (vec3:new 0 1 0)))
+		(cmi (mat4:invert cm))
+		(combined (mat4:* p cm))
+		(combined2 (mat4:* p cmi))
+		(combined-invert (mat4:invert combined))
+		(test-point (vec3:new 10 11 8))
+		)
+  
+  ($ let ((test-point-2 (mat4:apply cmi (vec3:new 0 0 -13.7 )))))
+  (println test-point-2)
+  )
