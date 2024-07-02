@@ -113,3 +113,66 @@
 (defvar keys::table (keys::to-table keys::key-list cadr car))
 
 (defun keys:code-to-key (keycode) (hashmap-get keys::table keycode))
+
+
+(defvar keydown (makehashmap))
+(defun key:down (key) (hashmap-get keydown key))
+(defvar events-list (list))
+(defun key:clear-events ()
+  (set events-list (list))
+  ) 
+
+(defun key:check-event (key type)
+  (block check
+	 ($ for-each k events-list)
+	 ($ when (eq (car k) type))
+	 ($ when (eq (cadr k) key))
+	 (return-from check t)
+	 ))
+
+(defun key:on-down (key) (key:check-event key 'key-down))
+(defun key:on-up (key) (key:check-event key 'key-up))
+
+(defvar keydown (makehashmap))
+(defun key:down (key) (hashmap-get keydown key))
+(defvar events-list (list))
+(defun key:clear-events ()
+  (set events-list (list))
+  ) 
+
+(defun key:check-event (key type)
+  (block check
+	 ($ for-each k events-list)
+	 ($ when (eq (car k) type))
+	 ($ when (eq (cadr k) key))
+	 (return-from check t)
+	 ))
+
+(defun key:on-down (key) (key:check-event key 'key-down))
+(defun key:on-up (key) (key:check-event key 'key-up))
+
+(defvar events-loaded nil)
+(defun key:load-events (canvas)
+  (unless events-loaded 
+    (set events-loaded t)
+    (window.addEventListener "keydown"
+		 (lambda (evt)
+		 ($ let ((k (keys:code-to-key evt.keyCode))))
+		 ($ unless (eq k 'key:f12))
+		 ($ unless (eq k 'key:f5))
+		 (evt.preventDefault) 
+       (hashmap-set keydown k t)
+     	 (push events-list (list 'key-down k))
+       ))
+    (window.addEventListener "keyup" (lambda (evt) 
+		  ($ let ((k (keys:code-to-key evt.keyCode))))
+		  ($ unless (eq k 'key:f12))
+		  ($ unless (eq k 'key:f5))
+		  (evt.preventDefault) 
+        (hashmap-set keydown k nil)
+		  (push events-list (list 'key-up k))
+        ))
+
+    ;(canvas.addEventListener "mousedown" (lambda (&rest args) (println args)))
+
+))

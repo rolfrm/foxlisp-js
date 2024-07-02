@@ -42,13 +42,26 @@
     (vec3:apply + v1 v2))
 
 (defun vec3:sub (v1 v2)
-    (vec3:apply - v1 v2))
+  (vec3:apply - v1 v2))
 
 (defun vec3:mul (v1 v2)
-    (vec3:apply * v1 v2))
+  (vec3:apply * v1 v2))
 
 (defun vec3:div (v1 v2)
     (vec3:apply / v1 v2))
+
+(defun vec3:cross (v1 v2)
+  (vec3:new (- (* (vec3:y v1) (vec3:z v2)) (* (vec3:z v1) (vec3:y v2)))
+				(- (* (vec3:z v1) (vec3:x v2)) (* (vec3:x v1) (vec3:z v2)))
+				(- (* (vec3:x v1) (vec3:y v2)) (* (vec3:y v1) (vec3:x v2)))))
+
+(defvar vec3:- vec3:sub)
+
+(defvar vec3:+ vec3:add)
+
+(defvar vec3:* vec3:mul)
+
+(defvar vec3:/ vec3:div)
 
 (defun vec3:mul-scalar (v s)
     (vec3:new (* (vec3:x v) s) (* (vec3:y v) s) (* (vec3:z v) s)))
@@ -73,13 +86,11 @@
 	 (push mat4::stack m)))
 
 (defun mat4:clone(matrix)
-  (if (len mat4::stack)
-	 (let ((r (pop mat4::stack)))
-		(r.set matrix)
-		r)
-	 (progn
-		(println 'new-matrix)
-		(Float32Array.from matrix))))
+  (let ((r (mat4::stack.pop)))
+	 (if r
+		  (r.set matrix)
+		  (set r (Float32Array.from matrix)))
+	 r))
 
 (defun mat4::pop-or-create()
   (if (length mat4::stack)
@@ -254,6 +265,74 @@
    0 (/ 2.0 (- top bottom)) 0 (/ (- (+ top bottom)) (- top bottom))
    0 0 (/ -2.0 (- far near)) (/ (- (+ far near)) (- far near))
    0 0 0 1))
+
+(defun mat4:camera-look-at(eye center up)
+  ($ let ((f (vec3:normalize (vec3:- center eye)))
+			 (s (vec3:normalize (vec3:cross f up)))
+			 (t (vec3:cross s f))))
+  (mat4:new (vec3:x s) (vec3:x t) (- (vec3:x f)) 0.0
+				(vec3:y s) (vec3:y t) (- (vec3:y f)) 0.0
+				(vec3:z s) (vec3:z t) (- (vec3:z f)) 0.0
+				(vec3:x eye) (vec3:y eye) (vec3:z eye) 1.0))
+(defun mat4:transpose-mat3 (m)
+  (swap (th m 1) (th m 4))
+  (swap (th m 2) (th m 8))
+  (swap (th m 3) (th m 12))
+  (swap (th m 6) (th m 9))
+  )
+
+(defun mat4:camera-inverse2 (m)
+  (println 'invert-m)
+  (mat4:print m)
+  (mat4:transpose-mat3 m)
+  ($ let ((t2 (vec3:new (th m 12) (th m 13) (th m 14)))
+			 (t3 (mat4:apply m t2))))
+  (println t2)
+  (mat4:print m)
+  )
+
+(defun mat4:invert(m)
+  ($ let ((s0 (- (* (th m 0) (th m 5)) (* (th m 4) (th m 1))))
+			 (s1 (- (* (th m 0) (th m 6)) (* (th m 4) (th m 2))))
+			 (s2 (- (* (th m 0) (th m 7)) (* (th m 4) (th m 3))))
+			 (s3 (- (* (th m 1) (th m 6)) (* (th m 5) (th m 2))))
+			 (s4 (- (* (th m 1) (th m 7)) (* (th m 5) (th m 3))))
+			 (s5 (- (* (th m 2) (th m 7)) (* (th m 6) (th m 3))))
+
+			 (c0 (- (* (th m  8) (th m 13)) (* (th m 12) (th m  9))))
+			 (c1 (- (* (th m  8) (th m 14)) (* (th m 12) (th m 10))))
+			 (c2 (- (* (th m  8) (th m 15)) (* (th m 12) (th m 11))))
+			 (c3 (- (* (th m  9) (th m 14)) (* (th m 13) (th m 10))))
+			 (c4 (- (* (th m  9) (th m 15)) (* (th m 13) (th m 11))))
+			 (c5 (- (* (th m 10) (th m 15)) (* (th m 14) (th m 11))))
+
+			 (idet (/ 1.0 (+ (* s0 c5)
+								  (* -1 s1 c4)
+								  (* s2 c3)
+								  (* s3 c2)
+								  (* -1 s4 c1)
+								  (* s5 c0))))))
+  (mat4:new
+ (* idet (+ (*    (th m  5) c5) (* -1 (th m 6 ) c4) (*    (th m  7) c3)))
+ (* idet (+ (* -1 (th m  1) c5) (*    (th m 2 ) c4) (* -1 (th m  3) c3)))
+ (* idet (+ (*    (th m 13) s5) (* -1 (th m 14) s4) (*    (th m 15) s3)))
+ (* idet (+ (* -1 (th m  9) s5) (*    (th m 10) s4) (* -1 (th m 11) s3)))
+ 
+ (* idet (+ (* -1 (th m  4) c5) (*    (th m  6) c2) (* -1 (th m  7) c1)))
+ (* idet (+ (*    (th m  0) c5) (* -1 (th m  2) c2) (*    (th m  3) c1)))
+ (* idet (+ (* -1 (th m 12) s5) (*    (th m 14) s2) (* -1 (th m 15) s1)))
+ (* idet (+ (*    (th m  8) s5) (* -1 (th m 10) s2) (*    (th m 11) s1)))
+
+ (* idet (+ (*    (th m  4) c4) (* -1 (th m  5) c2) (*    (th m  7) c0)))
+ (* idet (+ (* -1 (th m  0) c4) (*    (th m  1) c2) (* -1 (th m  3) c0)))
+ (* idet (+ (*    (th m 12) s4) (* -1 (th m 13) s2) (*    (th m 15) s0)))
+ (* idet (+ (* -1 (th m  8) s4) (*    (th m  9) s2) (* -1 (th m 11) s0)))
+
+ (* idet (+ (* -1 (th m  4) c3) (*    (th m  5) c1) (* -1 (th m  6) c0)))
+ (* idet (+ (*    (th m  0) c3) (* -1 (th m  1) c1) (*    (th m  2) c0)))
+ (* idet (+ (* -1 (th m 12) s3) (*    (th m 13) s1) (* -1 (th m 14) s0)))
+ (* idet (+ (*    (th m  8) s3) (* -1 (th m  9) s1) (*    (th m 10) s0)))))
+
 
 (defun mat4:rotation (angle axis-vector)
   (set axis-vector (vec3:normalize axis-vector))

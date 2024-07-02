@@ -5,7 +5,24 @@
     1 1 1)))
 (defvar model:transform (mat4:identity))
 (defvar model:color nil)
-(defvar model:projection (mat4:perspective 1.5 1.0 0.1 1000.0))
+
+(defvar model:projection (mat4:perspective 1.1 1.0 0.1 1000.0))
+(defvar model:camera (mat4:identity))
+(defvar model:inverse-camera (mat4:identity))
+
+(defun model:set-camera-fps(pos y-rot)
+  
+
+  )
+
+(defun model:camera-look-at(eye center up)
+  ($ let ((f (vec3:normalize (vec3:- center eye)))
+			 (s (vec3:normalize (vec3:cross f up)))
+			 (t (vec3:cross s f))))
+  (mat4:new (vec3:x s) (vec3:x t) (- (vec3:x f)) 0.0
+				(vec3:y s) (vec3:y t) (- (vec3:y f)) 0.0
+				(vec3:z s) (vec3:z t) (- (vec3:z f)) 0.0
+				(vec3:x eye) (vec3:y eye) (vec3:z eye) 1.0))
 
 (defvar model::chain-functions (makehashmap))
 (for-each item '((model:rotate-x model:rotate-x-i)
@@ -681,7 +698,8 @@
 		(polygon:draw cached)
 		))
 (defvar gl nil)
+(defvar model:webgl-canvas nil)
 (defun model:initialize-gl (canvas-id)
-  ($ let ((webgl-canvas (document.getElementById canvas-id))))
-  (set gl (webgl-canvas.getContext "webgl2"))
+  (set model:webgl-canvas (document.getElementById canvas-id))
+  (set gl (model:webgl-canvas.getContext "webgl2"))
   (assert gl))

@@ -18,19 +18,12 @@
         )
         (unless (eq x (nth code i))
           (when (eq code result)
-            (set result (apply list code))
-          )
-          (setnth result i x )
-
-        )
-      ))
+            (set result (apply list code)))
+          (setnth result i x ))))
       result))
-    
-  
 
 (defmacro with-prefix (prefix &rest body)
   `(progn ,@(prefix-symbols prefix body)))
-
 
 (defun $-impl (context index)
   (let ((new-context (take context (+ 1 index)))
@@ -124,7 +117,7 @@
 
 (defmacro - (&rest args2)
   (if (eq (length args2) 1)
-		`(%js "-" ,(car args2))
+		`(%js "(-" ,(car args2) ")")
 		`(%js ,@(sub-builder args2))))
 
 (defmacro < (&rest args2)

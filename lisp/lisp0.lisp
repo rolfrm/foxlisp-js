@@ -420,20 +420,14 @@
 	   (assert-eq 2 (length item))
 	   (let ((c `(if ,(car item) ,(cadr item))))
 	      ;; append the case to the list of cases.
-	      (set out-cases (concat out-cases (list c)))
-	   )
-	  )
-	  (link-ends out-cases)
-  )
-)
+	      (set out-cases (concat out-cases (list c)))))
+	  (link-ends out-cases)))
 
 (defun index-of (item lst)
-   (lst.indexOf item)
-)
+   (lst.indexOf item))
 
 (defun memq (item lst)
-   (skip lst (index-of item lst))
-)
+   (skip lst (index-of item lst)))
 
 (defvar min Math.min)
 (defvar max Math.max)
@@ -447,8 +441,7 @@
     (min maximum (max v minimum)))
 
 (defmacro incr (sym incr_value)
-  `(set ,sym (+ ,sym ,(or incr_value 1)))
-  )
+  `(set ,sym (+ ,sym ,(or incr_value 1))))
 
 (defun push (location value)
   (location.push value))
@@ -456,13 +449,17 @@
 (defun pop (location)
   (location.pop))
 
+(defmacro swap (a b)
+  `(let ((tmp ,b))
+	  (set ,b ,a)
+	  (set ,a tmp)))
+
+
 (defmacro for (varsym start stop increment &rest body)
   `(let ((,varsym ,start))
 	  (loop ,stop
 		,@body
-		,increment
-	  )
-	  ))
+		,increment)))
 
 (defun order-by (lst f)
     (let ((lst2 (lst.slice)))
@@ -470,30 +467,22 @@
 	      (if (> a b) 
 		     1
 			 (if (< a b) 
-			  -1 0
-			 )
-		  )
-	   ))
+			  -1 0))))
 	   lst2))
 
 (defun select (list f)
-   (let ((out (list.slice))
-         (l list.length))
-     (for i 0 (< i l) (incf i) 
-	     (setnth out i (f (getnth list i))))
-     out
-   ))
+  (let ((out (list.slice))
+        (l list.length))
+    (for i 0 (< i l) (incf i) 
+			(setnth out i (f (getnth list i))))
+    out))
 
 (defun where (lst f)
    (let ((out-lst (list)) (l (length lst)))
      (for-each x lst  
 	   (when (f x)
-	      (push out-lst x)
-	   )
-	 )
-   out-lst
-   )
-)
+	      (push out-lst x)))
+   out-lst))
 
 (defun aggregate (lst f)
    (when lst 
@@ -503,23 +492,16 @@
 	   v )))
 
 (defun take (lst n)
-   (lst.slice 0 n)
-	)
-
-;(defun slice (lst i n)
- ; (lst.slice i n))
+   (lst.slice 0 n))
 
 (defun skip (lst n)
    (lst.slice n))
 
-
 (defun async-call (f)
-   (%js "async function (){" f "()}()") 
-)
+   (%js "async function (){" f "()}()"))
 
 (defun function-signature (f)
-	(concat (list f.lispname) f.lispargs)
-)
+  (concat (list f.lispname) f.lispargs))
 
 (defmacro defun (name args &rest code)
   `(defvar ,name
@@ -534,9 +516,7 @@
     (dir.pop)
     (dir.push file)
     (let ((newpath (dir.join "/")))
-      (loadfile newpath))
-  )
-)
+      (loadfile newpath))))
 
 ;; math
 (defvar math:pi Math.PI)
