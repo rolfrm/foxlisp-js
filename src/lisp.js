@@ -51,9 +51,7 @@ __undefined = undefined
 
 eq = (a, b) => a === b;
 slice = (a, n) => a && (a.length <= n ? null : a.slice(n));
-raise = (err) => {
-	 throw err;
-};
+_raise = (err) => {throw err;}
 
 usplice = (x) => ({type: "unsplice", value: x})
 
@@ -392,7 +390,7 @@ function lispCompile2(code) {
 					 
 				}
 				
-				return `const ${sym.jsname} = {};try{${bodyCode}}catch(ex){if(ex.id === ${sym.jsname}){${value_marker} ex.value;}else{raise(ex);}}`
+				return `const ${sym.jsname} = {};try{${bodyCode}}catch(ex){if(ex.id === ${sym.jsname}){${value_marker} ex.value;}else{_raise(ex);}}`
 		  }
 		  case returnFromSym:{
 				const [sym, value] = operands;
@@ -403,7 +401,7 @@ function lispCompile2(code) {
 					 valuef = "tmpValue";
 				}
 				
-				return `${pre} raise({id:${sym.jsname}, value:${valuef}, type: "return-from" })`;
+				return `${pre} _raise({id:${sym.jsname}, value:${valuef}, type: "return-from" })`;
 		  }
 		  case lambdaSym:
 				{
@@ -430,7 +428,6 @@ function lispCompile2(code) {
 						  bodyCode = "{ var lambdaResult;"+ bodyCode.replaceAll(value_marker, "lambdaResult=") + "return lambdaResult}"
 					 }
 					 let lmb = `(${argstr}) => ${bodyCode}`;
-					 //console.log(lmb)
 					 
 					 return lmb
 				}
@@ -560,7 +557,7 @@ function lispCompile2(code) {
 					 const [varSym, handlerBody] = handler;
 					 const bodyCode = lispCompile(body);
 					 const handlerBodyCode = lispCompile(handlerBody);
-					 return `try{${isScope(bodyCode) ? bodyCode : value_marker + " " + bodyCode}}catch(${varSym.jsname}){ if(${varSym.jsname}.type === "return-from") raise(${varSym.jsname}); ${isScope(handlerBodyCode) ? handlerBodyCode : value_marker +" " + handlerBodyCode}}`
+					 return `try{${isScope(bodyCode) ? bodyCode : value_marker + " " + bodyCode}}catch(${varSym.jsname}){ if(${varSym.jsname}.type === "return-from") _raise(${varSym.jsname}); ${isScope(handlerBodyCode) ? handlerBodyCode : value_marker +" " + handlerBodyCode}}`
 					 
 				}
 				// Add more cases for other operators as needed
@@ -624,10 +621,16 @@ eval2 = evalLisp
 loadFileAsync = null
 loadcontext = ""
 currentEval = null
+error = null
 async function LispEvalBlock(code, file) {
-	 "use strict";
+	 let len1 = code.length
+	 let originalCode = code
+	 //"use strict";
 	 for(;;){
-		  
+
+		  parser.fileOffset = len1 - code.length
+		  parser.codeBase = originalCode
+		  parser.setCodeBase(originalCode)
 		  const [ast, next] = parser.ParseLisp(code)
 		  if (ast == parser.UnexpectedEOF){	
 				throw new Error(`Unexpected EOF in file ${file}`)
@@ -654,9 +657,9 @@ async function LispEvalBlock(code, file) {
 		  finally{
 
 		  }
-
+		  console.log(">>>> ", ast.offset)
 		  // there are two ways of doing this, which may be the same
-		  let ncode = "function currentEval()" + js;
+		  const ncode = "function currentEval()" + js;
 		  console.log(ncode)
 		  eval?.(ncode)
 		  
@@ -668,7 +671,7 @@ async function LispEvalBlock(code, file) {
 				const data = await loadFileAsync(result.value)
 				const prevContext = loadcontext
 				loadcontext = result.value
-				LispEvalBlock(data + "\n" + next, result.value)
+				await LispEvalBlock(data + "\n" + next, result.value)
 				loadcontext = prevContext
 				return;
 		  }

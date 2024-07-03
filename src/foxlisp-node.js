@@ -18,6 +18,7 @@ loadFileAsync = load_file;
 
 loadWat = null;
 
+/*
 const wabt = require('./extern/wabt.js');
 
 (async () => {
@@ -35,4 +36,4 @@ const wabt = require('./extern/wabt.js');
 	 }
 
 	
-})();
+})();*/

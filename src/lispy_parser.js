@@ -1,5 +1,11 @@
 const lisp = require("./symbols")
 
+codeBase = null
+
+function setCodeBase(code){
+	 codeBase = code
+}
+
 class ParserCondition {
     constructor(err) {
       this.err = err;
@@ -147,7 +153,7 @@ class ParserCondition {
       switch (input[0]) {
         
         case '(':
-          
+          let offset = codeBase.length - input.length
           input = skipCommentAndWhitespace(input.slice(1));
           
           if(input[0] == ')'){  
@@ -161,6 +167,8 @@ class ParserCondition {
               out.push(result)
               input = skipCommentAndWhitespace(input);
 					 if(input[0] == ')'){
+						  out.codeBase = codeBase
+						  out.offset = offset
 						  Object.freeze(out)
 						  return [out, input.slice(1)];
 					 }
@@ -228,7 +236,8 @@ class ParserCondition {
     }
   }
   
-  module.exports = {
+module.exports = {
     ParseLisp: ParseLisp,
-    UnexpectedEOF: UnexpectedEOF
-  };
+    UnexpectedEOF: UnexpectedEOF,
+	 setCodeBase: setCodeBase
+};
