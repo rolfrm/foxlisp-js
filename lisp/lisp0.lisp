@@ -29,6 +29,8 @@
   (defun::codemap.set name (list args code))
   `(defvar ,name
 	  (lambda ,args ,@code)))
+(defun make-error(o)
+  (%js "new Error(o)"))
 
 (defmacro raise (&rest body)
   `(_raise ,(car body)))
@@ -501,7 +503,7 @@
 (defvar math:sqrt3 (math:sqrt 3.0))
 
 (defun math:random (min max)
-  (+ (* (Math.random) (- max min) ) min))
+  (+ (* (Math.random) (- max min)) min))
 
 (defun lisp::make-float32-array (n)
   (%js "new Float32Array(n)"))

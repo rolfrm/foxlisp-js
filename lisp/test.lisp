@@ -188,7 +188,6 @@ asd ")
 (assert-equals '(4 5) (where '(1 2 3 4 5) (lambda (x) (> x 3))))
 (assert-equals '(1 2 3) (take '(1 2 3 4 5) 3))
 (assert-equals '(4 5) (skip '(1 2 3 4 5) 3))
-(println Infinity)
 
 
 (println (apply println '(1 2 3 4)))
@@ -493,17 +492,34 @@ asd ")
   (println 'hello))
 
 (println (defun:get-code 'test-get-code))
+(defvar defun::callstack (list))
 (let ((all-fcn (hashmap-keys defun::codemap)))
   (for-each f all-fcn
 				(println f (defun:get-code f))
-				(when (eq f 'test-get-code)
+				(when t ;(eq f 'test-get-code)
 				  (let ((ca (defun:get-code f)))
+					 (unless (or t (eq f 'push) (eq f 'pop))
 					 (eval `(defun ,f ,(car ca)
+								 
+								 (push defun::callstack ',f)
+								 (println 'call: defun::callstack)
+								 (let ((r (progn ,@(cadr ca))))
+									(pop defun::callstack)
+									r)
 
-							  (println 'call: ',f)
-							  ,@(cadr ca)))))))
+							  )))))))
 (test-get-code)
 
 													 ;(raise "oh no 2")
 
 (println (lisp::make-float32-array 2))
+(println (mat4:identity))
+
+(println (car (list 1 2)))
+
+(defun emit-error()
+  (raise (make-error "oh no!")))
+
+;(emit-error)
+(println 1)
+;(println global)

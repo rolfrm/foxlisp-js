@@ -9,19 +9,20 @@ for(i = 2; i < process.argv.length; i++){
     code += "(loadfile \"" + process.argv[i] + "\")";
 }
 
-async function nop(){
-	 console.log("nop")
-}
-
 async function EvalTopLevel(code){
 	 try{
-		  await LispEvalBlock(code);
+		  await LispEvalBlock(code, "toplevel");
 		  if(error != null){
 				throw error
 		  }
 		  
 	 }catch(err){
-		  console.log("error occured")
+		  
+		  if(err._at)
+				console.log("Unhandled error. "		 + err._at)
+		  else
+				console.log("Unhandled error. ")
+		  
 		  console.log(err)	  
 	 }
 	 console.log("Finished application")

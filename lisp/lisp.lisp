@@ -37,24 +37,34 @@
 (hashmap-set super-macros '! !-impl)
 (hashmap-set super-macros ', !-impl)
 
+;; this code scans for and applies super-macros
 (defun reader-replacer (code)
   (if (list? code)
-		(progn
-		  (set code (apply list code))
+		(let ((orig-code code))
 		  (dotimes (i (length code))
-			 (let ((x (getnth code i)))
+			 (let ((x (th code i)))
 				(when (list? x)
 				  (if (symbol? (car x))
 						(let ((sw (hashmap-get super-macros (car x))))
+						  
 						  (if sw
 								(let ((result (sw code i)))
 								  (set code result)
 								  (set i 0))
-					 			(setnth code i (reader-replacer x))
-								))
-						(setnth code i (reader-replacer x))))
+								(progn
+								  (when (eq code orig-code)
+									 (set code (apply list code)))
+					 			  (setnth code i (reader-replacer x))
+								  )))
+						(let ((new-v (reader-replacer x)))
+						  (when (eq code orig-code)
+							 (set code (apply list code)))
+						  (setnth code i new-v))))
 				(when (symbol? x)
 				  (let ((sw (hashmap-get super-macros x)))
+					 (when (eq code orig-code)
+						(set code (apply list code)))
+						
 					 (when sw
 						(set code (sw code i))
 						(set i 0))))))
@@ -115,3 +125,5 @@
 		(raise "!!!")))
 
 ;(load "lisp2.lisp")
+
+

@@ -1,6 +1,6 @@
 const fs = require('fs').promises;
 async function load_file(filePath){
-    return await fs.readFile(filePath);
+    return await fs.readFile(filePath, 'utf8');
 }
 
 function WriteCodeToLog(code) {

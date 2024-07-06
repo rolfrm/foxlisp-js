@@ -8,7 +8,7 @@ const reserved = {
 const sanitizedLookup = {}
 const sanitizedLookupRev = {}
 
-nameid = 0;
+let nameid = 0;
 function sanitizeSymbolName(name) {
 	if (name in sanitizedLookup) {
 		return sanitizedLookup[name]

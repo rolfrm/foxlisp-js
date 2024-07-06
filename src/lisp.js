@@ -1,8 +1,6 @@
 const parser = require("./lispy_parser")
 const lisp = require("./symbols")
 
-
-console.log("loading lispy")
 function sym(x, jsname){
     return lisp.sym(x, jsname)
 }
@@ -12,10 +10,10 @@ function issym(x){
 }
 
 
-quotes = []
-quotes_lookup = {}
+__quotes = []
+const quotes_lookup = {}
 function _getQuote(id) {
-    return quotes[id]
+    return __quotes[id]
 }
 getQuote = _getQuote
 function setQuote(newQuote){
@@ -23,9 +21,9 @@ function setQuote(newQuote){
 	 if(existing) {
 		  return existing
 	 }
-    let id = quotes.length;
-    quotes.length += 1
-    quotes[id] = newQuote
+    let id = __quotes.length;
+    __quotes.length += 1
+    __quotes[id] = newQuote
 	 quotes_lookup[newQuote] = id
     return id
 }
@@ -441,7 +439,7 @@ function lispCompile2(code) {
 					 }
 					 
 					 const id = setQuote(quoted)
-					 return `quotes[${id}]`
+					 return `__quotes[${id}]`
 				}
 		  case quasiQuoteSym:
 				{
@@ -462,7 +460,8 @@ function lispCompile2(code) {
 					 if(isScope(valueCode)){
 						  code2 = `${sym.jsname} = null;${valueCode.replaceAll(value_marker, sym.jsname + "=")}`
 					 }
-					 
+
+					 console.log(code2)
 					 let result = eval?.(code2);
 					 if(typeof(result) == "function" && result.assoc_id){
 						  result.lispname = sym
@@ -487,7 +486,7 @@ function lispCompile2(code) {
 					 
 					 return "1"
 				}
-		  case setSym:
+		  case setSym: {
 				const [variable, value] = operands;
 				let result = lispCompile(value)
 				let leftHand = variable.jsname
@@ -504,7 +503,8 @@ function lispCompile2(code) {
 				}else{
 					 result = leftHand + "=" + result;
 				}
-				return result;
+				return result
+		  }
 		  case letSym: {
 				const [variables, ...body] = operands
 				return lispCompileLet(variables, body)
@@ -599,8 +599,6 @@ lisp_reader = function(code) {
 
 function lispCompileAst(ast){
     js = "'use strict'\n; return "+ lispCompile(lisp_reader(ast))
-    //console.log("ast: ", ast)
-    //console.log("js: ", js)
     return Function(js)
 }
 
@@ -617,17 +615,37 @@ function evalLisp(code){
 	 return fn();
 }
 
+function countNewlinesBeforeIndex(str, index) {
+    if (index < 0 || index > str.length) {
+        throw new Error('Index out of bounds');
+    }
+
+    let newlineCount = 0;
+    for (let i = 0; i < index; i++) {
+        if (str[i] === '\n') {
+            newlineCount++;
+        }
+    }
+
+    return newlineCount;
+}
+
+
+//let onErrorSym = lisp.sym("lisp-parser:on-error")
+ 
+
 eval2 = evalLisp
 loadFileAsync = null
 loadcontext = ""
 currentEval = null
 error = null
+
 async function LispEvalBlock(code, file) {
 	 let len1 = code.length
-	 let originalCode = code
-	 //"use strict";
+	 
+	 const originalCode = code
 	 for(;;){
-
+		  let offset = len1 - code.length
 		  parser.fileOffset = len1 - code.length
 		  parser.codeBase = originalCode
 		  parser.setCodeBase(originalCode)
@@ -635,45 +653,43 @@ async function LispEvalBlock(code, file) {
 		  if (ast == parser.UnexpectedEOF){	
 				throw new Error(`Unexpected EOF in file ${file}`)
 		  }
+		  
 		  if (next == null){
+				
 				return;
 		  }
 		  code = next;
-		  var js;
-		  
+
 		  try{
-				js = lispCompile(lisp_reader(ast));
+				var js = lispCompile(lisp_reader(ast));
 				if(isScope(js)){
 					 js = js.replaceAll(value_marker, "returnValue =");
 					 js = "{'use strict'; var returnValue;" + js + "return returnValue;}";
 				}else{
 					 js = "{'use strict'; return " + js + "}";
 				}
+		  
+		  
+				// there are two ways of doing this, which may be the same
+				const ncode = "function currentEval()" + js;
+				console.log(ncode, file, " line: " + countNewlinesBeforeIndex(originalCode, offset))
+				eval?.(ncode)
+		  		const result = currentEval();
+				
+				if(result != null && typeof(result) == "object" && result.type == "load"){
+					 
+					 const data = await loadFileAsync(result.value)
+					 const prevContext = loadcontext
+					 loadcontext = result.value
+					 await LispEvalBlock(data, result.value)
+					 loadcontext = prevContext
+				}
 		  }catch(e){
-				console.log(e);
-				console.trace(e)
-				return;//throw e
-		  }
-		  finally{
-
-		  }
-		  console.log(">>>> ", ast.offset)
-		  // there are two ways of doing this, which may be the same
-		  const ncode = "function currentEval()" + js;
-		  console.log(ncode)
-		  eval?.(ncode)
-		  
-		  const result = currentEval();
-		  //const result = eval?.("() => " + js)()
-		  
-		  if(result != null && typeof(result) == "object" && result.type == "load"){
-
-				const data = await loadFileAsync(result.value)
-				const prevContext = loadcontext
-				loadcontext = result.value
-				await LispEvalBlock(data + "\n" + next, result.value)
-				loadcontext = prevContext
-				return;
+				
+				if(!e._at){
+					 e._at = file + " line: " + (1 + countNewlinesBeforeIndex(originalCode, offset));
+				}
+				throw e
 		  }
 	 }
 }
