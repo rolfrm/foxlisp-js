@@ -490,14 +490,14 @@
 (defvar math:2pi (* Math.PI 2))
 (defvar math:pi/2 (/ Math.PI 2))
 
-(defun math:sin (x) (Math.sin x))
-(defun math:cos (x) (Math.cos x))
-(defun math:tan (x) (Math.tan x))
-(defun math:asin (x) (Math.asin x))
-(defun math:acos (x) (Math.acos x))
-(defun math:atan (x) (Math.atan x))
-(defun math:atan2 (y x) (Math.atan2 y x))
-(defun math:sqrt (x) (Math.sqrt x))
+(defvar math:sin Math.sin)
+(defvar math:cos Math.cos)
+(defvar math:tan Math.tan)
+(defvar math:asin Math.asin)
+(defvar math:acos Math.acos)
+(defvar math:atan Math.atan)
+(defvar math:atan2 Math.atan2)
+(defvar math:sqrt Math.sqrt)
 
 (defvar math:sqrt2 (math:sqrt 2.0))
 (defvar math:sqrt3 (math:sqrt 3.0))
@@ -530,3 +530,6 @@
 
 (defun object? (item) (eq (type-of item) "object"))
 (defun null? (item) (and (object? item) (not item)))
+
+(defmacro fn (&rest args0)
+  `(lambda ,@args0))

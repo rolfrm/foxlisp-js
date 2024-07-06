@@ -631,8 +631,13 @@ function countNewlinesBeforeIndex(str, index) {
 }
 
 
-//let onErrorSym = lisp.sym("lisp-parser:on-error")
- 
+function on_lisp_error(e){
+	 console.log(e)
+}
+
+let onErrorSym = lisp.sym("lisp-parser:on-error")
+
+global[onErrorSym.jsname] = on_lisp_error;
 
 eval2 = evalLisp
 loadFileAsync = null
@@ -687,8 +692,9 @@ async function LispEvalBlock(code, file) {
 		  }catch(e){
 				
 				if(!e._at){
-					 e._at = file + " line: " + (1 + countNewlinesBeforeIndex(originalCode, offset));
+					 e._at = file + " line: " + (1 + countNewlinesBeforeIndex(originalCode, offset))
 				}
+				
 				throw e
 		  }
 	 }

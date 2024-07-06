@@ -19,7 +19,7 @@ async function EvalTopLevel(code){
 	 }catch(err){
 		  
 		  if(err._at)
-				console.log("Unhandled error. "		 + err._at)
+				console.log("Unhandled error at " + err._at + ".")
 		  else
 				console.log("Unhandled error. ")
 		  

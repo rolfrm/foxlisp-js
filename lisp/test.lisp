@@ -294,7 +294,8 @@ asd ")
 
 (load "polygon.lisp")
 (println (polygon:new '(0 0 0 1 0 0 0 1 0)))
-
+(println 'TRANSLATE: mat4:rotate)
+;(println 'TRANSLATE: mat4:multiply!)
 (load "model.lisp")
 (model:red-cube)
 
@@ -414,10 +415,6 @@ asd ")
   (dotimes (i 12)
 	 (mat4:rotate-x m2 1.0)))
 
-(println mat4:translate)
-
-
-(println 'camera: )
 (defun mat4:is-identity(m a)
   (unless a
 	 (set a 0.00001))
@@ -520,6 +517,41 @@ asd ")
 (defun emit-error()
   (raise (make-error "oh no!")))
 
+(set lisp-parser:on-error
+	  (lambda (e)
+		 
+		 ))
+
+(defun count (lst f)
+  (let ((i 0))
+	 (for-each x lst (when (f x) (incf i)))
+	 i))
+	
+(defun count-item (lst type)
+  (count lst (fn (x) (eq x type))))
+  
+(defun count-newlines-before-index(str index)
+  (+ 1 (count-item (take str index) (nth "
+" 0))))
+
 ;(emit-error)
 (println 1)
-;(println global)
+(lisp-parser:on-error 1000)
+(println (count-newlines-before-index "
+
+
+" 3))
+
+
+(println mat4:rotate)
+
+(let ((m4 (mat4:identity))
+		(v (vec3:new 1 0 0)))
+  (dotimes (i 100000000)
+	 (mat4:rotate m4 0.1 v)
+  ))
+
+(println mat4:rotate)
+(println mat4:rotate-x)
+(println mat4:translate)
+(println mat4:scale)
