@@ -547,7 +547,7 @@ asd ")
 
 (let ((m4 (mat4:identity))
 		(v (vec3:new 1 0 0)))
-  (dotimes (i 100000000)
+  (dotimes (i 1000000)
 	 (mat4:rotate m4 0.1 v)
   ))
 

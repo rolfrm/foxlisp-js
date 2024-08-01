@@ -75,6 +75,9 @@
 (defun symbol? (item) (and item (eq item.type "symbol")))
 (defun number? (item) (eq (type-of item) "number"))
 
+(defun <> (a b c)
+  (and (< a b) (< b c)))
+
 (defmacro unless (test &rest actions)
   `(if ,test () (progn ,@actions)))
 

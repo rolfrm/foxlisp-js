@@ -33,6 +33,9 @@
 							 (/ (vec3:y v) len)
 							 (/ (vec3:z v) len)))))
 
+(defun vec3:normalize-z(v)
+  (vec3:div-scalar v (vec3:z v)))
+
 (defmacro vec3:apply (f a b)
     `(vec3:new (,f (vec3:x ,a) (vec3:x ,b))
                (,f (vec3:y ,a) (vec3:y ,b))

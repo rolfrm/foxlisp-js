@@ -1,0 +1,32 @@
+body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+#container {
+    position: relative;
+    width: 512px;
+    height: 512px;
+}
+
+#webgl-canvas, #blit-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+	 //cursor:none; 
+}
+
+#webgl-canvas {
+    z-index: 0;
+}
+#blit-canvas {
+    z-index: 1;
+}
+		  
+canvas {
+    border: 1px solid black; 
+}
