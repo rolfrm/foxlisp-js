@@ -49,47 +49,62 @@
 
 (defvar occlusion-lookup (makehashmap))
 (defvar visible-keys (makehashmap))
-
-(defmacro occlusion-query (key &rest body)
-  `(let ((existing-query (hashmap-get occlusion-lookup ,key))
-			(model:visible nil)
-			)
+(defun occlusion-query::start(key)
+  (let ((existing-query (hashmap-get occlusion-lookup key))
+		  (model:visible nil))
 	 (unless existing-query
 		(set existing-query (gl.createQuery))
-		(hashmap-set occlusion-lookup ,key existing-query))
+		(hashmap-set occlusion-lookup key existing-query))
 	 ;;gl.getQueryParameter(sphere.query, gl.QUERY_RESULT_AVAILABLE))
 	 (when (gl.getQueryParameter existing-query gl.QUERY_RESULT_AVAILABLE)
 		(if (gl.getQueryParameter existing-query gl.QUERY_RESULT)
 			 (progn
-				(hashmap-set visible-keys ,key 1)
+				(hashmap-set visible-keys key 1)
 				(set model:visible t))
-			 (hashmap-set visible-keys ,key 0)
+			 (hashmap-set visible-keys key 0)
 			
 			 ))
 	 (gl.beginQuery gl.ANY_SAMPLES_PASSED_CONSERVATIVE existing-query)
+	 model:visible
+ 
+  ))
+(defmacro occlusion-query (key &rest body)
+  `(let ((model:visible (occlusion-query::start ,key)))
 	 ,@body
 	 (gl.endQuery gl.ANY_SAMPLES_PASSED_CONSERVATIVE)
-  ))
+	 ))
 
 (defmacro item(name &rest body)
-  `(progn
-	  (hashmap-set item-lookup ,name (mat4:clone model:transform))
+  `(let ((item-name ,name))
+	  (hashmap-set item-lookup item-name (mat4:clone model:transform))
 	  ,@body))
+
+(defun physics:bodies (list))
+
+(defun physics:body (id)
+  (push physics:bodies (list id model:transform))
+  )
 
 
 (defun fill-text (text)
-  (let ((c-world (mat4:apply model:transform (vec3:new 0 0 0)))
+  (let ((c-world (mat4:apply model:inverse-camera (mat4:apply model:transform (vec3:new 0 0 0))))
 		  (console2 (mat4:apply model:projection c-world)))
 	 (when (and
 			  (<> 0 (vec3:z console2) 1.0001)
 			  (<> -1 (vec3:x console2) 1.0)
 			  (<> -1 (vec3:y console2) 1.0))
 		
-		(blit-ctx.fillText text (* 256 (+ 1 (vec3:x console2))) (* 256(- 1 (vec3:y console2))))
+		(blit-ctx.fillText text (* 256 (+ 1 (vec3:x console2))) (* 256 (- 1 (vec3:y console2))))
 		)))
 
 (defmacro html-text (name)
   `(fill-text ,name))
+
+(defvar item-bounds (make-hash-map))
+
+;(defmacro bounds (body)
+;  (let ((current _hash-map-get item-bounds item-name)
+;  )))
 
 (defvar offset-x 0.0)
 (defvar offset-y 0.0)
@@ -125,7 +140,7 @@
 		  (incf offset-y (vec3:z v))
 		  )))
   (set model:camera (mat4:identity))
-  (mat4:translate model:camera (- offset-x) 0 (- offset-y))
+  (mat4:translate model:camera (- offset-x) 2.5 (- offset-y))
   (mat4:rotate-y model:camera (* -2 math:pi rotation))
   (set model:inverse-camera (mat4:invert model:camera))
   
@@ -150,12 +165,12 @@
   (set blit-ctx.fillStyle "white")
   (blit-ctx.clearRect 0 0 blit-canvas.width blit-canvas.height)
 	 
-  
+  (set physics:bodies (list))
   (model:start-gl-draw)
   (with-prefix model: 
 	 (with-draw model:on-draw
-		($ rotate-y rotation)
-		($ offset offset-x 0 offset-y)
+		;($ rotate-y rotation)
+		;($ offset offset-x 0 offset-y)
 		(item "camera"
 		(offset (vec3:x pointer-pos) (vec3:y pointer-pos) (vec3:z pointer-pos)
 				  (item "cursor"
@@ -167,10 +182,12 @@
 						 (cube)))))
 		(rgb 0.3 0.3 0.6
 			  
-			  (offset 0 -3 0
-						 
+			  (offset 0 0 0
 						 (scale 2 2 20
+								  (physics:body 'physics:upcube)
 								  (upcube))
+
+						 
 						 (offset 0 2 9.5
 									(item "console"
 											(occlusion-query "console"
@@ -196,9 +213,8 @@
 						 )))))
 	 (gl.bindVertexArray nil)
 	 (set model::bound-va nil)
+	 (println physics:bodies)
 	 
-	 (println (hashmap-get visible-keys "console2"))
-													 ;	
 	 
 	 (requestAnimationFrame animation-loop))
 

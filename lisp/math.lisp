@@ -1,16 +1,16 @@
-(defun vec3:new(x y z)
-    (list x y z))
+(defmacro vec3:new(x y z)
+    `(%js "[ " ,x "," ,y "," ,z "]"))
 (defun vec3:from-array(arr offset)
     (%js "[arr[offset], arr[offset + 1] , arr[offset + 2]]"))
 
-(defun vec3:x(v)
-    (th v 0))
+(defmacro vec3:x(v)
+    `(th ,v 0))
 
-(defun vec3:y(v) 
-    (th v 1))
+(defmacro vec3:y(v) 
+    `(th ,v 1))
 
-(defun vec3:z(v)
-    (th v 2))
+(defmacro vec3:z(v)
+    `(th ,v 2))
 
 (defun vec3:length(v)
   (let ((x (vec3:x v))

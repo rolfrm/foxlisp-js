@@ -2,6 +2,7 @@
 precision highp float;
 
 uniform mat4 view;
+uniform mat4 camera;
 uniform mat4 model;
 
 attribute vec3 vertexes;
@@ -10,8 +11,8 @@ attribute vec3 vertexColor;
 varying  vec3 vertColor;
 varying float depth;
 void main() {
-    vec4 p = view * model * vec4(vertexes, 1.0);
-    vec4 p2 = model * vec4(vertexes, 1.0);
+    vec4 p = view * camera * model * vec4(vertexes, 1.0);
+    vec4 p2 = camera * model * vec4(vertexes, 1.0);
     
     gl_Position = p;
     depth = p2.z / p2.w;
@@ -65,8 +66,10 @@ void main() {
             (set program-object.color (gl.getUniformLocation program "color"))
 				(set program-object.size (gl.getAttribLocation program "size"))
             (set program-object.model (gl.getUniformLocation program "model"))
+            (set program-object.camera (gl.getUniformLocation program "camera"))
             (set program-object.view (gl.getUniformLocation program "view"))
             (set program-object.vertexColor (gl.getAttribLocation program "vertexColor"))
+				(shader:set-camera program-object (mat4:identity))
             program-object
         )))
 
@@ -91,6 +94,7 @@ void main() {
 
 (defun shader:set-model (shader model) (gl.uniformMatrix4fv shader.model false model))
 (defun shader:set-view (shader view-matrix) (gl.uniformMatrix4fv shader.view false view-matrix))
+(defun shader:set-camera (shader camera-matrix) (gl.uniformMatrix4fv shader.camera false camera-matrix))
 
 (defvar shader::default nil)
 

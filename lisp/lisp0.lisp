@@ -102,6 +102,8 @@
 
 (defun makehashmap ()(%js "new Map()"))
 
+(defun make-hash-map ()(%js "new Map()"))
+
 (defvar *types* (makehashmap))
 (defun hashmap-set(map key value)
   (map.set key value))
@@ -109,11 +111,20 @@
 (defun hashmap-get(map key)
   (map.get key))
 
+(defun hash-map-set (map key value)
+  (map.set key value))
+
+(defun hash-map-get (map key)
+  (map.get key))
+
 (defun hashmap-delete(map key)
   (map.delete key))
 
 (defun hashmap-keys(map)
   (Array.from (map.keys)))
+
+(println lisp.symbols)
+
 
 (defmacro deftype (name args typedeclaration)
   `(hashmap-set *types* ',name '(,args ,typedeclaration)))

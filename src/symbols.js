@@ -7,8 +7,14 @@ const reserved = {
 
 const sanitizedLookup = {}
 const sanitizedLookupRev = {}
-
+const symbolArray = []
 let nameid = 0;
+
+function register_symbol(name, sanitized){
+	sanitizedLookup[name] = sanitized
+	sanitizedLookupRev[sanitized] = name
+}
+
 function sanitizeSymbolName(name) {
 	if (name in sanitizedLookup) {
 		return sanitizedLookup[name]
@@ -27,14 +33,12 @@ function sanitizeSymbolName(name) {
 			if (test in sanitizedLookupRev) {
 				continue;
 			}
-			sanitizedLookup[name] = test
-			sanitizedLookupRev[test] = name
+			register_symbol(name, test);
 			return test;
 		}
 	}
 
-	sanitizedLookup[name] = sanitized
-	sanitizedLookupRev[sanitized] = name
+	register_symbol(name, sanitized);
 	return sanitized;
 
 }
@@ -43,6 +47,9 @@ function getsym(str) {
 	return lisp.symbolName[str]
 }
 
+function __sym(index){
+	return lisp.symbols[index]
+}
 
 function sym(str, jsname) {
 	if (!lisp.symbolName[str]) {
@@ -54,12 +61,13 @@ function sym(str, jsname) {
 		const symbol = {
 			type: "symbol",
 			value: str,
-			jsname: jsname
+			jsname: jsname,
+			index: lisp.symbols.length
 		};
 		Object.freeze(symbol)
-
 		lisp.symbolName[str] = symbol;
 		lisp.symbols.push(symbol);
+		
 	}
 	return lisp.symbolName[str];
 }
@@ -71,7 +79,7 @@ quasiunquotesplice_sym = sym("quasiunquote-splice")
 module.exports = {
 	sym: sym,
 	getsym: getsym,
-	lisp: lisp,
+	lisp: lisp,	
 	quote_sym: quote_sym,
 	quasiquote_sym: quasiquote_sym,
 	quasiunquote_sym: quasiunquote_sym,

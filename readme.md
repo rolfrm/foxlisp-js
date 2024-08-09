@@ -14,3 +14,8 @@ node test.js
 npm run build
 
 ```
+
+
+
+## Todo
+- make symbol an index instead of some object.

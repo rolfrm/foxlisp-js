@@ -9,7 +9,7 @@ function issym(x){
 	 return x && x.type == "symbol";
 }
 
-
+___sym = lisp.lisp.symbols
 __quotes = []
 const quotes_lookup = {}
 function _getQuote(id) {
@@ -85,7 +85,6 @@ function escapeString(x){
 getsym = (s) => sym(s, null)
 
 function println_impl(obj){
-	 //console.log("print? ", Array.isArray(obj), obj)
 	 if(Array.isArray(obj) || obj instanceof Float32Array){
 		  
 		  let strOut = ""
@@ -185,6 +184,7 @@ const defvarSym = sym("defvar");
 const defConstSym = sym("defconstant");
 const handleErrorsSym = sym("handle-errors")
 const loop_sym = sym("loop")
+const withSym = sym("with")
 
 function quotedJs(code){
 	 if(Array.isArray(code)){
@@ -192,7 +192,8 @@ function quotedJs(code){
 		  return `[${innerCode}]`
 	 }
 	 if(code.type == "symbol"){
-		  return `getsym("${escapeString(code.value)}")`
+		  
+		  return `getsym("${escapeString(code.value)}")/*1*/`
 	 }
 	 if(typeof(code) == 'string'){
 		  return `"${escapeString(code)}"`
@@ -228,7 +229,7 @@ function unquoteToJs(code){
 		  return `ulist(${innerCode})`;
 	 }
 	 if(code.type == "symbol"){
-		  return `getsym("${escapeString(code.value)}")`
+		  return `getsym("${escapeString(code.value)}")/*2*/`
 	 }
 	 if(typeof(code) == 'string'){
 		  return `"${escapeString(code)}"`
@@ -319,8 +320,7 @@ function lispCompile(code, assignto){
 
 	 if(assignto){
         const r = assignto + " " + result;
-		  
-		  return r
+		return r
 	 }
 	 
 	 return result;
@@ -435,7 +435,10 @@ function lispCompile2(code) {
 				{
 					 const [quoted] = operands
 					 if(issym(quoted)){
-						  return `getsym(\"${quoted.value}\")`
+						if(quoted.index > -1){
+							return `___sym[${quoted.index}]`
+						}
+						  return `getsym(\"${quoted.value}\")/*3*/`
 					 }
 					 
 					 const id = setQuote(quoted)
@@ -559,6 +562,26 @@ function lispCompile2(code) {
 					 const handlerBodyCode = lispCompile(handlerBody);
 					 return `try{${isScope(bodyCode) ? bodyCode : value_marker + " " + bodyCode}}catch(${varSym.jsname}){ if(${varSym.jsname}.type === "return-from") _raise(${varSym.jsname}); ${isScope(handlerBodyCode) ? handlerBodyCode : value_marker +" " + handlerBodyCode}}`
 					 
+				}
+		  case withSym:
+				{
+					 const [arg, ...body] = operands;
+					 // arg must be in the form (sym value)
+					 let argCode = lispCompile(arg[1]);
+					 if(isScope(argCode)){
+						  argCode = argCode.replaceAll(value_marker, arg[0].jsname);
+					 }else{
+                    argCode = arg[0].jsname + "=" + argCode;
+					 }
+						 
+					 let bodyCode = lispCompileLet([], body, true)
+					 if(!isScope(bodyCode)){
+                    bodyCode = value_marker + " " + bodyCode;
+					 }
+					 return `{
+const __prevv = ${arg[0].jsname}; try{ ${argCode}; ${bodyCode}; }finally{ ${arg[0].jsname} = __prevv;}}`
+						  
+
 				}
 				// Add more cases for other operators as needed
 				

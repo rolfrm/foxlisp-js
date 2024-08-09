@@ -95,12 +95,10 @@
 
 (defmacro model:rotate-z (angle &rest body)
   (set body (model::gen-chain-body body))
-  `(let ((prev model:transform))
-     (set model:transform (mat4:clone model:transform))
+  `(with (model:transform (mat4:clone model:transform))
      (mat4:rotate-z model:transform (* ,angle 2 math:pi))
      ,@body
-	  (mat4:dispose model:transform)
-     (set model:transform prev)))
+	  (mat4:dispose model:transform)))
 
 (defmacro model:rotate-z-i (angle &rest body)
   (set body (model::gen-chain-body body))
@@ -111,13 +109,12 @@
 
 (defmacro model:offset (x y z &rest body)
   (set body (model::gen-chain-body body))
-  `(let ((prev model:transform))
-	  (set model:transform (mat4:clone model:transform))
-     (mat4:translate model:transform ,x ,y ,z)
-     ,@body
-	  (mat4:dispose model:transform)
-	  (set model:transform prev)
-    ))
+  `(with ( model:transform (mat4:clone model:transform))
+	 
+			(mat4:translate model:transform ,x ,y ,z)
+			,@body
+			(mat4:dispose model:transform)
+			))
 
 
 (defmacro model:offset-i (x y z &rest body)
@@ -681,7 +678,9 @@
   (shader:use model::shader)
   (gl.clearColor 0.1 0.1 0.1 1.0)
   (gl.clear gl.COLOR_BUFFER_BIT)
-  (shader:set-view model::shader model:projection))
+  (shader:set-view model::shader model:projection)
+  (shader:set-camera model::shader model:inverse-camera))
+
 
 (defun model:on-draw (model)
     (let ((cached (hashmap-get model::poly-cache model)))

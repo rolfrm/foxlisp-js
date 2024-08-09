@@ -555,3 +555,12 @@ asd ")
 (println mat4:rotate-x)
 (println mat4:translate)
 (println mat4:scale)
+
+(defvar with:test 1)
+
+(with (with:test 2)
+		(with (with:test 3)
+				(assert-eq with:test 3))
+		(assert-eq with:test 2))
+
+(assert-eq with:test 1)
