@@ -410,8 +410,8 @@
 (defmacro cond (&rest cases)
   (let ((out-cases (list)))
     (foreach item cases
-				  (assert-eq 2 (length item))
-				  (let ((c `(if ,(car item) ,(cadr item))))
+				  (assert  (> (length item) 1))
+				  (let ((c `(if ,(car item) (progn ,@(cdr item)))))
 					 ;; append the case to the list of cases.
 					 (set out-cases (concat out-cases (list c)))))
 	 (link-ends out-cases)))

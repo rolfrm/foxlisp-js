@@ -1,9 +1,14 @@
 (loadfile "lisp/lisp.lisp")
-(println 'hello-wasm!)
+
+
+(defmacro static (f)
+  (eval f))
 
 (defvar wasm1 "0061736d0100000001070160027f7f017f03020100070c01086d756c7469
 706c7900000a09010700200020016c0b")
-
+(defvar wasm1 "0061736d01000000010b0260027f7f017f6000017f03030200010608017f
+0141d0ce040b070c01086d756c7469706c7900000a15020700200020016c
+0b0b00230041016a240023000b")
 (defvar glyph:0 (car "0"))
 (defvar glyph:9 (car "9"))
 (defvar glyph:dot (car "."))
@@ -88,12 +93,61 @@
 
 (defun read:set-offset (r n)
   (set (th r 1) n))
-	  
 
-(println wasm1)
+(defun write:new ()
+  (list 'writer (list)))
+
+(defun write:byte (w b)
+  (push (th w 1) b))
+
+(defun write:bytes (w bytes)
+  (foreach b bytes
+			  (write:byte w b)))
+(defun write:to-array(w)
+  (let ((bytes (cadr w)))
+	 (%js "new Uint8Array(bytes)")))
+
+(defun write:uleb (w integer)
+  (cond
+	 ((< integer 128) (write:byte w integer))
+	 ((< integer (static (<< 1 14)))
+	  (write:byte w (logor #b10000000 (logand #b11111111 integer)))
+	  (write:byte w (>> integer 7)))
+	 ((< integer (static (<< 1 21)))
+	  (write:byte w (logor #b10000000 (logand #b11111111 integer)))
+	  (write:byte w (logor #b10000000 (logand #b11111111 (>> integer 7))))
+	  (write:byte w (>> integer 14))
+	  )
+	 ((< integer (static (<< 1 28)))
+	  (write:byte w (logor #b10000000 (logand #b11111111 integer)))
+	  (write:byte w (logor #b10000000 (logand #b11111111 (>> integer 7))))
+	  (write:byte w (logor #b10000000 (logand #b11111111 (>> integer 14))))
+	  (write:byte w (>> integer 21))
+	  )
+	 ((< integer (static (<< 1 30)))
+	  (write:byte w (logor #b10000000 (logand #b11111111 integer)))
+	  (write:byte w (logor #b10000000 (logand #b11111111 (>> integer 7))))
+	  (write:byte w (logor #b10000000 (logand #b11111111 (>> integer 14))))
+	  (write:byte w (logor #b10000000 (logand #b11111111 (>> integer 21))))
+	  (write:byte w (>> integer 28))
+	  )
+	 (1 (raise (list 'unsupported-integer integer)))
+  ))
+
 (defvar wasm:section-lookup
-  (list 'custom 'type 'ímport 'function 'table 'memory 'global
-		  'export 'start 'element 'code 'data 'data-count))
+ '(custom type ímport function table memory global
+	export start element code data data-count))
+
+(defvar wasm:section-lookup-inverse (make-hash-map))
+(let ((iter 0))
+  (foreach item wasm:section-lookup
+			  (hash-map-set wasm:section-lookup-inverse item iter)
+			  (incf iter)))
+
+(defun wasm:section-id-by-name (name)
+  (hash-map-get wasm:section-lookup-inverse name))
+
+(assert-eq 7 (wasm:section-id-by-name 'export))
 
 (defvar wasm:instructions
   '((#x00 unreachable)
@@ -298,11 +352,24 @@
 	 (raise (list "unknown type" typeid))
 	 nil))
 
+
+(defun wasm:type-to-id(type)
+  (block type-lookup
+	 (foreach elem wasm:types
+				 (when (eq type (car elem))
+					(return-from type-lookup (th elem 1))))
+	 (raise (list "unknown type" ))
+	 nil))
+
+
+(defun parse-value-type (r)
+  (wasm:type-from-id (read:byte r)))
+
 (defun parse-result-type (r)
   ($ let ((count (read:uleb r))
 			 (out-list (list))))
   (dotimes (i count)
-	 (push out-list (wasm:type-from-id (read:byte r))))
+	 (push out-list (parse-value-type r)))
 	
   out-list)
 
@@ -338,6 +405,16 @@
   ($ let ((n (read:uleb r))
 			 (bytes (read:bytes r n))))
   (utf8:decode bytes))
+(defun parse-global-section (r)
+  ($ let ((n (read:uleb r))
+			 (globals (list))))
+  (dotimes (i n)
+	 ($ let ((type (parse-value-type r))
+				(mutable (if (read:byte r) 'mutable 'const))
+				(expr (parse-expr r)))
+		 (push globals (list type mutable expr))
+		 ))
+  (list 'global globals))
 
 (defun parse-export-section (r)
   ($ let ((n (read:uleb r))
@@ -355,46 +432,56 @@
 					 index)))
 	 (list 'export exports)
 	 )
+
+(defun parse-expr (r)
+  (let ((op (read:byte r))
+							 (op-id (th wasm:instr-lookup op))
+							 (variable nil)
+							 )
+						(case op-id
+
+						  ('end (progn))
+						  ('local.get (set variable (read:uleb r)))
+						  ('local.set (set variable (read:uleb r)))
+						  ('global.get (set variable (read:uleb r)))
+						  ('global.set (set variable (read:uleb r)))
+						  ('i32.const (set variable (read:uleb r)))
+						  ('i32.mul (progn))
+						  ('i32.add (progn))
+						  
+						  (otherwise (raise (list "error: unsupported opcode" op-id)))
+						  )
+						(if (null? variable)
+							 op-id
+							 (list op-id variable))
+							 
+						  )
+						)
 (defun parse-code-section (r)
   (let ((nf (read:uleb r))
-		  (codes (list))
-		  (code (list))
-		  (locals (list)))
+		  (codes (list)))
 	 (dotimes (j nf)
-		(let ((size (read:uleb r)))
+		(let ((size (read:uleb r))
+				(code (list))
+				(locals (list)))
 		  (let ((nlocals (read:uleb r)))
-		  (dotimes (k nlocals)
-			 (let ((n (read:uleb r))
-					 (type (wasm:type-from-id (read:byte r))))
+			 (dotimes (k nlocals)
+				(let ((n (read:uleb r))
+						(type (wasm:type-from-id (read:byte r))))
 				(push locals (list type n))
 				
 				)))
 
 		  (block next
 			 (loop 1
-					 (let ((op (read:byte r))
-							 (op-id (th wasm:instr-lookup op))
-							 (variable nil)
-							 )
-						(case op-id
-
-						  ('end (return-from next 0))
-						  ('local.get (set variable (read:uleb r)))
-						  ('i32.mul (progn))
-						  
-						  (otherwise (raise (list "error: unsupported opcode" op-id)))
-						  )
-						(push code
-								(if (null? variable)
-									 op-id
-									 (list op-id variable))
-							 
-						  )
-						))))
+					 (let ((expr (parse-expr r)))
+						(push code expr)
+						(when (eq expr 'end)
+						  (return-from next nil))
+					 )))
 		
-		(push codes (list code locals))
+		(push codes (list code locals))))
 
-		)
 	 (list 'code codes)
 	 )
   )
@@ -414,6 +501,7 @@
 						  (set ctx.type type-section)
 						  type-section))
 			  ('function (parse-function-section r ctx.type))
+			  ('global (parse-global-section r))
 			  ('export (parse-export-section r))
 			  (otherwise (list 'unsupported-section-type section-type))))
 	 (read:set-offset r next-section)
@@ -426,8 +514,65 @@
 		  (sections (list)))
 	 (loop (not (read:finished? r))
 	  (push sections (parse-section r sections)))
-	 sections
+	 (list 'wasm magic version sections)
+	 ))
+
+(defun find-car (lst car-value)
+  (println 'find-car lst)
+  (block iter
+	 (foreach item lst
+				 (when (eq (car item) car-value)
+					(return-from iter item)))))
+
+(defun write-type-array (array writer)
+  (println 'write-type-array array)
+  (write:uleb writer (length array))
+  (foreach type2 array
+			  (write:byte writer (wasm:type-to-id type2))))
+
+(defun write-types-section (m w)
+  
+  (let ((section (find-car (cadddr m) 'types))
+		  (type-list (cadr section)))
+	 (write:uleb w (length type-list))
+	 (foreach type1 type-list
+				 (let ((t1 (car type1))
+						 (t2 (cadr type1)))
+					(write:byte w #x60)
+					(write-type-array t1 w)
+					(write-type-array t2 w)
+					))
   ))
+
+(defun write-function-section (m w)
+  (let ((section (find-car (cadddr m) 'function))
+		  (type-section (find-car (cadddr m) 'types))
+		  (function-list (cadr section)))
+	 (write:uleb w (length function-list))
+	 (foreach f function-list
+				 (write:uleb w (index-of f (cadr type-section))))))
+
+
+(defun write-section (m w f t)
+  (let ((sec-id (wasm:section-id-by-name t)))
+	 (assert (not (undefined? sec-id)))
+	 (write:byte w sec-id))
+  (let ((w2 (write:new)))
+	 (f m w2)
+	 (println 'w2 w2)
+	 (let ((bytes (write:to-array w2))
+			 (l (length bytes)))
+		
+		(write:uleb w l)
+		(write:bytes w bytes))))
+
+(defun write-module(m w)
+  (write:bytes w '(0 97 115 109))
+  (write:bytes w '(1 0 0 0))
+  (write-section m w write-types-section 'type)
+  (write-section m w write-function-section 'function)
+
+  )
 
 (println (nth wasm:instructions 3))
 
@@ -443,6 +588,27 @@
 			 (assert-eq (car item) (read:uleb (read:from-bytes (cdr item)))))
 	 
 													;(println hex::lookup)
+(let ((test-values '(0 1 100 1000 10000 100000 1000000 10000000 1000000000)))
+  (foreach test-value test-values
+			  (let ((w (write:new)))
+				 (println (<< 1 30))
+				 (write:uleb w test-value)
+				 (let ((reader (read:from-bytes (write:to-array w))))
+					(let ((u (read:uleb reader)))
+					  (println u)
+					  (assert-eq test-value u)
+						)))))
+
 
 (let ((r (read:from-bytes (hex->bytes wasm1))))
-  (println (parse-module r)))
+  (let ((sections (parse-module r)))
+	 (foreach section sections
+				 (println section))
+
+	 (let ((w (write:new)))
+		(write-module sections w)
+		(println (hex->bytes wasm1))
+		(println (apply list (write:to-array w) ))
+		)
+	 
+	 ))
