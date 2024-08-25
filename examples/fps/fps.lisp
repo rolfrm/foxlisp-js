@@ -3,6 +3,7 @@
 (load "shader.lisp")
 (load "model.lisp")
 (load "keys.lisp")
+(load "sdf.lisp")
 ;; todo: Implement a camera transform
 (defun get-time ()
   (%js "Date.now()"))
@@ -102,9 +103,36 @@
 
 (defvar item-bounds (make-hash-map))
 
-;(defmacro bounds (body)
-;  (let ((current _hash-map-get item-bounds item-name)
-;  )))
+
+(defun model:door-wall()
+  ($ with-prefix model:)
+  (offset -2 0 0.05
+			 (scale 2 2.5 0.1
+					  (upcube)))
+  (offset 2 0 0.05
+			 (scale 2 2.5 0.1
+					  (upcube)))
+  (offset 0 2.25 0.05
+			 (scale 2 0.25 0.1
+					  (upcube))))
+
+(defun model:wall()
+  ($ with-prefix model:)
+  (offset 0 0 0.05
+			 (scale 6 2.5 0.1
+					  (upcube))))
+
+(defun model:room ()
+  ($ with-prefix model:)
+  (wall)
+  (rotate-y 0.01
+			 (wall))
+  (offset 0 0 4
+			 (door-wall))
+  (rgb 0.2 0.3 0.2
+		 (offset 0 0 2
+					(scale 4 0.1 4
+							 (upcube)))))
 
 (defvar offset-x 0.0)
 (defvar offset-y 0.0)
@@ -178,8 +206,13 @@
 											
 
 						  (rgb 1 0 1
-											 (scale  0.2 0.2 0.2
-						 (cube)))))
+								 (scale  0.2 0.2 0.2
+											(cube)))))
+		(rgb 1 0 1
+			  (offset 0 2.5 (* 9 (math:sin (* 0.3 time)))
+						 (scale 0.15 0.15 0.15
+								  (rotate-y (* 0.4 time)
+											 (cube)))))
 		(rgb 0.3 0.3 0.6
 			  
 			  (offset 0 0 0
@@ -188,16 +221,39 @@
 								  (upcube))
 
 						 
+
+						 (offset 5 -2 -5
+									(model:room))
+						 (rgb 0.4 0.3 0.3
+						 (offset 0 2 -2
+									(scale 0.4 0.4 0.4
+									(model:door-wall)))
+						 (offset 0 2 -5
+									(scale 0.4 0.4 0.4
+									(model:door-wall)))
+						 (offset 0 2 -8
+									(scale 0.4 0.4 0.4
+									(model:door-wall))))
+						 (offset 3 0 3
+						 (scale 0.2 1 0.2
+						 (dotimes (i 20)
+							(dotimes (j 20)
+							  (model:rgb2 (case (% (+ i j) 3) (0 '(1 0 0)) (1 '(0 1 0))(2 '(0 0 1)))
+											  (offset (* i 2) (* 0.3 (% (+ i j) 3)) (* j 2)
+										 (scale 2 1 2
+												  (tile))))))))
+
 						 (offset 0 2 9.5
 									(item "console"
 											(occlusion-query "console"
-											(rgb 1 0 1
-												  (upcube))
+																  (rgb 1 0 1
+																		 (upcube))
 
 											(when model:visible 
 											  (html-text "console")))
 
 											))
+						 
 						 (offset 0 10 9.5
 									(item "console2" 
 											(occlusion-query "console2"
@@ -205,10 +261,6 @@
 																	 (html-text "console2"))
 											(rgb 1 0 1
 												  (upcube)))))
-						 
-
-
-
 
 						 )))))
 	 (gl.bindVertexArray nil)

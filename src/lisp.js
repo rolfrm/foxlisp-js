@@ -129,7 +129,7 @@ println = (...a) => {
 	 let first = true
 	 for(let elem of a){
 		  if(!first){
-				combined = combined + ", "
+				combined = combined + " "
 		  }else{
 				first = false
 		  }
@@ -193,7 +193,7 @@ function quotedJs(code){
 	 }
 	 if(code.type == "symbol"){
 		  
-		  return `getsym("${escapeString(code.value)}")/*1*/`
+		  return `___sym[${code.index}]`
 	 }
 	 if(typeof(code) == 'string'){
 		  return `"${escapeString(code)}"`
@@ -229,7 +229,7 @@ function unquoteToJs(code){
 		  return `ulist(${innerCode})`;
 	 }
 	 if(code.type == "symbol"){
-		  return `getsym("${escapeString(code.value)}")/*2*/`
+		  return `___sym[${code.index}]`
 	 }
 	 if(typeof(code) == 'string'){
 		  return `"${escapeString(code)}"`
@@ -438,7 +438,7 @@ function lispCompile2(code) {
 						if(quoted.index > -1){
 							return `___sym[${quoted.index}]`
 						}
-						  return `getsym(\"${quoted.value}\")/*3*/`
+						return `getsym(\"${quoted.value}\")/*3*/`
 					 }
 					 
 					 const id = setQuote(quoted)

@@ -55,10 +55,26 @@ class ParserCondition {
 
   
   // Helper function to parse a number
-  function parseNumber(input) {
-    let value = "";
-    let isFloat = false;
-    let isNegative = false;
+function parseNumber(input) {
+	 let value = "";
+	 let isFloat = false;
+	 let isNegative = false;
+	 let pattern = /\d/
+	 let base = 10;
+	 if(input[0] == '#' && input[1] == 'x'){
+		  pattern = /[0-9a-fA-F]/;
+		  base = 16
+		  input = input.slice(2)
+	 }else if(input[0] == '#' && input[1] == 'o'){
+		  pattern = /[0-7]/
+		  base = 8
+		  input = input.slice(2)
+	 }else if(input[0] == '#' && input[1] == 'b'){
+		  pattern = /[0-1]/;
+		  base = 2
+		  input = input.slice(2)
+	 }
+		
     if(input[0] == '-'){
       isNegative = true;
       input = input.slice(1);
@@ -67,7 +83,7 @@ class ParserCondition {
       input = input.slice(1)
     }
   
-    while (input.length > 0 && (/\d/.test(input[0]) || (!isFloat && input[0] === '.'))) {
+    while (input.length > 0 && (pattern.test(input[0]) || (!isFloat && input[0] === '.'))) {
       value += input[0];
       if (input[0] === '.') {
         isFloat = true;
@@ -99,7 +115,7 @@ class ParserCondition {
       return [num, input];
     }
   
-    const num = parseInt(value, 10);
+    const num = parseInt(value, base);
     if (isNaN(num)) {
       return [null, null];
     }

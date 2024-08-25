@@ -105,7 +105,7 @@
 	  
 	  ,@(let ((lst (list))
 				 (index 0))
-			(for-each item args
+			(foreach item args
 						 (push lst `(set (th m ,index) ,item))
 						 (incf index))
 			(dotimes (i (- 16 index))
@@ -180,7 +180,7 @@
 			 (unless  (and (eq (length karg) 1)
 								(let ((expr (car karg)))
 								  (and expr.unity (eq expr.reads (+ i (* j 4))))))
-				(for-each x karg
+				(foreach x karg
 							 (setnth used-cells x.reads 1))
 				(push calls `(set (th m ,(+ i (* j 4))) (+ ,@karg)))))))
 	 (dotimes (i 16)

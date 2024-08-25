@@ -39,7 +39,9 @@ world")))
 (assert-eq 3 (/ (* 3 6) (* 2 3)))
 (assert-eq 2 (/ (* 4 6) (* 4 3) ))
 (assert-eq 2 (/ (* 4 6) (* 12 1) ))
-
+(assert-eq 255 #xFF)
+(assert-eq 9 #o11)
+(assert-eq 15 #b1111)
 
 (println (lambda (x y &rest args) (list x y args)))
 
@@ -54,7 +56,7 @@ world")))
 
   )
 (let ((sum 0))
-  (for-each x '(1 2 3)
+  (foreach x '(1 2 3)
 				(set sum (+ x sum)))
   (assert-eq sum 6))
 
@@ -98,14 +100,14 @@ world")))
 (defvar not-string-items (list 1 (list 1) nil))
 (defvar symbol-items (list 'a 'asd123 (quote hej)))
 (defvar not-symbol-items (list 1 "asd" (list 123)))
-(for-each x not-list-items (assert-not (list? x)))
-(for-each x list-items (assert (list? x)))
+(foreach x not-list-items (assert-not (list? x)))
+(foreach x list-items (assert (list? x)))
 (println (type-of (car string-items)))
-(for-each x string-items
+(foreach x string-items
 			 (assert (string? x) "not a string item!" x))
-(for-each x not-string-items (assert-not (string? x)))
-(for-each x symbol-items (assert (symbol? x) "not a string item!"))
-(for-each x not-symbol-items (assert-not (symbol? x) "was a string item!"))
+(foreach x not-string-items (assert-not (string? x)))
+(foreach x symbol-items (assert (symbol? x) "not a string item!"))
+(foreach x not-symbol-items (assert-not (symbol? x) "was a string item!"))
 
 (assert (number? 5))
 (assert-not (number? "5"))
@@ -350,7 +352,7 @@ asd ")
 (defvar test-matrix (mat4:perspective 1.0 1.0 0.5 1000.0))
 
 
-(for-each i '(1 2 3) (println i))
+(foreach i '(1 2 3) (println i))
 
 (let ((y 0) (x (lambda () (dotimes (i 4) (incf y i)))))
   (x)
@@ -491,7 +493,7 @@ asd ")
 (println (defun:get-code 'test-get-code))
 (defvar defun::callstack (list))
 (let ((all-fcn (hashmap-keys defun::codemap)))
-  (for-each f all-fcn
+  (foreach f all-fcn
 				(println f (defun:get-code f))
 				(when t ;(eq f 'test-get-code)
 				  (let ((ca (defun:get-code f)))
@@ -524,7 +526,7 @@ asd ")
 
 (defun count (lst f)
   (let ((i 0))
-	 (for-each x lst (when (f x) (incf i)))
+	 (foreach x lst (when (f x) (incf i)))
 	 i))
 	
 (defun count-item (lst type)
@@ -564,3 +566,8 @@ asd ")
 		(assert-eq with:test 2))
 
 (assert-eq with:test 1)
+
+(println '(1 a 2 (b 3)))
+
+(assert-eq 11 (+ 5 (% 10 7) 3))
+(assert-eq 9 (* (% 10 7) 3))

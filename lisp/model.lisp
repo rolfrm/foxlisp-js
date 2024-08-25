@@ -25,7 +25,7 @@
 				(vec3:x eye) (vec3:y eye) (vec3:z eye) 1.0))
 
 (defvar model::chain-functions (makehashmap))
-(for-each item '((model:rotate-x model:rotate-x-i)
+(foreach item '((model:rotate-x model:rotate-x-i)
 					  (model:rotate-y model:rotate-y-i)
 					  (model:rotate-z model:rotate-z-i)
 					  (model:offset model:offset-i)
@@ -204,7 +204,7 @@
 			 (size 0)
 			 (k 0)
           )
-		(for-each item models
+		(foreach item models
 					 (unless (eq size 0)
 						(set size (+ size (* 2 3)))
 						)
@@ -214,7 +214,7 @@
 		(set result (float32-array-sized size))
 		
 		
-      (for-each item models
+      (foreach item models
 					 
 					 (if (eq (car (car item)) 'polygon-strip-color)
 						  (let ((model-verts (float32-array-from2 (cadr (car item))))
@@ -353,11 +353,13 @@
     `(model:with-color ,r ,g ,b ,@body))
 
 (defmacro model:rgb2 (lst &rest body)
-  `(model:with-color
-		 (vec3:x ,lst)
-	  (vec3:y ,lst)
-	  (vec3:z ,lst)
-	  ,@body))
+  `
+  (let ((++thecolor ,lst))
+		  (model:rgb
+			(vec3:x ++thecolor)
+			(vec3:y ++thecolor)
+			(vec3:z ++thecolor)
+			,@body)))
 
 
 (defvar model:drawer (lambda (m) (println 'no-drawer-model: m)))

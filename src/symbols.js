@@ -8,7 +8,6 @@ const reserved = {
 const sanitizedLookup = {}
 const sanitizedLookupRev = {}
 const symbolArray = []
-let nameid = 0;
 
 function register_symbol(name, sanitized){
 	sanitizedLookup[name] = sanitized
@@ -47,10 +46,6 @@ function getsym(str) {
 	return lisp.symbolName[str]
 }
 
-function __sym(index){
-	return lisp.symbols[index]
-}
-
 function sym(str, jsname) {
 	if (!lisp.symbolName[str]) {
 		if (jsname == null) {
@@ -71,10 +66,11 @@ function sym(str, jsname) {
 	}
 	return lisp.symbolName[str];
 }
-quote_sym = sym("quote");
-quasiquote_sym = sym("quasiquote")
-quasiunquote_sym = sym("quasiunquote")
-quasiunquotesplice_sym = sym("quasiunquote-splice")
+
+const quote_sym = sym("quote");
+const quasiquote_sym = sym("quasiquote")
+const quasiunquote_sym = sym("quasiunquote")
+const quasiunquotesplice_sym = sym("quasiunquote-splice")
 
 module.exports = {
 	sym: sym,

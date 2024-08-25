@@ -7,6 +7,9 @@
 (defvar <= _op_lte)
 (defvar << op_leftshift)
 (defvar >> op_rightshift)
+(defvar logor op_or)
+(defvar logand op_and)
+
 (defvar xor op_xor)
 (defvar eval eval2)
 (defvar undefined __undefined)
@@ -29,6 +32,7 @@
   (defun::codemap.set name (list args code))
   `(defvar ,name
 	  (lambda ,args ,@code)))
+
 (defun make-error(o)
   (%js "new Error(o)"))
 
@@ -48,7 +52,6 @@
 					  and_value_store
 					  ))
 			 1)))
-
 
 (defmacro or (&rest args)
   (if (eq args.length 1)
@@ -255,6 +258,8 @@
 (defvar char-0 (car "0"))
 (defvar char-9 (car "9"))
 (defvar char-dot (car "."))
+(defvar char-newline (car "
+"))
 (defconstant nil ())
 
 (defun sym-end (x)
@@ -365,7 +370,7 @@
 	 `(let ((cons-value ,value))
 		 ,(link-ends out-cases))))
 
-(defmacro for-each (sym list &rest body)
+(defmacro foreach (sym list &rest body)
   `(let ((for-each-lst ,list)
 			(,sym nil)
 			(__i 0)
@@ -404,7 +409,7 @@
 
 (defmacro cond (&rest cases)
   (let ((out-cases (list)))
-    (for-each item cases
+    (foreach item cases
 				  (assert-eq 2 (length item))
 				  (let ((c `(if ,(car item) ,(cadr item))))
 					 ;; append the case to the list of cases.
@@ -467,7 +472,7 @@
 
 (defun where (lst f)
   (let ((out-lst (list)) (l (length lst)))
-    (for-each x lst  
+    (foreach x lst  
 				  (when (f x)
 					 (push out-lst x)))
     out-lst))
@@ -475,7 +480,7 @@
 (defun aggregate (lst f)
   (when lst 
     (let ((v (car lst)))
-	   (for-each x (cdr lst)
+	   (foreach x (cdr lst)
 					 (set v (f v x)))
 	   v)))
 
@@ -521,6 +526,9 @@
 
 (defun lisp::make-float32-array (n)
   (%js "new Float32Array(n)"))
+
+(defun lisp::make-int32-array (n)
+  (%js "new Int32Array(n)"))
 
 (defun float32-array-sized(size)
   (lisp::make-float32-array size))

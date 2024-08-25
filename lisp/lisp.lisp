@@ -124,6 +124,10 @@
 		`(%js ,(car args2) " < " ,(cadr args2))
 		(raise "!!!")))
 
+(defmacro % (x y)
+  `(%js "( " ,x " % " ,y " )"))
+
+
 ;(load "lisp2.lisp")
 
 
