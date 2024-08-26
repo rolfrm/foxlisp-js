@@ -118,11 +118,13 @@
 
 (defun read:f32 (r)
   (let ((bytes (read:bytes r 4)))
-	 (%js "new DataView(new Uint8Array(bytes).buffer).getFloat32(0)")))
+	 
+	 (%js "new DataView(new Uint8Array(bytes).buffer).getFloat32(0, true)")))
 
 (defun read:f64 (r)
   (let ((bytes (read:bytes r 8)))
-	 (%js "new DataView(new Uint8Array(bytes).buffer).getFloat64(0)")))
+	 
+	 (%js "new DataView(new Uint8Array(bytes).buffer).getFloat64(0, true)")))
 
 
 (defun read:get-offset (r)
@@ -190,13 +192,13 @@
 (defun write:f32(w value)
   (let ((buf (%js "new Uint8Array(4)"))
 		  (view (%js "new DataView(buf.buffer)")))
-	 (view.setFloat32 0 value)
+	 (view.setFloat32 0 value t)
 	 (write:bytes w buf)))
 
 (defun write:f64(w value)
   (let ((buf (%js "new Uint8Array(8)"))
 		  (view (%js "new DataView(buf.buffer)")))
-	 (view.setFloat64 0 value)
+	 (view.setFloat64 0 value t)
 	 (write:bytes w buf)))
 
 (defvar wasm:section-lookup
