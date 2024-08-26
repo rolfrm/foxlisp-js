@@ -205,7 +205,9 @@
 (defmacro assert(condition)
   `(if ,condition
 		 (progn)
-		 (raise (value->string '("assertion failed" ,condition)))))
+		 (let ((err '("assertion failed" ,condition)))
+			(println 'raising err)
+			(raise err  ))))
 
 (defun assert-not(condition error)
   (assert (not condition) error))

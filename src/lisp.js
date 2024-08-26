@@ -11,20 +11,22 @@ function issym(x){
 
 ___sym = lisp.lisp.symbols
 __quotes = []
-const quotes_lookup = {}
+const quotes_lookup = new Map()
 function _getQuote(id) {
     return __quotes[id]
 }
 getQuote = _getQuote
 function setQuote(newQuote){
-	 let existing = quotes_lookup[newQuote]
+	 
+	 let existing = quotes_lookup.get(newQuote)
+	 
 	 if(existing) {
 		  return existing
 	 }
     let id = __quotes.length;
     __quotes.length += 1
     __quotes[id] = newQuote
-	 quotes_lookup[newQuote] = id
+	 quotes_lookup.set(newQuote, id)
     return id
 }
 

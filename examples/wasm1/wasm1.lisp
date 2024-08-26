@@ -7,6 +7,8 @@
 (defvar wasm1 "0061736d0100000001070160027f7f017f03020100070c01086d756c7469
 706c7900000a09010700200020016c0b")
 (defvar wasm1 "0061736d01000000010b0260027f7f017f6000017f03030200010608017f0141d0ce040b070c01086d756c7469706c7900000a15020700200020016c0b0b00230041016a240023000b")
+(defvar wasm1 "0061736d01000000010b0260027f7f017f6000017f03030200010614037f0141d0ce040b7f0141400b7f0141b0b17b0b071302086d756c7469706c79000004696e636600010a15020700200020016c0b0b00230041016a240023000b")
+(defvar wasm1 "0061736d01000000010b0260027f7f017f6000017f03030200010614037f0141d0ce040b7f0141400b7f0141b0b17b0b071302086d756c7469706c79000004696e636600010a28020700200020016c0b1e002300420143000000404400000000000008401a1a1a41016a240023000b")
 (defvar glyph:0 (car "0"))
 (defvar glyph:9 (car "9"))
 (defvar glyph:dot (car "."))
@@ -96,7 +98,33 @@
 					 (return-from a result))
 		
 				  )))))
+
+(defun read:ileb (r)
   
+  (let ((value 0)
+		  (read t)
+		  (offset 0)
+		  (chunk 0)
+		  (read-chunks (list)))
+	 (loop read
+			 (set chunk (read:byte r))
+			 (set value (+ value (<< (logand chunk #x7f) offset)))
+			 (set offset (+ offset 7))
+			 (set read (> chunk 128)))
+	 (when (and (< offset 64) (logand chunk #x40))
+		
+		(set value (logor value (<< -1 offset))))
+	 value))
+
+(defun read:f32 (r)
+  (let ((bytes (read:bytes r 4)))
+	 (%js "new DataView(new Uint8Array(bytes).buffer).getFloat32(0)")))
+
+(defun read:f64 (r)
+  (let ((bytes (read:bytes r 8)))
+	 (%js "new DataView(new Uint8Array(bytes).buffer).getFloat64(0)")))
+
+
 (defun read:get-offset (r)
   (th r 1))
 
@@ -112,6 +140,7 @@
 (defun write:bytes (w bytes)
   (foreach b bytes
 			  (write:byte w b)))
+
 (defun write:to-array(w)
   (let ((bytes (cadr w)))
 	 (%js "new Uint8Array(bytes)")))
@@ -141,7 +170,34 @@
 	  (write:byte w (>> integer 28))
 	  )
 	 (1 (raise (list 'unsupported-integer integer)))
-  ))
+	 ))
+
+(defun write:ileb(w value)
+  ($ let ((continue t)))
+  (loop continue
+		  ($ let ((bits (logand #b01111111 value))
+					 (sign (logand #b01000000 value))
+					 (next (>> value 7))))
+		  (if (or (and (eq next 0) (eq sign 0))
+					 (and (> sign 0) (eq next -1)))
+				(progn
+				  (write:byte w bits)
+				  (set continue nil))
+				(progn
+				  (write:byte w (logor #b10000000 bits))
+				  (set value next)))))
+
+(defun write:f32(w value)
+  (let ((buf (%js "new Uint8Array(4)"))
+		  (view (%js "new DataView(buf.buffer)")))
+	 (view.setFloat32 0 value)
+	 (write:bytes w buf)))
+
+(defun write:f64(w value)
+  (let ((buf (%js "new Uint8Array(8)"))
+		  (view (%js "new DataView(buf.buffer)")))
+	 (view.setFloat64 0 value)
+	 (write:bytes w buf)))
 
 (defvar wasm:section-lookup
  '(custom type ímport function table memory global
@@ -428,10 +484,14 @@
   ($ let ((n (read:uleb r))
 			 (globals (list))))
   (dotimes (i n)
+	 (println 'global$ i)
 	 ($ let ((type (parse-value-type r))
 				(mutable (if (read:byte r) 'mutable 'const))
 				(expr (parse-expr r)))
-		 (push globals (list type mutable expr))
+		 ;; read end marker
+		 (read:byte r)
+
+		 (push globals (println (list type mutable expr)))
 		 ))
   (list 'global globals))
 
@@ -453,10 +513,12 @@
 	 )
 
 (defun parse-expr (r)
+  
+  
   (let ((op (read:byte r))
 							 (op-id (th wasm:instr-lookup op))
 							 (variable nil)
-							 )
+		  )
 						(case op-id
 
 						  ('end (progn))
@@ -464,18 +526,20 @@
 						  ('local.set (set variable (read:uleb r)))
 						  ('global.get (set variable (read:uleb r)))
 						  ('global.set (set variable (read:uleb r)))
-						  ('i32.const (set variable (read:uleb r)))
+						  ('i32.const (set variable (read:ileb r)))
+						  ('i64.const (set variable (read:ileb r)))
+						  ('f32.const (set variable (read:f32 r)))
+						  ('f64.const (set variable (read:f64 r)))
 						  ('i32.mul (progn))
 						  ('i32.add (progn))
+						  ('drop (progn))
 						  
 						  (otherwise (raise (list "error: unsupported opcode" op-id)))
 						  )
 						(if (null? variable)
 							 op-id
-							 (list op-id variable))
-							 
-						  )
-						)
+							 (list op-id variable))))
+
 (defun parse-code-section (r)
   (let ((nf (read:uleb r))
 		  (codes (list)))
@@ -512,6 +576,8 @@
 		  (next-section (+ section-size (read:get-offset r)))
 		  (section nil)
 		  )
+	 
+	 (println 'parse-section section-type)
 
 	 (set section
 			(case section-type
@@ -586,8 +652,14 @@
 				(opcode-id (wasm:instruction-to-opcode instr))
 				(expr2 (cadr expr)))
 		  (write:byte w opcode-id)
-		  (when (number? expr2)
-			 (write:uleb w expr2))
+		  (case instr
+				  ('i32.const (write:ileb w expr2))
+				  ('i64.const (write:ileb w expr2))
+				  ('f32.const (write:f32 w expr2))
+				  ('f64.const (write:f64 w expr2))
+				  (otherwise
+					(when (number? expr2)
+					  (write:ileb w expr2))))
 		  )
 		(write:byte w (wasm:instruction-to-opcode expr))))
 
@@ -647,6 +719,8 @@
 
 (defun write-section (w m f t)
   (let ((sec-id (wasm:section-id-by-name t)))
+	 (unless sec-id
+		(raise (list 'sec-id-not-found t)))
 	 (assert (not (undefined? sec-id)))
 	 (write:byte w sec-id))
   (let ((w2 (write:new)))
@@ -671,15 +745,31 @@
 (println (nth wasm:instructions 3))
 
 (println (read:uleb (read:from-bytes (list 255 1))))
-(defvar uleb:test-values
-  '((#x0 #x0) (#x7f #x7f)
-	 (#x80 #x80 #x01)
-	 (#x3FFF #xFF #x7F)
-	 (#x4000 #x80 #x80 #x01)
-	 (#x1FFFFF #xFF #xFF #x7F)))
-(foreach item uleb:test-values
+(let ((uleb:test-values
+		 '((#x0 #x0) (#x7f #x7f)
+			(#x80 #x80 #x01)
+			(#x3FFF #xFF #x7F)
+			(#x4000 #x80 #x80 #x01)
+			(#x1FFFFF #xFF #xFF #x7F))))
+  (foreach item uleb:test-values
 			 ;(println 'test: (car item) 'eq (read:uleb (read:from-bytes (cdr item))))
-			 (assert-eq (car item) (read:uleb (read:from-bytes (cdr item)))))
+			(assert-eq (car item) (read:uleb (read:from-bytes (cdr item))))))
+
+
+(let ((ileb:test-values '((0 #x0 #x0) (1 1) (32 32) (-64 64) (75600 208 206 4) (-75600 176 177 123))))
+  (foreach item ileb:test-values
+			  (assert-eq (car item) (println (read:ileb (read:from-bytes (cdr item)))))
+
+			  (let ((value (read:ileb (read:from-bytes (cdr item))))
+					  (w (write:new)))
+				 (write:ileb w value)
+				 
+				 (let ((result (println (write:to-array w) '<<<))
+						 (read-back (read:ileb (read:from-bytes result))))
+					(println (car item) read-back)
+					(assert-eq (car item) read-back)
+
+			  ))))
 	 
 													;(println hex::lookup)
 (let ((test-values '(0 1 100 1000 10000 100000 1000000 10000000 1000000000)))
@@ -693,6 +783,9 @@
 					  (assert-eq test-value u)
 					  )))))
 
+
+
+
 (let ((strhex "1a4005ff0013ac")
 		(bytes (hex->bytes strhex))
 		(strhexback (bytes->hex bytes)))
@@ -700,15 +793,18 @@
   )
 
 
-(let ((r (read:from-bytes (hex->bytes wasm1))))
-  (let ((sections (parse-module r)))
-	 (println 'sections: sections)
-	 (let ((w (write:new)))
-		(write-module w sections)
-		(println wasm1)
-		(let ((read-back (bytes->hex (write:to-array w)))) 
-		  (assert-eq read-back wasm1)))))
+(defun test-read-write-wasm ()
+  (let ((r (read:from-bytes (hex->bytes wasm1))))
+	 (println 'bytes (hex->bytes wasm1))
+	 (let ((sections (parse-module r)))
+		(println 'sections: sections)
+		(let ((w (write:new)))
+		  (write-module w sections)
+		  (let ((read-back (bytes->hex (write:to-array w)))) 
+			 (println read-back)
+			 (println wasm1)
+			 (assert-eq read-back wasm1)
+			 (println (parse-module (read:from-bytes (write:to-array w))))
+			 )))))
 
-(defvar wasm-parsed '(wasm (0 97 115 109) (1 0 0 0) ((types (((i32 i32) (i32)) (() (i32)))) (function (((i32 i32) (i32)) (() (i32)))) (global ((i32 mutable (i32.const 75600)))) (export (("multiply" funcidx 0))) (code ((((local.get 0) (local.get 1) i32.mul end) ()) (((global.get 0) (i32.const 1) i32.add (global.set 0) (global.get 0) end) ()))))))
-(let ((w (write:new)))
-  (write-module w wasm-parsed))
+(test-read-write-wasm)
