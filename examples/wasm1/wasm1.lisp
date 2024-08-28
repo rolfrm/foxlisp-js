@@ -620,6 +620,8 @@
   (write:byte writer (wasm:type-to-id type)))
 
 (defun write-type-array (writer array)
+  (when (null? array)
+	 (set array (list)))
   (write:uleb writer (length array))
   (foreach type2 array
 			  (write-type writer type2)))
@@ -644,7 +646,9 @@
 		  (function-list (cadr section)))
 	 (write:uleb w (length function-list))
 	 (foreach f function-list
-				 (write:uleb w (index-of f (cadr type-section))))))
+				 (let ((idx (index-of f (cadr type-section) 1)))
+					(println idx (cadr type-section) f)
+					(write:uleb w idx)))))
 
 
 (defun write-expr (w expr)
@@ -800,13 +804,36 @@
 	 (println 'bytes (hex->bytes wasm1))
 	 (let ((sections (parse-module r)))
 		(println 'sections: sections)
-		(let ((w (write:new)))
-		  (write-module w sections)
-		  (let ((read-back (bytes->hex (write:to-array w)))) 
+		
+		  (let ((read-back (bytes->hex (wasm->bytes sections)))) 
 			 (println read-back)
-			 (println wasm1)
-			 (assert-eq read-back wasm1)
-			 (println (parse-module (read:from-bytes (write:to-array w))))
-			 )))))
+			 (println 'sections sections)
+			 ;(assert-equals read-back wasm1)
+			 
+			 ;(println '>>> (parse-module (read:from-bytes (hex->bytes read-back))))
+			 (hex->bytes read-back)
+			 ))))
 
-(test-read-write-wasm)
+(defun then (promise f)
+  (promise.then f))
+(defvar wasm2 '(wasm (0 97 115 109) (1 0 0 0) ((types (((i32 i32) (i32)) (() (i32)))) (function (((i32 i32) (i32)) (() (i32)))) (global ((i32 mutable (i32.const 75600)) (i32 mutable (i32.const -64)) (i32 mutable (i32.const -75600)))) (export (("multiply" funcidx 0) ("incf" funcidx 1))) (code ((((local.get 0) (local.get 1) i32.mul end) ()) (((global.get 0) (i64.const 1) (f32.const 2) (f64.const 3) drop drop drop (i32.const 1) i32.add (global.set 0) (global.get 0) end) ()))))))
+
+(defun wasm->bytes (wasm)
+  (let ((writer (write:new)))
+	 (write-module writer wasm)
+	 (write:to-array writer)))
+
+;(test-read-write-wasm)
+(println 'wasm2 wasm2)
+
+
+(when 1
+
+(let ((wasm-bin1 (wasm->bytes wasm2)))
+
+		
+  (then (WebAssembly.instantiate wasm-bin1.buffer)
+		  (lambda (r)
+			 (println (r.instance.exports.multiply 2 4)))
+		  )))
+

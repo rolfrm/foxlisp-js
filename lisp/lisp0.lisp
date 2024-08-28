@@ -152,7 +152,7 @@
 				(if (eq (length a) (length b))
 					 (loop (length a)
 					  (unless (equals? (car a) (car b))
-						 (return-from return2 true))
+						 (return-from return2 t))
 					  (set a (cdr a))
 					  (set b (cdr b)))))
 		  (eq a b))))
@@ -418,8 +418,13 @@
 					 (set out-cases (concat out-cases (list c)))))
 	 (link-ends out-cases)))
 
-(defun index-of (item lst)
-  (lst.indexOf item))
+(defun index-of (item lst equalp)
+  (if equalp
+		(block iter
+		  (dotimes (i (length lst))
+			 (when (equals? (th lst i) item)
+				(return-from iter i))))
+		(lst.indexOf item)))
 
 (defun memq (item lst)
   (skip lst (index-of item lst)))

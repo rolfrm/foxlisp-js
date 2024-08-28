@@ -154,9 +154,9 @@ function parseNumber(input) {
   
     return [null, null]; // Unclosed string
   }
-  
-  // ParseLisp function
-  function ParseLisp(input) {
+
+  // ParseLisp0 function
+  function ParseLisp0(input) {
     
     // Parsing loop
     while (true) {
@@ -169,15 +169,17 @@ function parseNumber(input) {
       switch (input[0]) {
         
         case '(':
-          let offset = codeBase.length - input.length
-          input = skipCommentAndWhitespace(input.slice(1));
+          let offset = codeBase.length - input.lengt
+			 let input0 = input
+			 input = skipCommentAndWhitespace(input.slice(1));
           
           if(input[0] == ')'){  
             return [[], input.slice(1)];
           }
           let out = []
+			 
           for(;;){
-            const [result,next] = ParseLisp(input)
+            const [result,next] = ParseLisp0(input)
             if(next){
               input = next;
               out.push(result)
@@ -185,8 +187,10 @@ function parseNumber(input) {
 					 if(input[0] == ')'){
 						  out.codeBase = codeBase
 						  out.offset = offset
+						  
 						  Object.freeze(out)
 						  return [out, input.slice(1)];
+						  
 					 }
             }else{
               return [UnexpectedEOF, null]
@@ -196,7 +200,7 @@ function parseNumber(input) {
         case ':':
           {
             // Parse keyword
-            const [r, next] = ParseLisp(input.slice(1));
+            const [r, next] = ParseLisp0(input.slice(1));
             return [[lisp.quote_sym, r], next]
           }
 
@@ -205,22 +209,22 @@ function parseNumber(input) {
           {
             // Parse quote
 
-            const [r, next] = ParseLisp(input.slice(1));
+            const [r, next] = ParseLisp0(input.slice(1));
             return [[lisp.quote_sym, r], next]
           }
 		case '`':
 			 {
-				  const [r, next] = ParseLisp(input.slice(1));
+				  const [r, next] = ParseLisp0(input.slice(1));
               return [[lisp.quasiquote_sym, r], next]
 
 			 }
 		case ',':
 			 {
 				  if(input[1] == '@'){
-						const [r, next] = ParseLisp(input.slice(2));
+						const [r, next] = ParseLisp0(input.slice(2));
 						return [[lisp.quasiunquotesplice_sym, r], next]
 				  }
-				  const [r, next] = ParseLisp(input.slice(1));
+				  const [r, next] = ParseLisp0(input.slice(1));
               return [[lisp.quasiunquote_sym, r], next]
 
 			 }
@@ -251,6 +255,12 @@ function parseNumber(input) {
       }
     }
   }
+
+
+
+function ParseLisp (codestring){
+    return ParseLisp0(codestring);
+}
   
 module.exports = {
     ParseLisp: ParseLisp,
