@@ -9,6 +9,8 @@
 (defvar wasm1 "0061736d01000000010b0260027f7f017f6000017f03030200010608017f0141d0ce040b070c01086d756c7469706c7900000a15020700200020016c0b0b00230041016a240023000b")
 (defvar wasm1 "0061736d01000000010b0260027f7f017f6000017f03030200010614037f0141d0ce040b7f0141400b7f0141b0b17b0b071302086d756c7469706c79000004696e636600010a15020700200020016c0b0b00230041016a240023000b")
 (defvar wasm1 "0061736d01000000010b0260027f7f017f6000017f03030200010614037f0141d0ce040b7f0141400b7f0141b0b17b0b071302086d756c7469706c79000004696e636600010a28020700200020016c0b1e002300420143000000404400000000000008401a1a1a41016a240023000b")
+
+(defvar wasm1 "0061736d01000000010f0360017f0060027f7f017f6000017f020f0107636f6e736f6c65036c6f67000003030201020614037f0141d0ce040b7f0141400b7f0141b0b17b0b071302086d756c7469706c79000104696e636600020a28020700200020016c0b1e002300420143000000404400000000000008401a1a1a41016a240023000b")
 (defvar glyph:0 (car "0"))
 (defvar glyph:9 (car "9"))
 (defvar glyph:dot (car "."))
@@ -202,7 +204,7 @@
 	 (write:bytes w buf)))
 
 (defvar wasm:section-lookup
- '(custom type ímport function table memory global
+ '(custom type import function table memory global
 	export start element code data data-count))
 
 (defvar wasm:section-lookup-inverse (make-hash-map))
@@ -228,44 +230,44 @@
 (#x0D br_if)
 (#x0E br_table)
 (#x0F return)
-(#x10 call)
-(#x11 call_indirect)
+(#x10 call u32)
+(#x11 call_indirect )
 (#x1A drop)
 (#x1B select)
-(#x20 local.get)
-(#x21 local.set)
-(#x22 local.tee)
-(#x23 global.get)
-(#x24 global.set)
-(#x28 i32.load)
-(#x29 i64.load)
-(#x2A f32.load)
-(#x2B f64.load)
-(#x2C i32.load8_s)
-(#x2D i32.load8_u)
-(#x2E i32.load16_s)
-(#x2F i32.load16_u)
-(#x30 i64.load8_s)
-(#x31 i64.load8_u)
-(#x32 i64.load16_s)
-(#x33 i64.load16_u)
-(#x34 i64.load32_s)
-(#x35 i64.load32_u)
-(#x36 i32.store)
-(#x37 i64.store)
-(#x38 f32.store)
-(#x39 f64.store)
-(#x3A i32.store8)
-(#x3B i32.store16)
-(#x3C i64.store8)
-(#x3D i64.store16)
-(#x3E i64.store32)
-(#x3F memory.size)
-(#x40 memory.grow)
-(#x41 i32.const)
-(#x42 i64.const)
-(#x43 f32.const)
-(#x44 f64.const)
+(#x20 local.get u32)
+(#x21 local.set u32)
+(#x22 local.tee u32)
+(#x23 global.get u32)
+(#x24 global.set u32)
+(#x28 i32.load memarg)
+(#x29 i64.load memarg)
+(#x2A f32.load memarg)
+(#x2B f64.load memarg)
+(#x2C i32.load8_s memarg)
+(#x2D i32.load8_u memarg)
+(#x2E i32.load16_s memarg)
+(#x2F i32.load16_u memarg)
+(#x30 i64.load8_s memarg)
+(#x31 i64.load8_u memarg)
+(#x32 i64.load16_s memarg)
+(#x33 i64.load16_u memarg)
+(#x34 i64.load32_s memarg)
+(#x35 i64.load32_u memarg)
+(#x36 i32.store memarg)
+(#x37 i64.store memarg)
+(#x38 f32.store memarg)
+(#x39 f64.store memarg)
+(#x3A i32.store8 memarg)
+(#x3B i32.store16 memarg)
+(#x3C i64.store8 memarg)
+(#x3D i64.store16 memarg)
+(#x3E i64.store32 memarg)
+(#x3F memory.size u8)
+(#x40 memory.grow u8)
+(#x41 i32.const i32)
+(#x42 i64.const i64)
+(#x43 f32.const f32)
+(#x44 f64.const f64)
 (#x45 i32.eqz)
 (#x46 i32.eq)
 (#x47 i32.ne)
@@ -401,9 +403,8 @@
   (push wasm:instr-lookup i)
   )
 (foreach pair wasm:instructions
-			 (set (th wasm:instr-lookup (car pair)) (cadr pair))
-			 (hash-map-set wasm:instr-lookup-inverse (cadr pair) (car pair)) 
-			 )
+			(set (th wasm:instr-lookup (car pair)) pair)
+			(hash-map-set wasm:instr-lookup-inverse (cadr pair) pair))
 
 (defun wasm:instruction-to-opcode (opcode)
   (hash-map-get wasm:instr-lookup-inverse opcode))
@@ -458,15 +459,29 @@
 	 (assert-eq #x60 magic)
 	 (push types (list t-args t-returns))
 	 )
-  (list 'types types)
+  (list 'type types)
   )
 
-(defun parse-function-section (r type-section)
+(defun parse-import-section (r)
+  ($ let ((n (read:uleb r))
+			 (l (list))))
+  (dotimes (i n)
+	 (let ((modname (parse-name r))
+			 (symname (parse-name r))
+			 (import-desc (case (read:byte r)
+								 (0 (list 'func (read:uleb r)))
+								 (1 (list 'table (raise 'unsupported)))
+								 (2 (list 'memtype (raise 'unsupported)))
+								 (3 (list 'global (parse-value-type r) (if (read:byte r) 'mutable 'const))))))
+		(push l (list modname symname import-desc))))
+  (list 'import l))
+
+(defun parse-function-section (r)
   ($ let ((fcn-types (list))
 			 (n (read:uleb r))))
   (dotimes (i n)
 	 ($ let ((index (read:uleb r))))
-	 (push fcn-types (nth (cadr type-section) index)))
+	 (push fcn-types index))
   (list 'function fcn-types)
   )
 
@@ -482,6 +497,16 @@
   ($ let ((n (read:uleb r))
 			 (bytes (read:bytes r n))))
   (utf8:decode bytes))
+
+(defun parse-memory-section (r)
+  ($ let ((n (read:uleb r))
+			 (memories (list))))
+  (dotimes (i n)
+	 (push memories (if (read:byte r)
+				  (list (read:u32 r) (read:u32 r))
+				  (list (read:u32 r)))))
+  (list 'memory memories))
+
 (defun parse-global-section (r)
   ($ let ((n (read:uleb r))
 			 (globals (list))))
@@ -518,29 +543,31 @@
   
   
   (let ((op (read:byte r))
-							 (op-id (th wasm:instr-lookup op))
-							 (variable nil)
-		  )
-						(case op-id
-
-						  ('end (progn))
-						  ('local.get (set variable (read:uleb r)))
-						  ('local.set (set variable (read:uleb r)))
-						  ('global.get (set variable (read:uleb r)))
-						  ('global.set (set variable (read:uleb r)))
-						  ('i32.const (set variable (read:ileb r)))
-						  ('i64.const (set variable (read:ileb r)))
-						  ('f32.const (set variable (read:f32 r)))
-						  ('f64.const (set variable (read:f64 r)))
-						  ('i32.mul (progn))
-						  ('i32.add (progn))
-						  ('drop (progn))
-						  
-						  (otherwise (raise (list "error: unsupported opcode" op-id)))
-						  )
-						(if (null? variable)
-							 op-id
-							 (list op-id variable))))
+		  (op-def (th wasm:instr-lookup op))
+		  (op-id (cadr op-def))
+		  (var-type (caddr op-def))
+		  (variable nil))
+	 
+	 (case op-id
+		('br (raise 'br-unsupported))
+		(otherwise
+		 (when var-type
+			(case var-type
+			  ('i32 (set variable (read:ileb r)))
+			  ('i64 (set variable (read:ileb r)))
+			  ('u32 (set variable (read:ileb r)))
+			  ('u64 (set variable (read:ileb r)))
+			  ('f32 (set variable (read:f32 r)))
+			  ('f64 (set variable (read:f64 r)))
+			  ('memarg (set variable (list (read:u32 r)
+													 (read:u32 r))))
+			  ('u8 (set variable (read:byte r)))
+			  (otherwise
+				
+				(raise (list 'unsupported-variable-type var-type)))))))
+	 (if (null? variable)
+		  op-id
+		  (list op-id variable))))
 
 (defun parse-code-section (r)
   (let ((nf (read:uleb r))
@@ -587,7 +614,9 @@
 			  ('type (let ((type-section (parse-type-section r)))
 						  (set ctx.type type-section)
 						  type-section))
-			  ('function (parse-function-section r ctx.type))
+			  ('import (parse-import-section r))
+			  ('function (parse-function-section r))
+			  ('memory (parse-memory-section r))
 			  ('global (parse-global-section r))
 			  ('export (parse-export-section r))
 			  (otherwise (list 'unsupported-section-type section-type))))
@@ -628,7 +657,7 @@
 
 (defun write-types-section (w m)
   
-  (let ((section (find-car (cadddr m) 'types))
+  (let ((section (find-car (cadddr m) 'type))
 		  (type-list (cadr section)))
 	 (write:uleb w (length type-list))
 	 (foreach type1 type-list
@@ -640,35 +669,72 @@
 					))
   ))
 
+(defun write-import-section (w m)
+(let ((section (find-car (cadddr m) 'import))
+		(import-list (cadr section)))
+  
+	 (println 'import-list: import-list section)
+	 (write:uleb w (if import-list (length import-list) 0))
+	 (when section
+	 (foreach idx import-list
+				 
+				 (write-name w (car idx))
+				 (write-name w (cadr idx))
+				 (let ((descr (caddr idx)))
+					(if (eq (car descr) 'func)
+						 (progn (write:byte w 0)
+								  (write:uleb w (cadr descr)))
+						 (raise 'unsupported-import-write)
+				 ))))))
+
 (defun write-function-section (w m)
   (let ((section (find-car (cadddr m) 'function))
-		  (type-section (find-car (cadddr m) 'types))
 		  (function-list (cadr section)))
 	 (write:uleb w (length function-list))
-	 (foreach f function-list
-				 (let ((idx (index-of f (cadr type-section) 1)))
-					(println idx (cadr type-section) f)
-					(write:uleb w idx)))))
+	 (foreach idx function-list
+				 (println 'idx idx)
+				 (write:uleb w idx))))
 
 
 (defun write-expr (w expr)
   (if (list? expr)
 		
 		(let ((instr (car expr))
-				(opcode-id (wasm:instruction-to-opcode instr))
+				(opcode-def (wasm:instruction-to-opcode instr))
+				(opcode-id (car opcode-def))
+				(var-type (caddr opcode-def))
 				(expr2 (cadr expr)))
 		  (write:byte w opcode-id)
-		  (case instr
-				  ('i32.const (write:ileb w expr2))
-				  ('i64.const (write:ileb w expr2))
-				  ('f32.const (write:f32 w expr2))
-				  ('f64.const (write:f64 w expr2))
-				  (otherwise
-					(when (number? expr2)
-					  (write:ileb w expr2))))
+		  (unless var-type
+			 (raise (list 'vartype-not-defined opcode-def)))
+		  (case var-type
+			 ('i32 (write:ileb w expr2))
+			 ('i64 (write:ileb w expr2))
+			 ('u32 (write:uleb w expr2))
+			 ('u64 (write:uleb w expr2))
+			 ('f32 (write:f32 w expr2))
+			 ('f64 (write:f64 w expr2))
+			 ('memarg (progn
+							(write:u32 w (car expr))
+							(write:u32 w (cadr expr))))
+			 ('u8 (write:byte w expr2))
+			 (otherwise (raise (list 'unsupported-var-type var-type))))
 		  )
-		(write:byte w (wasm:instruction-to-opcode expr))))
+		(write:byte w (car (wasm:instruction-to-opcode expr)))))
 
+(defun write-memory-section (w m)
+  (let ((section (find-car (cadddr m) 'memory)))
+	 (let ((memories (cadr section))
+			 (memory-count (length memories)))
+		  (write:uleb w memory-count)
+		  (foreach memory memories
+					  (if (eq (length memory) 2)
+							(progn (write:byte w 1)
+									 (write:uleb w (car memory))
+									 (write:uleb w (cadr memory)))
+							(progn (write:byte w 0)
+									 (write:uleb w (car memory))))))))
+					  
 (defun write-global-section (w m)
   (let ((section (find-car (cadddr m) 'global))
 		  (globals (cadr section)))
@@ -721,27 +787,31 @@
 						 (write:uleb w (length w2-array))
 						 (write:bytes w w2-array))
 					
-				 )))))
+					  )))))
 
-(defun write-section (w m f t)
-  (let ((sec-id (wasm:section-id-by-name t)))
+(defun write-section (w m f section-name)
+  (let ((sec-id (wasm:section-id-by-name section-name)))
 	 (unless sec-id
-		(raise (list 'sec-id-not-found t)))
+		(raise (list 'sec-id-not-found section-name)))
 	 (assert (not (undefined? sec-id)))
-	 (write:byte w sec-id))
-  (let ((w2 (write:new)))
-	 (f w2 m)
-	 (let ((bytes (write:to-array w2))
-			 (l (length bytes)))
+	 
+	 (when (or 0 (find-car (cadddr m) section-name))
+		(write:byte w sec-id)
+		(let ((w2 (write:new)))
+		  (f w2 m)
+		  (let ((bytes (write:to-array w2))
+				  (l (length bytes)))
 		
-		(write:uleb w l)
-		(write:bytes w bytes))))
+			 (write:uleb w l)
+			 (write:bytes w bytes))))))
 
 (defun write-module(w m)
   (write:bytes w '(0 97 115 109))
   (write:bytes w '(1 0 0 0))
   (write-section w m write-types-section 'type)
+  (write-section w m write-import-section 'import)
   (write-section w m write-function-section 'function)
+  (write-section w m write-memory-section 'memory)
   (write-section w m write-global-section 'global)
   (write-section w m write-export-section 'export)
   (write-section w m write-code-section 'code)
@@ -807,8 +877,10 @@
 		
 		  (let ((read-back (bytes->hex (wasm->bytes sections)))) 
 			 (println read-back)
+			 (println wasm1)
 			 (println 'sections sections)
-			 ;(assert-equals read-back wasm1)
+			 
+			 (assert-equals read-back wasm1)
 			 
 			 ;(println '>>> (parse-module (read:from-bytes (hex->bytes read-back))))
 			 (hex->bytes read-back)
@@ -816,24 +888,66 @@
 
 (defun then (promise f)
   (promise.then f))
-(defvar wasm2 '(wasm (0 97 115 109) (1 0 0 0) ((types (((i32 i32) (i32)) (() (i32)))) (function (((i32 i32) (i32)) (() (i32)))) (global ((i32 mutable (i32.const 75600)) (i32 mutable (i32.const -64)) (i32 mutable (i32.const -75600)))) (export (("multiply" funcidx 0) ("incf" funcidx 1))) (code ((((local.get 0) (local.get 1) i32.mul end) ()) (((global.get 0) (i64.const 1) (f32.const 2) (f64.const 3) drop drop drop (i32.const 1) i32.add (global.set 0) (global.get 0) end) ()))))))
+
+(defvar wasm2 '(wasm (0 97 115 109) (1 0 0 0)
+					 (
+					  (type (((i32 i32) (i32)) (() (i32))))
+					  (import (("a" "x" (func 0))))
+					  (function (0 1 0 1))
+
+					  (memory ((5)))
+					  (global ((i32 mutable (i32.const 75600))
+								  (i32 mutable (i32.const -64))
+								  (i32 mutable (i32.const -75600))))
+					  (export (("multiply" funcidx 0)
+								  ("incf" funcidx 1)
+								  ("add2" funcidx 2)
+								  ("add3" funcidx 3)))
+					  (code (
+								((
+								  (local.get 0)
+								  (local.get 1)
+								  i32.mul
+								  end) ())
+								
+								(((global.get 0)
+								  (i64.const 1)
+								  (f32.const 2)
+								  (f64.const 3)
+								  (memory.size (0 0))
+
+								  drop drop drop drop (i32.const 1) i32.add (global.set 0) (global.get 0) end) ())
+
+								(((local.get 0)
+								  (local.get 1)
+								  i32.add
+								  end) ())
+								(((i32.const 1) (i32.const 2) (call 0) end)())
+
+								)))))
 
 (defun wasm->bytes (wasm)
   (let ((writer (write:new)))
 	 (write-module writer wasm)
 	 (write:to-array writer)))
 
-;(test-read-write-wasm)
+
+(test-read-write-wasm)
 (println 'wasm2 wasm2)
 
 
 (when 1
 
-(let ((wasm-bin1 (wasm->bytes wasm2)))
+  (let ((wasm-bin1 (wasm->bytes wasm2))
+		  (import-obj (list)))
+	 (set import-obj.a (list))
+	 (set import-obj.a.x (lambda (x y) (println (+ x y) '<<<<INVOKE)))
 
 		
-  (then (WebAssembly.instantiate wasm-bin1.buffer)
+  (then (WebAssembly.instantiate wasm-bin1.buffer import-obj)
 		  (lambda (r)
-			 (println (r.instance.exports.multiply 2 4)))
+			 (println (r.instance.exports.multiply 2 4)
+						 (r.instance.exports.add2 2 10)
+						 (r.instance.exports.incf) (r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf) (r.instance.exports.add3)))
 		  )))
 
