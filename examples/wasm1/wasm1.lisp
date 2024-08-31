@@ -1008,6 +1008,13 @@
 										  (br_if 0)
 										  ;drop
 										  )
+								  (block i64
+									 (i32.const 1)
+									 (call 1)
+									 (i64.const 64)
+									 (br 0)
+									 )
+								  
 								  drop
 										  
 
