@@ -1099,7 +1099,7 @@
 	 (set import-obj.a (list))
 	 (set import-obj.mod (list))
 	 (set import-obj.a.x (lambda (x y) (println (+ x y) '<<<<INVOKE)))
-	 (set import-obj.mod.print (lambda (x) (println x)))
+	 (set import-obj.mod.print (println x))
 	 (set import-obj.mod.printstr
 			(lambda (x)
 			  (let ((n 0)
