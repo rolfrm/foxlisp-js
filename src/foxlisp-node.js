@@ -3,6 +3,10 @@ async function load_file(filePath){
     return await fs.readFile(filePath, 'utf8');
 }
 
+async function load_file_bytes(filePath){
+	 return new Uint8Array(await fs.readFile(filePath));
+}
+
 function WriteCodeToLog(code) {
 	return;
 	fs.appendFile("log.js", "\n" + code, (err) => {
@@ -15,6 +19,7 @@ function WriteCodeToLog(code) {
 }
 writeCodetoLog = WriteCodeToLog
 loadFileAsync = load_file;
+loadFileBytesAsync = load_file_bytes
 
 loadWat = null;
 

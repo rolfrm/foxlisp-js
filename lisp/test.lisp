@@ -8,7 +8,8 @@
 ;(println (case-code (cdr '(case 3 (3 b) (4 d) (5 e) (6 g)))))
 (println (link-ends '((1 2 3) (4 5 6) (7 8 9) (10 11 12))))
 (println "gets here")
-(println (case 10 (9 (+ 1 2)) (10 (+ 3 4))))
+(assert-eq 7 (case 10 (9 (+ 1 2)) (10 'test (+ 3 4))))
+
 
 (println `(1 2 3 "asd" asd (3 2 1 ,(+ 1 2) ,@(list 4 5 6) 1 2 "hello
 world")))
@@ -225,12 +226,12 @@ asd ")
 
 (defun cond-test (x)
    (cond 
-      ((string? x) "string")
-      ((number? x) "number")
-      (t "unknown")
-   )
-
-)
+     ((string? x)
+		1 "string")
+     ((number? x)
+		2 "number")
+     (t
+		3 "unknown")))
 (assert-eq (cond-test "asd") "string")
 (assert-eq (cond-test 123) "number")
 (assert-eq (cond-test 'hej) "unknown")

@@ -112,7 +112,7 @@
 			 (set chunk (read:byte r))
 			 (set value (+ value (<< (logand chunk #x7f) offset)))
 			 (set offset (+ offset 7))
-			 (set read (> chunk 128)))
+			 (set read (>= chunk 128)))
 	 (when (and (< offset 64) (logand chunk #x40))
 		
 		(set value (logor value (<< -1 offset))))
@@ -474,6 +474,7 @@
 (defun parse-type-section (r)
   ($ let ((types (list))
 			 (n (read:uleb r))))
+  (println 'n n)
   (dotimes (i n)
 	 ($ let ((magic (read:byte r))
 				(t-args (parse-result-type r))
@@ -526,20 +527,22 @@
 			 (memories (list))))
   (dotimes (i n)
 	 (push memories (if (read:byte r)
-				  (list (read:u32 r) (read:u32 r))
-				  (list (read:u32 r)))))
+				  (list (read:uleb r) (read:uleb r))
+				  (list (read:uleb r)))))
   (list 'memory memories))
 
 (defun parse-global-section (r)
   ($ let ((n (read:uleb r))
 			 (globals (list))))
   (dotimes (i n)
-	 (println 'global$ i)
+	 (println 'global: i)
 	 ($ let ((type (parse-value-type r))
 				(mutable (if (read:byte r) 'mutable 'const))
 				(expr (parse-expr r)))
 		 ;; read end marker
-		 (read:byte r)
+		 (let ((endmarker (read:byte r)))
+			(println endmarker)
+			)
 
 		 (push globals (println (list type mutable expr)))
 		 ))
@@ -570,40 +573,86 @@
 		  (op-id (cadr op-def))
 		  (var-type (caddr op-def))
 		  (variable nil))
-	 
+	 (println '>>> op op-id)
+	 (assert op-id)
 	 (case op-id
-		('br (raise 'br-unsupported))
+		('block
+			 (let ((loop-type-id (read:byte r))
+					 (loop-type (if (eq loop-type-id #x40)
+										 (list)
+										 (wasm:type-from-id loop-type-id)))
+					 (bdy (list)))
+				(let ((done nil))
+				  (loop (not done)
+						(let ((e (parse-expr r)))
+						  (if (eq e 'end)
+								(set done t)
+								(push bdy e)))))
+				(println `(block ,loop-type ,@bdy))
+
+				))
+		('loop
+			 (let ((loop-type-id (read:byte r))
+					 (loop-type (if (eq loop-type-id #x40)
+										 (list)
+										 (wasm:type-from-id loop-type-id)))
+					 (bdy (list)))
+				(let ((done nil))
+				  (loop (not done)
+						(let ((e (parse-expr r)))
+						  (if (eq e 'end)
+								(set done t)
+								(push bdy e)))))
+				(println `(loop ,loop-type ,@bdy))
+
+				))
+		('br_table
+		 (let ((n (read:uleb r))
+				 (tbl (list)))
+			(dotimes (i n)
+			  (push tbl (read:uleb r)))
+			(let ((tblidx (read:uleb r)))
+			  (list 'br_table tbl tblidx)
+		 )))
 		(otherwise
-		 (when var-type
-			(case var-type
-			  ('i32 (set variable (read:ileb r)))
-			  ('i64 (set variable (read:ileb r)))
-			  ('u32 (set variable (read:ileb r)))
-			  ('u64 (set variable (read:ileb r)))
-			  ('f32 (set variable (read:f32 r)))
-			  ('f64 (set variable (read:f64 r)))
-			  ('localidx (set variable (read:uleb r)))
-			  ('globalidx (set variable (read:uleb r)))
-			  ('memarg (set variable (list (read:u32 r)
-													 (read:u32 r))))
-			  ('u8 (set variable (read:byte r)))
-			  (otherwise
-				
-				(raise (list 'unsupported-variable-type var-type)))))))
+		 (progn
+			(when var-type
+			  (case var-type
+				 ('i32 (set variable (read:ileb r)))
+				 ('i64 (set variable (read:ileb r)))
+				 ('u32 (set variable (read:ileb r)))
+				 ('u64 (set variable (read:ileb r)))
+				 ('f32 (set variable (read:f32 r)))
+				 ('f64 (set variable (read:f64 r)))
+				 ('localidx (set variable (read:uleb r)))
+				 ('globalidx (set variable (read:uleb r)))
+				 ('funcidx (set variable (read:uleb r)))
+				 ('memarg (set variable (list (read:uleb r)
+														(read:uleb r))))
+				 ('u8 (set variable (read:byte r)))
+				 (otherwise
+				  (cond
+					 ((and (eq (car var-type) 'u32)
+							 (eq (cadr var-type) 'u32))
+					  (set variable (list (read:uleb r)
+												 (read:uleb r))))
+					 (t (raise (list 'unsupported-variable-type var-type)))))))
 	 (if (null? variable)
 		  op-id
-		  (list op-id variable))))
+		  (list op-id variable)))))))
 
 (defun parse-code-section (r)
   (let ((nf (read:uleb r))
 		  (codes (list)))
 	 (dotimes (j nf)
+
+		(println j)
 		(let ((size (read:uleb r))
 				(code (list))
 				(locals (list)))
 		  (let ((nlocals (read:uleb r)))
 			 (dotimes (k nlocals)
-				(let ((n (read:uleb r))
+				(let ((n (println (read:uleb r) nlocals))
 						(type (wasm:type-from-id (read:byte r))))
 				(push locals (list type n))
 				
@@ -617,7 +666,7 @@
 						  (return-from next nil))
 					 )))
 		
-		(push codes (list code locals))))
+		(push codes (println (list code locals)))))
 
 	 (list 'code codes)
 	 )
@@ -625,14 +674,14 @@
 
 (defun parse-section(r ctx)
   (let ((section-id (read:byte r))
-		  (section-size (read:byte r))
+		  (section-size (read:uleb r))
 		  (section-type (th wasm:section-lookup section-id))
 		  (next-section (+ section-size (read:get-offset r)))
 		  (section nil)
 		  )
-	 
 	 (println 'parse-section section-type)
-
+	 ;(assert section-type)
+	 
 	 (set section
 			(case section-type
 			  ('code (parse-code-section r))
@@ -644,7 +693,7 @@
 			  ('memory (parse-memory-section r))
 			  ('global (parse-global-section r))
 			  ('export (parse-export-section r))
-			  (otherwise (list 'unsupported-section-type section-type))))
+			  (otherwise (println 'unsupported-section-type section-type))))
 	 (read:set-offset r next-section)
 	 section
 	 
@@ -653,6 +702,8 @@
   (let ((magic (read:bytes r 4))
 		  (version (read:bytes r 4))
 		  (sections (list)))
+	 (println magic version)
+
 	 (loop (not (read:finished? r))
 	  (push sections (parse-section r sections)))
 	 (list 'wasm magic version sections)
@@ -679,6 +730,9 @@
 (defun write-type (writer type)
   (write:byte writer (wasm:type-to-id type)))
 
+(defun write-end (w)
+  (write:byte w #x0b))
+
 (defun write-type-array (writer array)
   (when (null? array)
 	 (set array (list)))
@@ -703,30 +757,25 @@
 (defun write-import-section (w m)
 (let ((section (find-car (cadddr m) 'import))
 		(import-list (cadr section)))
-  
-	 (println 'import-list: import-list section)
-	 (write:uleb w (if import-list (length import-list) 0))
-	 (when section
-	 (foreach idx import-list
-				 
-				 (write-name w (car idx))
-				 (write-name w (cadr idx))
-				 (let ((descr (caddr idx)))
-					(if (eq (car descr) 'func)
-						 (progn (write:byte w 0)
-								  (write:uleb w (cadr descr)))
-						 (raise 'unsupported-import-write)
-				 ))))))
+  (write:uleb w (if import-list (length import-list) 0))
+  (foreach idx import-list
+			  
+			  (write-name w (car idx))
+			  (write-name w (cadr idx))
+			  (let ((descr (caddr idx)))
+				 (if (eq (car descr) 'func)
+					  (progn (write:byte w 0)
+								(write:uleb w (cadr descr)))
+					  (raise 'unsupported-import-write)
+					  )))))
 
 (defun write-function-section (w m)
   (let ((section (find-car (cadddr m) 'function))
 		  (function-list (cadr section)))
 	 (write:uleb w (length function-list))
 	 (foreach idx function-list
-				 (println 'idx idx)
 				 (write:uleb w idx))))
-(defun write-end (w)
-  (write:byte w #x0b))
+
 
 
 (defun write-expr (w expr)
@@ -774,7 +823,7 @@
 				(foreach elem body
 							(write-expr w elem))
 				 
-				(write:byte w #x0b)))
+				(write-end w)))
 			 (otherwise
 			  (progn
 			  (unless var-type
@@ -788,9 +837,9 @@
 				 ('f64 (write:f64 w expr2))
 				 ('funcidx (write:uleb w expr2))
 				 ('localidx (write:uleb w expr2))
-				 ('memarg (progn
-								(write:uleb w (car expr2))
-								(write:uleb w (cadr expr2))))
+				 ('globalidx (write:uleb w expr2))
+				 ('memarg 	(write:uleb w (car expr2))
+								(write:uleb w (cadr expr2)))
 				 ('u8 (write:byte w expr2))
 				 (otherwise (raise (list 'unsupported-var-type var-type))))
 			  ))))
@@ -879,9 +928,6 @@
 									 (progn
 										(raise 'not-supported))
 									 (progn
-								  
-
-								  
 										(write:uleb w 0)
 										(write-expr w (list 'i32.const (cadr data)))
 										(write-end w)
@@ -937,7 +983,19 @@
 			(#x1FFFFF #xFF #xFF #x7F))))
   (foreach item uleb:test-values
 			 ;(println 'test: (car item) 'eq (read:uleb (read:from-bytes (cdr item))))
-			(assert-eq (car item) (read:uleb (read:from-bytes (cdr item))))))
+			  (assert-eq (car item) (read:uleb (read:from-bytes (cdr item))))))
+
+(dotimes (_i 10000)
+  ($ let ((i (- _i 5000))))
+  (let ((w (write:new)))
+	 (write:ileb w i)
+	 (let ((r (read:from-bytes (write:to-array w))))
+		(let ((result (read:ileb r)))
+		  ;(println 'rrr result i (write:to-array w))
+		  (assert-eq i result)))))
+			  
+
+;(assert 0)
 
 
 (let ((ileb:test-values '((0 #x0 #x0) (1 1) (32 32) (-64 64) (75600 208 206 4) (-75600 176 177 123))))
@@ -948,7 +1006,7 @@
 					  (w (write:new)))
 				 (write:ileb w value)
 				 
-				 (let ((result (println (write:to-array w) '<<<))
+				 (let ((result (write:to-array w))
 						 (read-back (read:ileb (read:from-bytes result))))
 					(println (car item) read-back)
 					(assert-eq (car item) read-back)
@@ -1131,6 +1189,14 @@
 						 (r.instance.exports.incf) (r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf) (r.instance.exports.add3))
 
 			 (println r.instance.exports.memory.buffer)
+			 (then
+			  (loadFileBytesAsync "./big.wasm")
+			  (lambda (data)
+				 (println '>>> (type-of data))
+				 (handle-errors
+				  (println (parse-module (read:from-bytes data)))
+				  (e (println e))
+				 )))
 			 )
 		  )))
 
