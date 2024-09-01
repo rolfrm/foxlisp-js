@@ -870,19 +870,30 @@
 	 (write:uleb w n)
 	 (foreach data datas
 				 (case (car data)
-					('active (progn
-								  (write:uleb w 0)
-								  (write-expr w (list 'i32.const (cadr data)))
-								  (write-end w)
-								  (let ((payload (caddr data)))
-									 (if (string? payload)
+					('passive
+					 (let ((payload (cadr data)))
+						(write:uleb w 1)
+						(write:uleb w (length payload))
+						(write:bytes w payload)))
+					('active (if (eq 5 (length data))
+									 (progn
+										(raise 'not-supported))
+									 (progn
+								  
 
-										  (progn
-											 (write-name w payload t))
-										  (progn
-											 (write:uleb w (length payload))
-				 							 (write:bytes w payload)
-								  )))))
+								  
+										(write:uleb w 0)
+										(write-expr w (list 'i32.const (cadr data)))
+										(write-end w)
+										(let ((payload (caddr data)))
+										  (if (string? payload)
+												
+												(progn
+												  (write-name w payload t))
+												(progn
+												  (write:uleb w (length payload))
+				 								  (write:bytes w payload)
+												  ))))))
 					(otherwise (raise 'oh-no))))))
 
 (defun write-section (w m f section-name)
@@ -1099,7 +1110,7 @@
 	 (set import-obj.a (list))
 	 (set import-obj.mod (list))
 	 (set import-obj.a.x (lambda (x y) (println (+ x y) '<<<<INVOKE)))
-	 (set import-obj.mod.print (println x))
+	 (set import-obj.mod.print println)
 	 (set import-obj.mod.printstr
 			(lambda (x)
 			  (let ((n 0)
