@@ -230,16 +230,16 @@
 	 (#x0D br_if u32)
 	 (#x0E br_table special)
 	 (#x0F return)
-	 (#x10 call u32)
+	 (#x10 call funcidx)
 	 (#x11 call_indirect (u32 u32))
 	 (#x1A drop)
 	 (#x1B select)
 	 (#x1C select.t (vec valtype))
-	 (#x20 local.get u32)
-	 (#x21 local.set u32)
-	 (#x22 local.tee u32)
-	 (#x23 global.get u32)
-	 (#x24 global.set u32)
+	 (#x20 local.get localidx)
+	 (#x21 local.set localidx)
+	 (#x22 local.tee localidx)
+	 (#x23 global.get localidx)
+	 (#x24 global.set localidx)
 	 (#x28 i32.load memarg)
 	 (#x29 i64.load memarg)
 	 (#x2A f32.load memarg)
@@ -582,6 +582,8 @@
 			  ('u64 (set variable (read:ileb r)))
 			  ('f32 (set variable (read:f32 r)))
 			  ('f64 (set variable (read:f64 r)))
+			  ('localidx (set variable (read:uleb r)))
+			  ('globalidx (set variable (read:uleb r)))
 			  ('memarg (set variable (list (read:u32 r)
 													 (read:u32 r))))
 			  ('u8 (set variable (read:byte r)))
@@ -663,11 +665,17 @@
 				 (when (eq (car item) car-value)
 					(return-from iter item)))))
 
-(defun write-name (writer name)
+(defun write-name (writer name include0)
   ($ let ((bytes (utf8:encode name))))
-  (write:uleb writer (length bytes))
-  (write:bytes writer bytes))
-
+  (if include0
+		(progn
+		  (write:uleb writer (+ 1 (length bytes)))
+		  (write:bytes writer bytes)
+		  (write:byte writer 0))
+		(progn
+		  (write:uleb writer (length bytes))
+		  (write:bytes writer bytes))))
+		  
 (defun write-type (writer type)
   (write:byte writer (wasm:type-to-id type)))
 
@@ -717,6 +725,8 @@
 	 (foreach idx function-list
 				 (println 'idx idx)
 				 (write:uleb w idx))))
+(defun write-end (w)
+  (write:byte w #x0b))
 
 
 (defun write-expr (w expr)
@@ -728,7 +738,7 @@
 				(var-type (caddr opcode-def))
 				(expr2 (cadr expr)))
 		  (write:byte w opcode-id)
-		  (println instr)
+		  (println instr expr2)
 		  (case instr
 			 ('if
 			  (let ((type (cadr expr))
@@ -743,8 +753,7 @@
 					(write:byte w #x05)
 					(foreach elem else-clause
 								(write-expr w elem)))
-				 
-				 (write:byte w #x0b)
+				 (write-end w)
 				 ))
 			 ('loop
 			  (let ((type (cadr expr))
@@ -754,8 +763,7 @@
 					  (write-type w type))
 				 (foreach elem body
 							 (write-expr w elem))
-				 
-				 (write:byte w #x0b)
+				 (write-end w)
 				 ))
 			 ('block 
 				  (let ((type (cadr expr))
@@ -778,9 +786,11 @@
 				 ('u64 (write:uleb w expr2))
 				 ('f32 (write:f32 w expr2))
 				 ('f64 (write:f64 w expr2))
+				 ('funcidx (write:uleb w expr2))
+				 ('localidx (write:uleb w expr2))
 				 ('memarg (progn
-								(write:u32 w (car expr))
-								(write:u32 w (cadr expr))))
+								(write:uleb w (car expr2))
+								(write:uleb w (cadr expr2))))
 				 ('u8 (write:byte w expr2))
 				 (otherwise (raise (list 'unsupported-var-type var-type))))
 			  ))))
@@ -821,7 +831,7 @@
 	 (foreach expt exports
 				 (println 'export expt)
 				 (write-name w (car expt))
-				 (write:byte w (cond (cadr expt)
+				 (write:byte w (case (cadr expt)
 											('funcidx 0)
 											('tableidx 1)
 											('memidx 2)
@@ -853,6 +863,28 @@
 					
 					  )))))
 
+(defun write-data-section(w m)
+  (let ((section (find-car (cadddr m) 'data))
+		  (datas (cadr section))
+		  (n (length datas)))
+	 (write:uleb w n)
+	 (foreach data datas
+				 (case (car data)
+					('active (progn
+								  (write:uleb w 0)
+								  (write-expr w (list 'i32.const (cadr data)))
+								  (write-end w)
+								  (let ((payload (caddr data)))
+									 (if (string? payload)
+
+										  (progn
+											 (write-name w payload t))
+										  (progn
+											 (write:uleb w (length payload))
+				 							 (write:bytes w payload)
+								  )))))
+					(otherwise (raise 'oh-no))))))
+
 (defun write-section (w m f section-name)
   (let ((sec-id (wasm:section-id-by-name section-name)))
 	 (unless sec-id
@@ -879,6 +911,7 @@
   (write-section w m write-global-section 'global)
   (write-section w m write-export-section 'export)
   (write-section w m write-code-section 'code)
+  (write-section w m write-data-section 'data)
 
   )
 
@@ -959,17 +992,20 @@
 								(() (i32))
 								((i32) ())))
 					  (import (("a" "x" (func 0))
-								  ("mod" "print" (func 2))))
+								  ("mod" "print" (func 2))
+								  ("mod" "printstr" (func 2))))
 					  (function (0 1 0 1))
 
 					  (memory ((5)))
 					  (global ((i32 mutable (i32.const 75600))
 								  (i32 mutable (i32.const -64))
 								  (i32 mutable (i32.const -75600))))
-					  (export (("multiply" funcidx 2)
-								  ("incf" funcidx 3)
-								  ("add2" funcidx 4)
-								  ("add3" funcidx 5)))
+					  (export (("multiply" funcidx 3)
+								  ("incf" funcidx 4)
+								  ("add2" funcidx 5)
+								  ("add3" funcidx 6)
+								  ("memory" memidx 0)
+								  ))
 					  (code (
 								((
 								  (local.get 0)
@@ -998,26 +1034,33 @@
 								  (local.set 0)
 								  (loop i64
 									(local.get 0)
-									(i32.const -1)
-									i32.add
+									(i32.const 10)
+									i32.sub
 									(local.set 0)
 									(local.get 0)
 									(call 1)
 									(i64.const 64)
 										  (local.get 0)
 										  (br_if 0)
-										  ;drop
 										  )
+								  drop
 								  (block i64
 									 (i32.const 1)
 									 (call 1)
 									 (i64.const 64)
-									 (br 0)
+									 (i32.const 1)
+									 (br_if 0)
+									 (i32.const 6400)
+									 (call 1)
 									 )
-								  
 								  drop
-										  
-
+								  (i32.const 30)
+								  (i32.load (0 0))
+								  (call 1)
+								  (i32.const 40)
+								  (call 2)
+												
+								  		  
 								  drop drop drop (i32.const 1) i32.add (global.set 0) (global.get 0) end) ((i32 1)))
 
 								(((local.get 0)
@@ -1026,7 +1069,15 @@
 								  end) ())
 								(((i32.const 1) (i32.const 2) (call 0) end)())
 
-								)))))
+								))
+					  (data
+						(
+						 (active 0 (0 1 2 3 4 5 6 1 1 1 1 1 1))
+						 (active 30 (#xab #xcd #xef #x12 4 5 6 1 1 1 1 1 1))
+						 (active 40 "aaaaaaaaa")
+						 (active 40 "hejhej")
+
+						 )))))
 
 (defun wasm->bytes (wasm)
   (let ((writer (write:new)))
@@ -1041,17 +1092,34 @@
 (when 1
 
   (let ((wasm-bin1 (wasm->bytes wasm2))
-		  (import-obj (list)))
+		  (import-obj (list))
+		  (module 0)
+		  (memory 0)
+		  )
 	 (set import-obj.a (list))
 	 (set import-obj.mod (list))
 	 (set import-obj.a.x (lambda (x y) (println (+ x y) '<<<<INVOKE)))
 	 (set import-obj.mod.print (lambda (x) (println x)))
+	 (set import-obj.mod.printstr
+			(lambda (x)
+			  (let ((n 0)
+					  (buffer (%js "new Uint8Array(memory.buffer)")))
+				 (loop (th buffer (+ x n))
+				  (incf n))
+				 (let ((view (buffer.slice x (+ x n))))
+					(println (utf8:decode view)))
+			  )))
 
 		
   (then (WebAssembly.instantiate wasm-bin1.buffer import-obj)
 		  (lambda (r)
+			 (set module r.instance)
+			 (set memory r.instance.exports.memory)
 			 (println (r.instance.exports.multiply 2 4)
 						 (r.instance.exports.add2 2 10)
-						 (r.instance.exports.incf) (r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf) (r.instance.exports.add3)))
+						 (r.instance.exports.incf) (r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf) (r.instance.exports.add3))
+
+			 (println r.instance.exports.memory.buffer)
+			 )
 		  )))
 
