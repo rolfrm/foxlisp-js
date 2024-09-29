@@ -110,13 +110,14 @@ function println_impl(obj){
 		  strOut += ")"
 		  return strOut;
 	 }else{
-		  if(obj == undefined){
-				return "undefined"
-		  }
-		  if(obj == null){
+		  if(obj === null){
 				return "null";
 		  }
-		  if(obj.type == "symbol"){
+		  if(obj === undefined){
+				return "undefined"
+		  }
+		  
+		  if(obj.type === "symbol"){
 				return obj.value;
 		  }
 		  if(typeof obj === "string") {

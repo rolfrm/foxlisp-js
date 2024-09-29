@@ -204,8 +204,19 @@
 	 (write:bytes w buf)))
 
 (defvar wasm:section-lookup
- '(custom type import function table memory global
-	export start element code data data-count))
+  '(custom
+	 type
+	 import
+	 function
+	 table
+	 memory
+	 global
+	 export
+	 start
+	 element
+	 code
+	 data
+	 data-count))
 
 (defvar wasm:section-lookup-inverse (make-hash-map))
 (let ((iter 0))
@@ -423,8 +434,8 @@
 (defvar wasm:instr-lookup (list))
 (defvar wasm:instr-lookup-inverse (make-hash-map))
 (dotimes (i #xFF)
-  (push wasm:instr-lookup i)
-  )
+  (push wasm:instr-lookup i))
+
 (foreach pair wasm:instructions
 			(set (th wasm:instr-lookup (car pair)) pair)
 			(hash-map-set wasm:instr-lookup-inverse (cadr pair) pair))
@@ -449,7 +460,6 @@
 	 (raise (list "unknown type" typeid))
 	 nil))
 
-
 (defun wasm:type-to-id(type)
   (block type-lookup
 	 (foreach elem wasm:types
@@ -458,7 +468,6 @@
 	 (raise (list "unknown type" type ))
 	 nil))
 
-
 (defun parse-value-type (r)
   (wasm:type-from-id (read:byte r)))
 
@@ -466,8 +475,7 @@
   ($ let ((count (read:uleb r))
 			 (out-list (list))))
   (dotimes (i count)
-	 (push out-list (parse-value-type r)))
-	
+	 (push out-list (parse-value-type r)))	
   out-list)
 
 
@@ -478,13 +486,10 @@
   (dotimes (i n)
 	 ($ let ((magic (read:byte r))
 				(t-args (parse-result-type r))
-				(t-returns (parse-result-type r))
-				))
+				(t-returns (parse-result-type r))))
 	 (assert-eq #x60 magic)
-	 (push types (list t-args t-returns))
-	 )
-  (list 'type types)
-  )
+	 (push types (list t-args t-returns)))
+  (list 'type types))
 
 (defun parse-import-section (r)
   ($ let ((n (read:uleb r))
@@ -573,7 +578,6 @@
 		  (op-id (cadr op-def))
 		  (var-type (caddr op-def))
 		  (variable nil))
-	 (println '>>> op op-id)
 	 (assert op-id)
 	 (case op-id
 		('block
@@ -640,6 +644,25 @@
 	 (if (null? variable)
 		  op-id
 		  (list op-id variable)))))))
+(defun parse-element-section (r)
+  (let ((n (read:uleb r))
+		  (elements (list)))
+	 (dotimes (i n)
+		(let ((header (read:uleb r)))
+		  (case header
+			 (0 (let ((e (parse-expr r))
+						 (endmarker (read:byte r))
+						 (n (read:uleb r))
+						 (elem (list)))
+					(assert-eq endmarker #x0b)
+					
+					(dotimes (i n)
+					  (push elem (read:uleb r))) 
+					(push elements (list 'passive-func-element e elem))))
+			 (otherwise (raise '!!!))
+				
+			 )))
+	 (list 'element elements)))
 
 (defun parse-code-section (r)
   (let ((nf (read:uleb r))
@@ -672,6 +695,40 @@
 	 )
   )
 
+(defun array-to-string-maybe(array)
+  (let ((l (length array)))
+	 (if (or (eq l 0) (not (nth array (- l 1))))
+		  array
+		  (block loop
+			 
+			 (dotimes (i (- (length array) 1))
+				(unless (eq (th array i) 0)
+				  (return-from loop array)
+				  ))
+			 (utf8:encode array)))))
+
+(defun parse-data-section (r)
+  (let ((n (read:uleb r))
+		  (datas (list)))
+	 (dotimes (i n)
+		(let ((header (read:uleb r))
+				(memidx 0)
+				(expr nil)
+				(data nil))
+		  (when (eq header 2)
+			 (set memidx (read:uleb r)))
+		  (when (not (eq header 1))
+			 (set expr (parse-expr r))
+			 (assert (eq (read:byte r) #x0b)))
+		  (let ((n (read:uleb r)))
+			 (set data (read:bytes r n)))
+		  (push datas
+				  (case header
+						  (0 (list 'active expr data))
+						  (1 (list 'passive data))
+						  (2 (list 'active memidx expr data))))))
+	 (list 'data datas)))
+
 (defun parse-section(r ctx)
   (let ((section-id (read:byte r))
 		  (section-size (read:uleb r))
@@ -684,7 +741,6 @@
 	 
 	 (set section
 			(case section-type
-			  ('code (parse-code-section r))
 			  ('type (let ((type-section (parse-type-section r)))
 						  (set ctx.type type-section)
 						  type-section))
@@ -693,6 +749,9 @@
 			  ('memory (parse-memory-section r))
 			  ('global (parse-global-section r))
 			  ('export (parse-export-section r))
+			  ('element (parse-element-section r))
+			  ('code (parse-code-section r))
+			  ('data (parse-data-section r))
 			  (otherwise (println 'unsupported-section-type section-type))))
 	 (read:set-offset r next-section)
 	 section
@@ -972,6 +1031,27 @@
 
   )
 
+(defun is-wasm-module(module)
+  (and (eq (car module) 'wasm)
+		 (equals? (println (cadr module)) '(0 97 115 109))
+		 (equals? (caddr module) '(1 0 0 0))))
+
+(defun wasm->bytes (wasm)
+  (let ((writer (write:new)))
+	 (write-module writer wasm)
+	 (write:to-array writer)))
+
+
+(defun import-module(codebase module)
+  "This function 'imports' module into codebase by merging the two code bases."
+  (assert (is-wasm-module codebase))
+  (assert (is-wasm-module module))
+  (let ((type-section (find-car (cadddr codebase) 'type))
+		  (import-type-section (find-car (cadddr module) 'type)))
+	 (println 'type-sections: (list type-section import-type-section))
+	 ))
+
+
 (println (nth wasm:instructions 3))
 
 (println (read:uleb (read:from-bytes (list 255 1))))
@@ -1025,9 +1105,6 @@
 					  (assert-eq test-value u)
 					  )))))
 
-
-
-
 (let ((strhex "1a4005ff0013ac")
 		(bytes (hex->bytes strhex))
 		(strhexback (bytes->hex bytes)))
@@ -1054,6 +1131,35 @@
 
 (defun then (promise f)
   (promise.then f))
+
+(defvar wasm-lib '(wasm (0 97 115 109) (1 0 0 0)
+						 ((type (((i32 i32) ()))))
+						 (import (("os" "os_write_log" (func 0))))
+						 (function (0))
+						 (export (("os_write_log" funcidx 0)))
+						 (code (end) ())))
+
+(defvar wasm2* '(wasm
+					  (import
+						(a.x (i32 i32 i32))
+						(mod.print (i32 ()))
+						(mod.printstr (i32 ())))
+					  (global
+						(g0 75600 i32)
+						(g1 -64 i32)
+						(g2 -75600 i32))
+					  (code (multiply ((a i32) (b i32) i32)
+								()
+								(local.get b)
+								(local.get a)
+								(local.get b)
+								(local.get a)
+								(call mod.print)
+								(call mod.print)
+								i32.mul
+								end))))
+								
+						
 
 (defvar wasm2 '(wasm (0 97 115 109) (1 0 0 0)
 					 (
@@ -1148,22 +1254,20 @@
 
 						 )))))
 
-(defun wasm->bytes (wasm)
-  (let ((writer (write:new)))
-	 (write-module writer wasm)
-	 (write:to-array writer)))
-
-
 (test-read-write-wasm)
-(println 'wasm2 wasm2)
 
-
-(when 1
+(println (wasm->bytes wasm-lib))
+													 ;type-sections: (
+;  (type (((i32 i32) (i32)) (() (i32)) ((i32) ())))
+;  (type (((i32 i32) ()))))
+(import-module wasm2 wasm-lib)
+(when 0
 
   (let ((wasm-bin1 (wasm->bytes wasm2))
 		  (import-obj (list))
 		  (module 0)
 		  (memory 0)
+		  (wasm-bin2 (wasm->bytes wasm-lib))
 		  )
 	 (set import-obj.a (list))
 	 (set import-obj.mod (list))
@@ -1177,7 +1281,8 @@
 				  (incf n))
 				 (let ((view (buffer.slice x (+ x n))))
 					(println (utf8:decode view)))
-			  )))
+				 )))
+	 (println wasm2)
 
 		
   (then (WebAssembly.instantiate wasm-bin1.buffer import-obj)
@@ -1189,14 +1294,17 @@
 						 (r.instance.exports.incf) (r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf)(r.instance.exports.incf) (r.instance.exports.add3))
 
 			 (println r.instance.exports.memory.buffer)
-			 (then
+			 (when 0 (then
 			  (loadFileBytesAsync "./big.wasm")
 			  (lambda (data)
-				 (println '>>> (type-of data))
+	
+				 ;(println '>>> (type-of data))
 				 (handle-errors
-				  (println (parse-module (read:from-bytes data)))
+				  (let ((sections (parse-module (read:from-bytes data))))
+					 ;(println (find-car (cadddr sections) 'data))
+					 )
 				  (e (println e))
-				 )))
+				 ))
 			 )
-		  )))
+		  )))))
 

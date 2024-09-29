@@ -152,7 +152,7 @@
 				(if (eq (length a) (length b))
 					 (loop (length a)
 					  (unless (equals? (car a) (car b))
-						 (return-from return2 t))
+						 (return-from return2 nil))
 					  (set a (cdr a))
 					  (set b (cdr b)))))
 		  (eq a b))))
@@ -562,3 +562,169 @@
 
 (defmacro fn (&rest args0)
   `(lambda ,@args0))
+
+
+
+(defun deep-compare (a b)
+  "sort order: list, string, number."
+  (block return2
+	 (if (eq a b)
+		  0
+	 (if (list? a)
+		  (if (list? b)
+				(if (eq (length a) (length b))
+					 (dotimes (i (length a))
+						(let ((sub (deep-compare (th a i) (th b i))))
+						  (unless (eq sub 0)
+							 (return-from return2 sub))))
+					 (- (length a) (length b)))
+				1)
+		  (if (list? b)
+				-1
+				(if (string? a)
+					 (if (string? b)
+						  (a.localeCompare b)
+						  1)
+					 (if (string? b)
+						  -1
+						  (if (number? a)
+								(if (number? b)
+									 (- a b)
+									 1)
+								(if (number? b)
+									 -1
+									 0 ;;Cannot compare this kind of object!
+									 )))))))))
+
+
+(load "prime.lisp")
+
+
+(defun string-hash (a)
+  (let ((hash -53811313)
+		  (l (length a)))
+	 (dotimes! (_i 2)
+				  (dotimes (i l)
+					 (set hash (%js "((hash + a.charCodeAt(i)) * 13191721 |0)"))))
+	 hash))
+	 
+
+(defun deep-hash (a)
+  (if (list? a)
+		(let ((l (length a))
+				(s (%js `((,(prime! 1) + ,(prime! 2) * a "|" 0)))))
+		  (dotimes (_i 1)
+			 (dotimes (i l)
+				(let ((sub (deep-hash (th a i))))
+				  (dotimes (__i 2)
+					 (set s (%js "(((s + sub) | 0) * 13191721 | 0)"))))))
+		  s)
+		(if (Number.isInteger a)
+			 a
+			 (if (string? a)
+				  (string-hash a)
+				  (if (symbol? a)
+						(%js "((348347489 + (a.index * 1000001911))|0)")
+						(string-hash (value->string a)))))))
+
+
+
+(defun array-with-length (n)
+  (%js "(new Array(n))"))
+
+(defmacro new-object(&rest args)
+  1
+  )
+(defmacro new-instance (type &rest args)
+  `(%js "(new " ,type "(" ,@args "))")) 
+
+
+(defun make-hash-map-equal()
+  "This hash map uses deep equality and comparison."
+  (list (array-with-length 4)))
+
+(defvar hash2-tombstone (%js "{}"))
+(defun hash2-insert(map0 value )
+  
+  (let ((h (deep-hash value))
+		  (map (th map0 0))
+		  (l (length map))
+		  (h2 (logand h (- l 1)))
+		  (ltrig (/ l 2))
+		  (i h2)
+		  (tombstone-index nil)
+		  )
+	 (let ((idx
+			  ;; do linear probing to find an empty spot.
+			  (block linear-probing
+				 (loop (< i l)
+				  (let ((item (th map i)))
+					 (when (or (not item) (equals? item value))
+						(return-from linear-probing i))
+					 (if (eq item hash2-tombstone i)
+						(when (null? tombstone-index )
+						  (set tombstone-index i))
+						(decf ltrig))
+					 (incr i)
+				  ))
+				 (set i 0)
+				 (loop (< i h2)
+				  (let ((item (th map i)))
+					 (when (or (not item) (equals? item value))
+						(return-from linear-probing i))
+					 (if (eq item hash2-tombstone i)
+						(when (null? tombstone-index )
+						  (set tombstone-index i))
+						(decf ltrig))
+					 (incf i)))
+				 -1)))
+		
+		(if (or (eq idx -1) (< ltrig 0))
+		  (let ((a2 (list (array-with-length (* 2 l)))))
+			 (dotimes (i l)
+				(let ((obj (th map i)))
+				  (unless (or (undefined? obj) (eq obj hash2-tombstone))
+					 (hash2-insert a2 (th map i)))))
+			 (set (th map0 0) (car a2))
+			 (hash2-insert map0 value)
+			 )
+		  (progn
+			 (if (and (not (th map idx)) (number? tombstone-index))
+				  (progn
+					 (set (th map tombstone-index) value)
+					 value)
+				  (let ((current-value (th map idx)))
+					 (if (equals? current-value value)
+						  (%js "null")
+						  (set (th map idx) value)
+						  ))
+			 
+		))))))
+	 
+(defun hash2-remove(map0 value)
+  (let ((h (deep-hash value))
+		  (map (th map0 0))
+		  (l (length map))
+		  (h2 (logand h (- l 1)))
+		  (i h2))
+	 (let ((idx
+			  
+			  (block r
+				 (loop (< i l)
+				  (let ((item (th map i)))
+					 (when (or (not item) (equals? item value))
+						(return-from r i))
+					 (incr i)
+				  ))
+				 (set i 0)
+				 (loop (< i h2)
+				  (let ((item (th map i)))
+					 (when (or (not item) (equals? item value))
+						(return-from r i))
+				
+					 (incf i)))
+				 -1)))
+	  
+		(unless (eq idx -1)
+		  (set (th map idx) hash2-tombstone))
+		  )))
