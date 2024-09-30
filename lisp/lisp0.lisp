@@ -82,10 +82,10 @@
   (and (< a b) (< b c)))
 
 (defmacro unless (test &rest actions)
-  `(if ,test () (progn ,@actions)))
+  `(if ,test nil (progn ,@actions)))
 
 (defmacro when (test &rest actions)
-  `(if ,test (progn ,@actions) ()))
+  `(if ,test (progn ,@actions) nil))
 
 (defun caar (x) (car (car x)))
 (defun cadr (x) (nth x 1))
@@ -253,16 +253,34 @@
    (set str (cdr str)))
   str)
 
-(defvar t (eq 1 1))
-(defvar false (eq 1 0))
-(defvar minus-char (car "-"))
-(defvar plus-char (car "+"))
-(defvar char-0 (car "0"))
-(defvar char-9 (car "9"))
-(defvar char-dot (car "."))
-(defvar char-newline (car "
-"))
+(defvar **constants** (makehashmap))
+
+(defun is-constant(sym)
+  (hashmap-get **constants** sym))
+
+(defun get-constant (sym)
+  (hashmap-get **constants** sym))
+
+(defmacro defconstant (variable value)
+  `(progn
+	  (when (is-constant ',variable)
+		 (raise (list "constant already defined: " ',variable)))
+	  
+	  
+	  (defvar ,variable ,value)
+	  (hashmap-set **constants** ',variable ,variable)
+	  ))
+
 (defconstant nil ())
+(defvar t (eq 1 1))
+(defconstant false nil)
+(defconstant minus-char (car "-"))
+(defconstant plus-char (car "+"))
+(defconstant char-0 (car "0"))
+(defconstant char-9 (car "9"))
+(defconstant char-dot (car "."))
+(defconstant char-newline (car "
+"))
 
 (defun sym-end (x)
   (or (is-whitespace x)
@@ -645,7 +663,7 @@
 
 (defvar hash2-tombstone (%js "{}"))
 (defun hash2-insert(map0 value )
-  
+  "Returns the element if it was added otherwise nil."
   (let ((h (deep-hash value))
 		  (map (th map0 0))
 		  (l (length map))
@@ -702,6 +720,7 @@
 		))))))
 	 
 (defun hash2-remove(map0 value)
+  "Returns true if an element was removed otherwise nil."
   (let ((h (deep-hash value))
 		  (map (th map0 0))
 		  (l (length map))
@@ -709,22 +728,27 @@
 		  (i h2))
 	 (let ((idx
 			  
-			  (block r
+			  (block linear-probing
 				 (loop (< i l)
 				  (let ((item (th map i)))
-					 (when (or (not item) (equals? item value))
-						(return-from r i))
+					 (when (not item)
+						(return-from linear-probing -1))
+					 (when (equals? item value)
+						(return-from linear-probing i))
 					 (incr i)
-				  ))
+					 ))
+				 
 				 (set i 0)
 				 (loop (< i h2)
 				  (let ((item (th map i)))
-					 (when (or (not item) (equals? item value))
-						(return-from r i))
+					 (when (not item)
+						(return-from linear-probing -1))
+					 (when (equals? item value)
+						(return-from linear-probing i))
 				
 					 (incf i)))
 				 -1)))
 	  
 		(unless (eq idx -1)
-		  (set (th map idx) hash2-tombstone))
-		  )))
+		  (set (th map idx) hash2-tombstone)
+		  t))))

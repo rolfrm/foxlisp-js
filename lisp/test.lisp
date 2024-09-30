@@ -619,9 +619,18 @@ asd ")
 			  (hash2-insert m '(3 2 1))
 			  (hash2-insert m '(1 3))
 			  (hash2-insert m 13))
+  
   (println '>> (null? (hash2-insert m 13) ))
+  (println '>>> (hash2-remove m 13) (hash2-remove m 13))
   (println m)
   )
+
+(defconstant pi 3.14159265359 )
+
+(defun test-constant(x)
+  (let ((pi 4)) (println pi)))
+(println test-constant)
+
 (when 0
   (println (>> 10 2))
   (println (prime! 3))

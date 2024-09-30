@@ -184,7 +184,6 @@ const quasiUnQuoteSpliceSym = lisp.quasiunquotesplice_sym;
 const restSym = sym("&rest")
 const declareSym = sym("declare")
 const defvarSym = sym("defvar");
-const defConstSym = sym("defconstant");
 const handleErrorsSym = sym("handle-errors")
 const loop_sym = sym("loop")
 const withSym = sym("with")
@@ -472,13 +471,6 @@ function lispCompile2(code) {
 					 if(typeof(result) == "function" && result.assoc_id){
 						  result.lispname = sym
 					 }
-					 return `${sym.jsname}`
-				}
-		  case defConstSym:
-				{
-					 const [sym, code] = operands;
-					 const valueCode = lispCompile(code);
-					 eval(`${sym.jsname} = ${valueCode}`)
 					 return `${sym.jsname}`
 				}
 		  case defMacroSym:

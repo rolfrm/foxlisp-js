@@ -67,9 +67,18 @@
 						
 					 (when sw
 						(set code (sw code i))
-						(set i 0))))))
+						(set i 0)))
+				  (when (is-constant x)
+					 
+					 (when (eq code orig-code)
+						(set code (apply list code)))
+					 (setnth code i (get-constant x))
+					 (set i 0))
+				  )))
 		  code)
-		code))
+		(if (and (symbol? code) (is-constant code))
+			 (get-constant code)
+			 code)))
 
 (set lisp_reader reader-replacer)
 
