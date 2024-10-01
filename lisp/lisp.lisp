@@ -72,7 +72,10 @@
 					 
 					 (when (eq code orig-code)
 						(set code (apply list code)))
-					 (setnth code i (get-constant x))
+					 (let ((constant (get-constant x)))
+						(setnth code i (if (list? constant)
+												 (list 'quote (get-constant x))
+												 constant)))
 					 (set i 0))
 				  )))
 		  code)

@@ -263,12 +263,15 @@
 
 (defmacro defconstant (variable value)
   `(progn
-	  (when (is-constant ',variable)
-		 (raise (list "constant already defined: " ',variable)))
 	  
+	  (defvar ,variable (let ((v ,value))
+								 (when (is-constant ',variable)
+									(raise (list "constant already defined: " ',variable)))
+								 (println 'ok)
+								 (hashmap-set **constants** ',variable v)
+								 (println 'ok?)
+								 v))
 	  
-	  (defvar ,variable ,value)
-	  (hashmap-set **constants** ',variable ,variable)
 	  ))
 
 (defconstant nil ())
@@ -530,9 +533,9 @@
       (loadfile newpath))))
 
 ;; math
-(defvar math:pi Math.PI)
-(defvar math:2pi (* Math.PI 2))
-(defvar math:pi/2 (/ Math.PI 2))
+(defconstant math:pi Math.PI)
+(defconstant math:2pi (* Math.PI 2))
+(defconstant math:pi/2 (/ Math.PI 2))
 
 (defvar math:sin Math.sin)
 (defvar math:cos Math.cos)
@@ -543,8 +546,8 @@
 (defvar math:atan2 Math.atan2)
 (defvar math:sqrt Math.sqrt)
 
-(defvar math:sqrt2 (math:sqrt 2.0))
-(defvar math:sqrt3 (math:sqrt 3.0))
+(defconstant math:sqrt2 (math:sqrt 2.0))
+(defconstant math:sqrt3 (math:sqrt 3.0))
 
 (defun math:random (min max)
   (+ (* (Math.random) (- max min)) min))

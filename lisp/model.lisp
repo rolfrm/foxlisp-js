@@ -43,7 +43,7 @@
 
 (defmacro model:rotate (angle x y z &rest body)
   (set body (model::gen-chain-body body))
-  `(let ((m (mat4:rotation (* ,angle 2 math:pi) (vec3:new ,x ,y ,z)))
+  `(let ((m (mat4:rotation (* ,angle math:2pi) (vec3:new ,x ,y ,z)))
            (prev-rotation model:transform))
         
        (set model:transform (mat4:multiply model:transform m))

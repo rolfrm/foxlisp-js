@@ -625,11 +625,12 @@ asd ")
   (println m)
   )
 
-(defconstant pi 3.14159265359 )
-
-(defun test-constant(x)
-  (let ((pi 4)) (println pi)))
-(println test-constant)
+(defconstant asddddd '(1))
+(println asddddd)
+(defun pi-asdd()
+  (println (+ math:pi asddddd)))
+;; todo: Fix quoted primitive types.
+(println pi-asdd (+ '3.14 3))
 
 (when 0
   (println (>> 10 2))
