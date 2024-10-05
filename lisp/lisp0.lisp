@@ -126,9 +126,6 @@
 (defun hashmap-keys(map)
   (Array.from (map.keys)))
 
-(println lisp.symbols)
-
-
 (defmacro deftype (name args typedeclaration)
   `(hashmap-set *types* ',name '(,args ,typedeclaration)))
 
@@ -165,7 +162,6 @@
   (let ((out (list)))
 	 (put out 'length (length lst))
 	 (Array.from out (lambda (_, index) (f (nth lst index))))))
-
 
 (defmacro +(&rest args)
   (if (len args)

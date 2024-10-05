@@ -632,6 +632,11 @@ asd ")
 ;; todo: Fix quoted primitive types.
 (println pi-asdd (+ '3.14 3))
 
+(load "keys.lisp")
+
+(dotimes (i -5 5)
+  (println i))
+
 (when 0
   (println (>> 10 2))
   (println (prime! 3))

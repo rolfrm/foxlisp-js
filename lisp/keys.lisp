@@ -104,7 +104,7 @@
 
 (defun keys::to-table (lst keyfcn valuefcn)
    (let ((table (makehashmap)))
-     (for-each v lst
+     (foreach v lst
         (hashmap-set table (keyfcn v) (valuefcn v))
      )
      table 

@@ -182,7 +182,7 @@
 								  (and expr.unity (eq expr.reads (+ i (* j 4))))))
 				(foreach x karg
 							 (setnth used-cells x.reads 1))
-				(push calls `(set (th m ,(+ i (* j 4))) (+ ,@karg)))))))
+				(push calls `(set (th ,m ,(+ i (* j 4))) (+ ,@karg)))))))
 	 (dotimes (i 16)
 		(when (nth used-cells i)
 		  (push loads `(,(string->symbol (concat "m" i)) (th ,m ,i)))))

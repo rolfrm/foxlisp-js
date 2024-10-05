@@ -29,6 +29,7 @@
 					  (model:rotate-y model:rotate-y-i)
 					  (model:rotate-z model:rotate-z-i)
 					  (model:offset model:offset-i)
+					  (model:offset-x model:offset-x-i)
 					  (model:scale model:scale-i))
 			 (hashmap-set model::chain-functions (car item) (cadr item)))
 
@@ -116,12 +117,38 @@
 			(mat4:dispose model:transform)
 			))
 
+(defmacro model:offset-x (x &rest body)
+  (set body (model::gen-chain-body body))
+  `(with ( model:transform (mat4:clone model:transform))
+
+			(mat4:multiply! model:transform 
+								 1 0 0 0
+								 0 1 0 0
+								 0 0 1 0
+								 ,x 0 0 1)
+			
+			,@body
+			(mat4:dispose model:transform)
+			))
+
 
 (defmacro model:offset-i (x y z &rest body)
   (set body (model::gen-chain-body body))
   `(progn
 	  (mat4:translate model:transform ,x ,y ,z)
      ,@body))
+
+(defmacro model:offset-x-i (x &rest body)
+  (set body (model::gen-chain-body body))
+  `(progn
+	  (mat4:multiply! model:transform 
+							1 0 0 0
+							0 1 0 0
+							0 0 1 0
+							,x 0 0 1)
+			
+			,@body
+			))
 
 
 (defmacro model:scale (x y z &rest body)
