@@ -81,6 +81,11 @@
 (defun <> (a b c)
   (and (< a b) (< b c)))
 
+(defun sign(a)
+  (if (< a 0)
+		-1
+		1))
+
 (defmacro unless (test &rest actions)
   `(if ,test nil (progn ,@actions)))
 
@@ -99,6 +104,9 @@
 
 (defun apply (f lst)
   (f.apply nil lst))
+
+(defun funcall(f &rest args)
+  (apply f args))
 
 (defun length(list) list.length)
 (defun make-object ()(%js "({})"))
@@ -263,9 +271,8 @@
 	  (defvar ,variable (let ((v ,value))
 								 (when (is-constant ',variable)
 									(raise (list "constant already defined: " ',variable)))
-								 (println 'ok)
 								 (hashmap-set **constants** ',variable v)
-								 (println 'ok?)
+								 
 								 v))
 	  
 	  ))
@@ -454,7 +461,7 @@
 (defvar round Math.round)
 (defvar math:power Math.pow)
 
-(defun clamp (v minimum maximum)
+(defun clamp (minimum v maximum)
   (min maximum (max v minimum)))
 
 (defmacro incr (sym incr_value)

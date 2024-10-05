@@ -108,25 +108,49 @@
      ,@body
 	  ))
 
-(defmacro model:offset (x y z &rest body)
-  (set body (model::gen-chain-body body))
-  `(with ( model:transform (mat4:clone model:transform))
-	 
-			(mat4:translate model:transform ,x ,y ,z)
-			,@body
-			(mat4:dispose model:transform)
-			))
+(defun model::math::offset-x(m x)
+  (mat4:multiply! m 
+						1 0 0 0
+						0 1 0 0
+						0 0 1 0
+						x 0 0 1))
+
+(defun model::math::offset-y(m y)
+  (mat4:multiply! m 
+						1 0 0 0
+						0 1 0 0
+						0 0 1 0
+						0 y 0 1))
+
+
+(defun model::math::offset-z(m z)
+  (mat4:multiply! m 
+						1 0 0 0
+						0 1 0 0
+						0 0 1 0
+						0 0 z 1))
 
 (defmacro model:offset-x (x &rest body)
   (set body (model::gen-chain-body body))
   `(with ( model:transform (mat4:clone model:transform))
+			(model::math::offset-x model:transform ,x)
+			,@body
+			(mat4:dispose model:transform)
+			))
 
-			(mat4:multiply! model:transform 
-								 1 0 0 0
-								 0 1 0 0
-								 0 0 1 0
-								 ,x 0 0 1)
-			
+(defmacro model:offset-y (x &rest body)
+  (set body (model::gen-chain-body body))
+  `(with ( model:transform (mat4:clone model:transform))
+			(model::math::offset-y model:transform ,x)
+			,@body
+			(mat4:dispose model:transform)
+			))
+
+
+(defmacro model:offset-z (x &rest body)
+  (set body (model::gen-chain-body body))
+  `(with ( model:transform (mat4:clone model:transform))
+			(model::math::offset-z model:transform ,x)
 			,@body
 			(mat4:dispose model:transform)
 			))
@@ -146,11 +170,25 @@
 							0 1 0 0
 							0 0 1 0
 							,x 0 0 1)
-			
-			,@body
-			))
+			,@body))
 
 
+(defmacro model:offset (x y z &rest body)
+  (cond ((and (eq x 0) (eq y 0))
+			`(model:offset-z ,z  ,@body))
+		  ((and (eq x 0) (eq z 0))
+			`(model:offset-y ,y  ,@body))
+		  ((and (eq z 0) (eq y 0))
+			`(model:offset-x ,x ,@body))
+		  (t
+			(progn
+			  (set body (model::gen-chain-body body))
+			  `(with ( model:transform (mat4:clone model:transform))
+	 
+						(mat4:translate model:transform ,x ,y ,z)
+						,@body
+						(mat4:dispose model:transform)
+						)))))
 (defmacro model:scale (x y z &rest body)
   (set body (model::gen-chain-body body))
   `(let ((prev model:transform))
@@ -159,6 +197,12 @@
      ,@body
 	  (mat4:dispose model:transform)
      (set model:transform prev)))
+
+
+(defmacro model:scale-uniform(x &rest body)
+  `(progn
+	  (model:scale ,x ,x ,x ,@body)
+	  ))
 
 (defmacro model:scale-i (x y z &rest body)
   (set body (model::gen-chain-body body))
@@ -585,6 +629,12 @@
 
 (defun model:z-tile()
   ($ model:offset -0.5 -0.0 -0.0)
+  (model:tile))
+
+(defun model:y-tile()
+  ($ model:bake)
+  ($ model:rotate-x 0.25)
+  ($ model:offset -0.5 -0.0 -0.5)
   (model:tile))
 
 (defun model:tile-centered ()
