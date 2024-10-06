@@ -201,7 +201,7 @@ function parseNumber(input) {
           {
             // Parse keyword
             const [r, next] = ParseLisp0(input.slice(1));
-            return [[lisp.quote_sym, r], next]
+            return [[lisp.keyword_sym, r], next]
           }
 
         break;

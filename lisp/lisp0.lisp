@@ -81,6 +81,9 @@
 (defun <> (a b c)
   (and (< a b) (< b c)))
 
+(defun <=> (a b c)
+  (and (<= a b) (<= b c)))
+
 (defun sign(a)
   (if (< a 0)
 		-1
@@ -396,16 +399,25 @@
 	 `(let ((cons-value ,value))
 		 ,(link-ends out-cases))))
 
+
 (defmacro foreach (sym list &rest body)
+  (let ((reverse (eq sym 'reverse)))
+	 (when reverse
+		
+	 (set sym list)
+	 (set list (car body))
+	 (set body (cdr body))
+	 (println 'reverse sym list body)
+	 )
   `(let ((for-each-lst ,list)
 			(,sym nil)
-			(__i 0)
-			(__len (length for-each-lst)))
-	  (loop (< __i __len)
+			(__i ,(if reverse `(- (length for-each-lst) 1) 0))
+			(__len ,(if reverse 0 `(length for-each-lst))))
+	  (loop (,(if reverse '>= '<) __i __len)
 		(set ,sym (nth for-each-lst __i))
-		(set __i (+ __i 1))
+		(set __i (,(if reverse `- `+) __i 1))
 		,@body)
-	  ))
+	  )))
 
 (defmacro dotimes (sym-count &rest body)
   (let ((sym (car sym-count))
@@ -460,6 +472,7 @@
 (defvar floor Math.floor)
 (defvar round Math.round)
 (defvar math:power Math.pow)
+(defvar expt math:power)
 
 (defun clamp (minimum v maximum)
   (min maximum (max v minimum)))
@@ -548,6 +561,7 @@
 (defvar math:atan Math.atan)
 (defvar math:atan2 Math.atan2)
 (defvar math:sqrt Math.sqrt)
+(defvar sqrt math:sqrt)
 
 (defconstant math:sqrt2 (math:sqrt 2.0))
 (defconstant math:sqrt3 (math:sqrt 3.0))
@@ -758,3 +772,32 @@
 		(unless (eq idx -1)
 		  (set (th map idx) hash2-tombstone)
 		  t))))
+
+(defun hash2-get(map0 value)
+  "Returns true if an element was removed otherwise nil."
+  (let ((h (deep-hash value))
+		  (map (th map0 0))
+		  (l (length map))
+		  (h2 (logand h (- l 1)))
+		  (i h2))
+	 (block linear-probing
+		(loop (< i l)
+		 (let ((item (th map i)))
+			(when (not item)
+			  (return-from linear-probing nil))
+			(when (equals? item value)
+			  (return-from linear-probing item))
+			(incr i)
+			))
+				 
+		(set i 0)
+		(loop (< i h2)
+		 (let ((item (th map i)))
+			(when (not item)
+			  (return-from linear-probing -1))
+			(when (equals? item value)
+			  (return-from linear-probing item))
+				
+			(incf i)))
+		nil)))
+	  

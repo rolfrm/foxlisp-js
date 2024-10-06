@@ -68,16 +68,18 @@ function sym(str, jsname) {
 }
 
 const quote_sym = sym("quote");
+const keyword_sym = sym("keyword");
 const quasiquote_sym = sym("quasiquote")
 const quasiunquote_sym = sym("quasiunquote")
 const quasiunquotesplice_sym = sym("quasiunquote-splice")
 
 module.exports = {
-	sym: sym,
-	getsym: getsym,
-	lisp: lisp,	
-	quote_sym: quote_sym,
-	quasiquote_sym: quasiquote_sym,
-	quasiunquote_sym: quasiunquote_sym,
-	quasiunquotesplice_sym: quasiunquotesplice_sym
+	 sym: sym,
+	 getsym: getsym,
+	 lisp: lisp,	
+	 quote_sym: quote_sym,
+	 keyword_sym: keyword_sym,
+	 quasiquote_sym: quasiquote_sym,
+	 quasiunquote_sym: quasiunquote_sym,
+	 quasiunquotesplice_sym: quasiunquotesplice_sym
 };

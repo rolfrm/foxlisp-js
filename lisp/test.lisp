@@ -44,6 +44,14 @@ world")))
 (assert-eq 9 #o11)
 (assert-eq 15 #b1111)
 
+
+;; Todo: Fix this
+
+;(defmacro test-sym(s)
+;  (assert (eq s :reverse)))
+
+;(test-sym :reverse)
+
 (println (lambda (x y &rest args) (list x y args)))
 
 (assert-not-equals '(1 2 3) '(0 1 2 3))
@@ -56,8 +64,13 @@ world")))
   (console.log (list "123" 111 222 'asd))
 
   )
+
 (let ((sum 0))
   (foreach x '(1 2 3)
+				(set sum (+ x sum)))
+  (assert-eq sum 6))
+(let ((sum 0))
+  (foreach reverse x '(1 2 3)
 				(set sum (+ x sum)))
   (assert-eq sum 6))
 

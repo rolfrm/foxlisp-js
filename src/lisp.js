@@ -178,6 +178,7 @@ const blockSym = sym("_block");
 const returnFromSym = sym("return-from")
 const jsSym = sym("%js")
 const quoteSym = lisp.quote_sym;
+const keywordSym = lisp.keyword_sym;
 const quasiQuoteSym = lisp.quasiquote_sym;
 const quasiUnQuoteSym = lisp.quasiunquote_sym;
 const quasiUnQuoteSpliceSym = lisp.quasiunquotesplice_sym;
@@ -433,6 +434,7 @@ function lispCompile2(code) {
 				}
 		  case prognSym:
 				return lispCompileLet([], operands)
+		  case keywordSym:
 		  case quoteSym:
 				{
 					 const [quoted] = operands
@@ -466,7 +468,7 @@ function lispCompile2(code) {
 						  code2 = `${sym.jsname} = null;${valueCode.replaceAll(value_marker, sym.jsname + "=")}`
 					 }
 
-					 console.log(code2)
+					 //console.log(code2)
 					 let result = eval?.(code2);
 					 if(typeof(result) == "function" && result.assoc_id){
 						  result.lispname = sym
@@ -587,6 +589,8 @@ const __prevv = ${arg[0].jsname}; try{ ${argCode}; ${bodyCode}; }finally{ ${arg[
 				if (macroLookup.has(operator)) {
 					 let macroFcn = macroLookup.get(operator)
 					 let newcode = null;
+					 // replace
+					 //console.log(operands)
 					 newcode = macroFcn(...operands)
 					 
 					 return lispCompile(newcode)
@@ -695,7 +699,7 @@ async function LispEvalBlock(code, file) {
 		  
 				// there are two ways of doing this, which may be the same
 				const ncode = "function currentEval()" + js;
-				console.log(ncode, file, " line: " + countNewlinesBeforeIndex(originalCode, offset))
+				//console.log(ncode, file, " line: " + countNewlinesBeforeIndex(originalCode, offset))
 				eval?.(ncode)
 		  		const result = currentEval();
 				

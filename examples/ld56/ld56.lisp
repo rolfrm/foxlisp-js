@@ -58,9 +58,10 @@
   (let ((c-world (mat4:apply model:inverse-camera (mat4:apply model:transform (vec3:new 0 0 0))))
 		  (console2 (mat4:apply model:projection c-world)))
 	 (when (and
-			  (<> 0 (vec3:z console2) 1.0001)
+			  (<=> 0 (vec3:z console2) 1.0001)
 			  (<> -1 (vec3:x console2) 1.0)
 			  (<> -1 (vec3:y console2) 1.0))
+
 		
 		(blit-ctx.fillText text (* 256 (+ 1 (vec3:x console2))) (* 256 (- 1 (vec3:y console2))))
 		)))
@@ -68,38 +69,6 @@
 (defmacro html-text (name)
   `(fill-text ,name))
 
-(defvar item-bounds (make-hash-map))
-
-
-(defun model:door-wall()
-  ($ with-prefix model:)
-  (offset -2 0 0.05
-			 (scale 2 2.5 0.1
-					  (upcube)))
-  (offset 2 0 0.05
-			 (scale 2 2.5 0.1
-					  (upcube)))
-  (offset 0 2.25 0.05
-			 (scale 2 0.25 0.1
-					  (upcube))))
-
-(defun model:wall()
-  ($ with-prefix model:)
-  (offset 0 0 0.05
-			 (scale 6 2.5 0.1
-					  (upcube))))
-
-(defun model:room ()
-  ($ with-prefix model:)
-  (wall)
-  (rotate-y 0.01
-			 (wall))
-  (offset 0 0 4
-			 (door-wall))
-  (rgb 0.2 0.3 0.2
-		 (offset 0 0 2
-					(scale 4 0.1 4
-							 (upcube)))))
 
 (defvar offset-x 0.0)
 (defvar offset-y 0.0)
@@ -109,15 +78,48 @@
 
 (defun green-box()
   ($ with-prefix model:)
-  (rgb 1 0.5 0.7
+  (rgb 0.7 0.6 0.6
+		 
+		 (rgb 0 0 0
+				(offset 0.2 0.3 0
+						  (scale 0.2 0.5 1
+									(y-tile)))
+				(offset -0.25 0.3 0
+						  (scale 0.2 0.5 1
+									(y-tile)))
+				(offset -0.15 -0.3 0
+						  (scale 0.5 0.2 1
+									(y-tile)))
+				(rgb 1 0.5 0.5
+				(offset -0.0 0.8 0
+						  (scale 1.2 0.4 1
+									(y-tile))))
+
+				)
 		 (scale 1.2 1.2 1.2
 				  (y-tile))))
 
 (defun red-box()
   ($ with-prefix model:)
   (rgb 1 0.7 0.7
+		 (rgb 0 0 0
+				(offset 0.20 0.3 0
+						  (scale 0.2 0.5 1
+									(y-tile)))
+				(offset -0.25 0.3 0
+						  (scale 0.2 0.5 1
+									(y-tile)))
+				)
 		 (scale 1.1 1.1 1.1
 				  (y-tile))))
+
+(defun wall (obj)
+  ($ with-prefix model:)
+  (rgb 0 0 1
+		 (scale (or (th (th obj 5) 0) 1)
+				  (or (th (th obj 5) 1) 1) 1
+				  (y-tile))))
+
 (defvar game-time 0.0)
 (defun blades1 (obj)
   ($ let ((scaling (or (th obj 5) 1.0))))
@@ -128,21 +130,23 @@
 		 (rotate-z (* 0.5 0.25) (y-tile))
 		 (y-tile)))
 
-(defvar game-objects (list (list 10 0 green-box -1 'player)
-									(list 10 -5 red-box 0 'apple)
-									(list 14 -15 red-box 1 'apple)
-									(list 14 -15 red-box 2 'apple)
-									(list 14 -15 red-box 3 'apple)
-									(list 14 -15 red-box 4 'apple)
-									(list 14 -15 red-box 5 'apple)
-									(list 14 -15 red-box 6 'apple)
+(defvar saved-friends (list "Saved friends: 0"))
+
+(defvar game-objects (list (list -20 -20 green-box -1 'player  4 0 )
+									(list -19 -5 red-box -1 'apple)
+									(list -12 -15 red-box -1 'apple)
+									(list -13 -15 red-box -1 'apple)
+									(list -14 -15 red-box -1 'apple)
+									(list -15 -15 red-box -1 'apple)
+									(list -16 -15 red-box -1 'apple)
+									(list -17 -15 red-box -1 'apple)
 									
-									(list 14 -15 red-box 7 'apple)
-									(list 14 -15 red-box 8 'apple)
-									(list 14 -15 red-box 9 'apple)
-									(list 14 -15 red-box 10 'apple)
-									(list 14 -15 red-box 11 'apple)
-									(list 14 -15 red-box 12 'apple)
+									(list -14 -17 red-box -1 'apple)
+									(list 13 -15 red-box -1 'apple)
+									(list 14 -12 red-box -1 'apple)
+									(list 15 -13 red-box -1 'apple)
+									(list 16 -11 red-box -1 'apple)
+									(list 17 -14 red-box -1 'apple)
 									
 									(list 14 -15 red-box -1 'apple)
 									(list 14 -25 red-box -1 'apple)
@@ -151,14 +155,111 @@
 									(list 4 -4 red-box -1 'apple)
 									
 									(list -14 -15 red-box -1 'apple)
-									(list 0 20 blades1 -1 'blade 2 'down-up 0.0)
-									(list -10 20 blades1 -1 'blade 5)
-									(list 10 20 blades1 -1 'blade 5)
-									(list 20 20 blades1 -1 'blade 1 'down-up 0.0)
+									(list 0 0 blades1 -1 'blade 2 'down-up 0.0)
+									(list -6 0 blades1 -1 'blade 5 'left-right (list 3 2 10))
+									(list -6 10 blades1 -1 'blade 5 'left-right (list 1 2 10))
+									(list 20 00 blades1 -1 'blade 1 'down-up 3.0)
+									(list 20 00 blades1 -1 'blade 1 'down-up 1.0)
+									(list 20 00 blades1 -1 'blade 1 'down-up 2.0)
+									(list -2 15 wall -1 'wall '(2 30))
+
+									(list 0 30 wall -1 'wall '(60 2))
+									(list 0 -30 wall -1 'wall '(60 2))
+									(list -30 0 wall -1 'wall '(2 60))
+									
 									))
 
 (foreach x game-objects
 			(set (th x 3) (or (th game-objects (th x 3)) nil)))
+
+(defvar level2 (list
+					 (list -10 0 blades1 -1 'blade 1 'down-up 4)
+					 (list -5 0 blades1 -1 'blade 1 'down-up 3)
+					 (list 0 0 blades1 -1 'blade 1 'down-up 2)
+					 (list 5 0 blades1 -1 'blade 1 'down-up 1)
+					 (list 10 0 blades1 -1 'blade 1 'down-up 5)
+					 (list 15 0 blades1 -1 'blade 1 'down-up 6)
+					 (list 20 0 blades1 -1 'blade 1 'down-up 7)
+					 
+					 (list 0 30 wall -1 'wall '(60 2))
+					 (list 0 -30 wall -1 'wall '(60 2))
+					 ))
+(defvar level3 (list
+					 
+					 (list 0 30 wall -1 'wall '(60 2))
+					 (list 0 -30 wall -1 'wall '(60 2))
+					 (list -20 10 wall -1 'wall '(2 40))
+					 (list -10 -10 wall -1 'wall '(2 40))
+					 (list -0 10 wall -1 'wall '(2 40))
+					 (list 10 -10 wall -1 'wall '(2 40))
+					 ))
+(defvar level4 (list
+					 
+					 (list 0 30 wall -1 'wall '(60 2))
+					 (list 0 -30 wall -1 'wall '(60 2))
+					 (list -20 10 wall -1 'wall '(2 40))
+					 (list 0 -10 wall -1 'wall '(2 40) 'left-right (list 0 1 10))
+					 (list -0 10 wall -1 'wall '(2 40) )
+					 (list 20 -10 wall -1 'wall '(2 40) 'left-right (list math:pi 1 10))
+					 (list 20 10 wall -1 'wall '(2 40) )
+					 
+					 
+					 ))
+
+(defun text (obj)
+  ;(println 'blit-text (th obj 5))
+  (fill-text (th obj 5)))
+
+(defvar level5 (list
+					 
+					 (list 0 30 wall -1 'wall '(60 2))
+					 (list 0 -30 wall -1 'wall '(60 2))
+					 (list 30 00 wall -1 'wall '(2 60))
+					 (list -25 25 text -1 'text "←←←← go get your friends")
+					 (list -18 22 text -1 'text "Use the arrow keys.")
+					 (list -18 19 text -1 'text "Click [space] to leave them behind.")
+					 (list -18 15 text -1 'text saved-friends)
+					 ;(list 0 0 red-box -1 'apple)
+					 ))
+
+
+(defvar level1 game-objects)
+(defvar level0 (list))
+
+(defvar levels (make-hash-map-equal))
+
+(defun set-level(l x y)
+  (let ((list-obj (list x y)))
+	 (set list-obj.level l)
+	 (hash2-insert levels list-obj)))
+
+(set-level level1 0 0)
+(set-level level2 1 0)
+(set-level level3 2 0)
+(set-level level4 3 0)
+(set-level level5 4 0)
+
+(defun connected-to-player (x)
+  (when x
+	 (or (eq (th x 4) 'player)
+		  (connected-to-player (th x 3)))))
+
+(defun load-level (level)
+  (let ((player-objects (filter game-objects connected-to-player)))
+	 (foreach p player-objects
+				 (remove game-objects p))
+	 
+	 (let ((p2 (filter game-objects connected-to-player)))
+		(assert (eq (length p2) 0)))
+	 ($ let ((prev-level game-objects)))
+	 (set game-objects level)
+	 (foreach p player-objects
+				 ;(assert (not (find level p)))
+				 (push level p))
+	 (println 'load (length level1) (length level2) (eq prev-level level1) (eq prev-level level2))
+	 ))
+
+  
 
 (defvar blood-objects (list))
 
@@ -175,9 +276,19 @@
   (dotimes (i 10)
 	 (add-blood x y)))
 ;(add-blood 0 0)
-
+(defvar level-to-load nil)
+													 ;(set level-to-load level5)
+(set level-to-load level5)
 
 (defun animation-loop ()
+  (when level-to-load
+	 (load-level level-to-load)
+	 (set level-to-load nil)
+	 )
+  (when t
+	 ;; update saved friends
+	 (set (th saved-friends 0) (list "Saved friends: " (count level5 (lambda (x) (eq (th x 4) 'apple))))))
+  
   (incf frame-id)
   (set last-time time)
   (set game-time time)
@@ -189,7 +300,7 @@
   (key:clear-events)
   ($ let ((y-move 0)
 			 (x-move 0)
-			 (speed 0.3)
+			 (speed (* delta-time 60.0 0.3))
 			 ))
 		  
   (when (key:down 'key:arrow-right)
@@ -203,7 +314,21 @@
   
   (when (key:down 'key:arrow-down)
 	 (incf y-move -1))
-  
+  ($ let ((leave-friends (key:down 'key:space))))
+  (when leave-friends
+	 ;; leave the last friend
+	 ($ let ((connectome (makehashmap))
+				(player-object (find game-objects (lambda (x) (th x 4)) 'player))
+				(last player-object)))
+	 (foreach x game-objects
+				 (when (th x 3)
+					(hashmap-set connectome (th x 3) x)))
+	 (loop (hashmap-get connectome last)
+	  (set last (hashmap-get connectome last)))
+	 (when (and last (not (eq player-object last)))
+		(set (th last 3) nil))
+
+	 )
 
   (let ((player-object (find game-objects (lambda (x) (th x 4)) 'player)))
 	 ($ when player-object)
@@ -241,10 +366,7 @@
 							
 							))))))
 
-  ($ let ((connected-to-player
-			  (lambda (x)
-				 (when x
-					(or (eq (th x 4) 'player) (connected-to-player (th x 3))))))))
+  ($ let ())
   
   ;; objects repel eachother.
   ($ let ((blade-collisions (makehashmap))))
@@ -253,12 +375,14 @@
 	 (foreach obj game-objects
 				 ($ let ((x (th obj 0))
 							(y (th obj 1))))
+				 ($ unless (eq (th obj 4) 'wall))
 				 (foreach obj2 game-objects
 							 ($ unless (eq (th obj2 4) 'blade))
+							 ($ unless (eq (th obj2 4) 'wall))
 							 ($ unless (eq obj2 obj))
 							 ($ let ((x2 (th obj2 0))
 										(y2 (th obj2 1))
-										(size (or (th obj 5) 0.8))
+										(size (or (and (eq (th obj 4) 'blade) (th obj 5)) 0.8))
 										(dx (- x2 x))
 										(dy (- y2 y))
 										(d2 (+ (* dx dx) (* dy dy)))
@@ -278,9 +402,28 @@
 											(not (connected-to-player obj2)))
 							  
 								(hashmap-set connect-object obj2 t)
-
 								)
 							 ))))
+  
+  (foreach obj game-objects
+			  ($ when (eq (th obj 4) 'wall))
+			  ($ let ((x (th obj 0))
+						 (y (th obj 1))
+						 (w (th (th obj 5) 0))
+						 (h (th (th obj 5) 1))))
+			  (foreach obj2 game-objects
+						  ($ unless (eq (th obj2 4) 'wall))
+						  ($ unless (eq (th obj2 4) 'blade))
+						  ($ let ((ox (th obj2 0))
+									 (oy (th obj2 1))
+									 (d (rectangle ox oy x y w h))))
+						  ;(println ox oy x y w h d obj)
+						  (when (< d 1.0)
+							 (hashmap-set blade-collisions obj2 t))
+						  
+						  
+			  ))
+				 
   (let ((keys (hashmap-keys connect-object))
 		  (player-object (find game-objects (lambda (x) (th x 4)) 'player)))
 	 (when (and player-object (> (length keys) 0))
@@ -307,11 +450,16 @@
 				 (when other
 					
 					(set (th other 4) 'player)
+					
+					;; copy global location
+					(push other (th x 5))
+					(push other (th x 6))
+					
 					(set (th other 2) (th x 2))
 					) 
 			  ))
   
-  (set game-objects (filter game-objects (lambda (x) (not (hashmap-get blade-collisions x)))))
+  (remove-if game-objects (lambda (x) (hashmap-get blade-collisions x)))
   
   (foreach x (hashmap-keys blade-collisions)
 			  (load-blood (th x 0) (th x 1)))
@@ -322,25 +470,61 @@
 				 (push b (th b 0))
 				 (push b (th b 1)))
 			  ($ let ((phase (th b 7))))
-			  (set (th b 1) (+ (th b 9) (* 20.0 (- (math:sin phase) 1))))
+			  (set (th b 1) (+ (th b 9) (* 30.0 (math:sin phase))))
 			  (incf phase delta-time)
 			  (set (th b 7) phase)
 			  )
-						  
+  (foreach b (filter game-objects (lambda (x) (th x 6)) 'left-right)
+			  
+			  (unless (th b 8)
+				 (push b (th b 0))
+				 (push b (th b 1)))
+			  (let ((phase-data (th b 7)))
+				 ($ let ((phase (th phase-data 0))
+							(speed (th phase-data 1))
+							(amplitude (th phase-data 2))))
+				 (set (th b 0) (+ (th b 8) (* amplitude (- (math:sin phase) 1))))
+				 (incf phase (* delta-time speed))
+				 (set (th phase-data 0) phase)
+			  ))
+  
+  (let ((p (find game-objects (lambda (x) (th x 4)) 'player)))
+	 ($ when p)
+	 ($ let ((x (th p 5))
+				(y (th p 6))
+				(offset-x 0))
+		 (when (or (progn (set offset-x 1) (> (th p 0) 30))
+					  (progn (set offset-x -1) (< (th p 0) -30)))
+			($ when offset-x)
+			(foreach g (filter game-objects connected-to-player)
+						(set (th g 0) (+ (th g 0) (* offset-x -60))))
+			(println 'load-at x y offset-x p)
+			(set x (+ x offset-x))
+			(set (th p 5) x)
+			
+			(let ((new-level (hash2-get levels (list x y))))
+			  (unless new-level
+				 (set new-level level0))
+			  (println 'got: new-level new-level.level)
+			  (if (and new-level new-level.level)
+					(set level-to-load new-level.level)
+					(set level-to-load level0)
+					)))))
+  
 
   
   (set model:camera (mat4:identity))
-  (mat4:translate model:camera (- offset-x) 2.5 (- offset-y))
+  (mat4:translate model:camera 0 0 0)
   (mat4:rotate-y model:camera (* -2 math:pi rotation))
   (set model:inverse-camera (mat4:invert model:camera))
   
   ;(println offset-x offset-y)
   ($ let ((time2 (/ time 100))
 			 (deltat (- time last-time))
-			 (fps2 (/ 1.0 deltat))
+			 (fps2 (/ 1.0 (or deltat 1.0)))
 			 ))
   (set fps (+ (* 0.9 fps) (* 0.1 fps2)))
-  (set fps-display.innerHTML (concat ">> " (fps.toFixed 2) " " target-xn " " target-yn))
+  (set fps-display.innerHTML (concat (fps.toFixed 0) ))
 
   ($ let ((pointer-pos (vec3:new 0 0 0))))
   (let ((v (list target-xn target-yn 1))
@@ -357,49 +541,26 @@
   (model:start-gl-draw)
   (with-prefix model: 
 	 (with-draw model:on-draw
-		(item "camera"
-				(offset (vec3:x pointer-pos) (vec3:y pointer-pos) (vec3:z pointer-pos)
-						  (when nil
-				  (item "cursor"
-						  ;(html-text "cursor")
-											
-
-						  (rgb 1 0 1
-								 (scale  0.5 0.5 0.5
-											(cube))))))
-				(when nil
-				(offset-x 10
-							 (scale 5 5 5
-									  (blades1 time)))
-				(offset-x -10
-							 (scale 5 5 5
-									  (blades1 time)))
-				(scale 5 5 5
-						 (blades1 time)))
-				
+		
 		(foreach obj game-objects
 					(offset (car obj) (cadr obj) 0
 							  (funcall (th obj 2) obj)))
-		(rgb 1 0 0
-		(foreach blood blood-objects
-					($ let ((x (th blood 0))
-							  (y (th blood 1))
-							  (dx (th blood 2))
-							  (dy (th blood 3))
-							  (spawn-time (th blood 4))))
-					(set x (+ x (* (- time spawn-time) dx)))
-					(set y (+ y (* (- time spawn-time) dy)))
+				(rgb 1 0 0
+					  (foreach blood blood-objects
+								  ($ let ((x (th blood 0))
+											 (y (th blood 1))
+											 (dx (th blood 2))
+											 (dy (th blood 3))
+											 (spawn-time (th blood 4))))
+								  (set x (+ x (* (- time spawn-time) dx)))
+								  (set y (+ y (* (- time spawn-time) dy)))
 					
 					
-					(offset x y 0
-							  (y-tile))
-					)
-		(set blood-objects (filter blood-objects (lambda (x) (> (th x 4) time))))
-		)
-		
-
-
-		)))
+								  (offset x y 0
+											 (y-tile))
+								  )
+					  (set blood-objects (filter blood-objects (lambda (x) (> (th x 4) time))))
+					  )))
 	 (gl.bindVertexArray nil)
 	 (set model::bound-va nil)
 	 
