@@ -254,7 +254,6 @@
 	 ($ let ((prev-level game-objects)))
 	 (set game-objects level)
 	 (foreach p player-objects
-				 ;(assert (not (find level p)))
 				 (push level p))
 	 (println 'load (length level1) (length level2) (eq prev-level level1) (eq prev-level level2))
 	 ))
@@ -283,8 +282,7 @@
 (defun animation-loop ()
   (when level-to-load
 	 (load-level level-to-load)
-	 (set level-to-load nil)
-	 )
+	 (set level-to-load nil))
   (when t
 	 ;; update saved friends
 	 (set (th saved-friends 0) (list "Saved friends: " (count level5 (lambda (x) (eq (th x 4) 'apple))))))
@@ -300,8 +298,7 @@
   (key:clear-events)
   ($ let ((y-move 0)
 			 (x-move 0)
-			 (speed (* delta-time 60.0 0.3))
-			 ))
+			 (speed (* delta-time 60.0 0.3))))
 		  
   (when (key:down 'key:arrow-right)
 	 (incf x-move 1))
@@ -314,7 +311,9 @@
   
   (when (key:down 'key:arrow-down)
 	 (incf y-move -1))
-  ($ let ((leave-friends (key:down 'key:space))))
+  
+  (let ((leave-friends (key:down 'key:space)))
+  
   (when leave-friends
 	 ;; leave the last friend
 	 ($ let ((connectome (makehashmap))
@@ -326,9 +325,7 @@
 	 (loop (hashmap-get connectome last)
 	  (set last (hashmap-get connectome last)))
 	 (when (and last (not (eq player-object last)))
-		(set (th last 3) nil))
-
-	 )
+		(set (th last 3) nil))))
 
   (let ((player-object (find game-objects (lambda (x) (th x 4)) 'player)))
 	 ($ when player-object)
@@ -336,41 +333,37 @@
 		(when (> dmove 0.01)
 		  (incf (th player-object 0) (* speed (/ x-move dmove)))
 		  (incf (th player-object 1) (* speed (/ y-move dmove))))))
+  
   (foreach obj game-objects
-			  (let ((type (th obj 4)))
-				 (when (eq type 'apple)
-					(let ((target (th obj 3)))
-					  ($ when target)
-					  (let ((tx (th target 0))
-							  (ty (th target 1))
-							  (ax (th obj 0))
-							  (ay (th obj 1)))
-						 (let ((dx (- tx ax))
-								 (dy (- ty ay))
-								 (d (math:sqrt (+ (* dx dx) (* dy dy))))
-								 
-								 )
-							(set dx (/ dx d))
+			  (when (eq (th obj 4) 'apple)
+				 (let ((target (th obj 3)))
+					($ when target)
+					(let ((tx (th target 0))
+							(ty (th target 1))
+							(ax (th obj 0))
+							(ay (th obj 1))
+							(dx (- tx ax))
+							(dy (- ty ay))
+							  (d (math:sqrt (+ (* dx dx) (* dy dy)))))
+
+						 (set dx (/ dx d))
 							(set dy (/ dy d))
 							(when (< d 1.2)
-							  (set dx 0))
-							(when (< d 1.2)
+							  (set dx 0)
 							  (set dy 0))
-							;(set dx (- dx (sign dx)))
-							;(set dy (- dy (sign dy)))
+							
 							(set dx (clamp -1 dx 1))
 							(set dy (clamp -1 dy 1))
 
 							(set (th obj 0) (+ ax (* 0.3 dx)))
 							(set (th obj 1) (+ ay (* 0.3 dy)))
 							
-							))))))
+							))))
 
-  ($ let ())
-  
   ;; objects repel eachother.
-  ($ let ((blade-collisions (makehashmap))))
-  ($ let ((connect-object (makehashmap))))
+  ($ let ((blade-collisions (makehashmap))
+			 (connect-object (makehashmap))))
+  
   (dotimes (i 10)
 	 (foreach obj game-objects
 				 ($ let ((x (th obj 0))
@@ -417,12 +410,8 @@
 						  ($ let ((ox (th obj2 0))
 									 (oy (th obj2 1))
 									 (d (rectangle ox oy x y w h))))
-						  ;(println ox oy x y w h d obj)
 						  (when (< d 1.0)
-							 (hashmap-set blade-collisions obj2 t))
-						  
-						  
-			  ))
+							 (hashmap-set blade-collisions obj2 t))))
 				 
   (let ((keys (hashmap-keys connect-object))
 		  (player-object (find game-objects (lambda (x) (th x 4)) 'player)))

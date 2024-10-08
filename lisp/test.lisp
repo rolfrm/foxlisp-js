@@ -47,10 +47,10 @@ world")))
 
 ;; Todo: Fix this
 
-;(defmacro test-sym(s)
-;  (assert (eq s :reverse)))
+(defmacro test-sym(s)
+ (assert (eq s :reverse)))
 
-;(test-sym :reverse)
+(test-sym :reverse)
 
 (println (lambda (x y &rest args) (list x y args)))
 
@@ -668,3 +668,4 @@ asd ")
 													 ; )
   
   (println deep-hash))
+

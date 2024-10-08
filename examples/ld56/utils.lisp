@@ -1,25 +1,8 @@
 (defun find (lst key-selector key)
-  (if key
-		(block search
-		  (foreach elem lst
-					  (when (eq (key-selector elem) key)
-						 (return-from search elem))))
-		(block search
-		  (foreach elem lst
-					  (when (eq elem key-selector)
-						 (return-from search elem))))))
-  
+  (lst.find (if key (lambda (x) (eq (key-selector x) key)) key-selector)))  
 
 (defun filter (lst f key)
-  (let ((result (list)))
-	 (if key
-		  (foreach item lst
-					  (when (eq (f item) key)
-						 (push result item)))
-		  (foreach item lst
-					  (when (f item)
-						 (push result item))))
-	 result))
+  (lst.filter (if key (lambda (x) (eq (f x) key)) f)))
 
 (defun remove-at(lst i)
   (lst.splice i 1))
@@ -33,9 +16,8 @@
 		  (dotimes (i (length lst))
 			 (when (f (th lst i))
 				(push remove-indexes i))))
-	 (foreach reverse index remove-indexes
+	 (foreach :reverse index remove-indexes
 				 (remove-at lst index))))
-						
 
 (defun remove (lst item)  
   (let ((i (lst.indexOf item)))
@@ -49,9 +31,9 @@
 	 c))
 
 (defun rectangle (px py cx cy w h)
-  (let ((dx (abs (- px cx)))                        ;; Distance along the x-axis
-        (dy (abs (- py cy)))                        ;; Distance along the y-axis
-        (qx (- dx (/ w 2)))                         ;; Distance outside along the x-axis
-        (qy (- dy (/ h 2))))                        ;; Distance outside along the y-axis
-    (+ (sqrt (+ (expt (max qx 0) 2) (expt (max qy 0) 2)))  ;; Distance outside the rectangle
-       (min (max qx qy) 0))))                        ;; Clamp to 0 when inside the rectangle
+  (let ((dx (abs (- px cx)))                       
+        (dy (abs (- py cy)))                       
+        (qx (- dx (/ w 2)))                        
+        (qy (- dy (/ h 2))))                       
+    (+ (sqrt (+ (expt (max qx 0) 2) (expt (max qy 0) 2)))
+       (min (max qx qy) 0))))

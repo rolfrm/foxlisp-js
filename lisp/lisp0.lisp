@@ -270,15 +270,12 @@
 
 (defmacro defconstant (variable value)
   `(progn
-	  
 	  (defvar ,variable (let ((v ,value))
 								 (when (is-constant ',variable)
 									(raise (list "constant already defined: " ',variable)))
 								 (hashmap-set **constants** ',variable v)
 								 
-								 v))
-	  
-	  ))
+								 v))))
 
 (defconstant nil ())
 (defvar t (eq 1 1))
@@ -401,13 +398,12 @@
 
 
 (defmacro foreach (sym list &rest body)
-  (let ((reverse (eq sym 'reverse)))
+  (let ((reverse (eq sym :reverse)))
 	 (when reverse
 		
 	 (set sym list)
 	 (set list (car body))
 	 (set body (cdr body))
-	 (println 'reverse sym list body)
 	 )
   `(let ((for-each-lst ,list)
 			(,sym nil)

@@ -442,7 +442,7 @@ function lispCompile2(code) {
 						if(quoted.index > -1){
 							return `___sym[${quoted.index}]`
 						}
-						return `getsym(\"${quoted.value}\")/*3*/`
+						  return `getsym(\"${quoted.value}\")/*3*/`
 					 }
 					 
 					 const id = setQuote(quoted)
@@ -589,9 +589,19 @@ const __prevv = ${arg[0].jsname}; try{ ${argCode}; ${bodyCode}; }finally{ ${arg[
 				if (macroLookup.has(operator)) {
 					 let macroFcn = macroLookup.get(operator)
 					 let newcode = null;
-					 // replace
-					 //console.log(operands)
-					 newcode = macroFcn(...operands)
+					 
+					 let operands2 = operands;
+
+					 {
+						  // small hack to get keywords to be their values instead
+						  // of (keywordsym keywordname)
+						  let anyKw = operands2.find(x => car(x) == keywordSym)
+						  if(anyKw){
+								operands2 = operands2.map(x => car(x) == keywordSym ? x[1] : x)
+						  }
+					 }
+					 
+					 newcode = macroFcn(...operands2)
 					 
 					 return lispCompile(newcode)
 				}
