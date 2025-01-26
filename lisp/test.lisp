@@ -649,7 +649,18 @@ asd ")
 
 (dotimes (i -5 5)
   (println i))
+(let ((m0 (make-hash-map-equal)))
+  (println m0)
+  
+  (println (hash2::linear-probe m0 '(1 2))))
 
+(let ((worker (%js "new Worker(\"./worker.js\")")))
+  (worker.postMessage ">>>")
+  (worker.on "message" (lambda (msg)
+								 (when (eq msg "done")
+									(worker.terminate))
+								 (println msg))))
+  
 (when 0
   (println (>> 10 2))
   (println (prime! 3))

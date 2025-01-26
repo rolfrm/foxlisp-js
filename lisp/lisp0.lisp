@@ -678,6 +678,42 @@
   (list (array-with-length 4)))
 
 (defvar hash2-tombstone (%js "{}"))
+
+(defun hash2::linear-probe(map0 value h0)
+  "Returns the element if it was added otherwise nil."
+  (let ((h (or h0 (deep-hash value)))
+		  (map (th map0 0))
+		  (l (length map))
+		  (h2 (logand h (- l 1)))
+		  (ltrig (/ l 2))
+		  (i h2)
+		  (tombstone-index nil))
+	 ;; do linear probing to find an empty spot.
+	 (block linear-probing
+		(loop (< i l)
+		 (let ((item (th map i)))
+			(when (or (not item) (equals? item value))
+			  (return-from linear-probing i))
+			(if (eq item hash2-tombstone i)
+				 (when (null? tombstone-index )
+					(set tombstone-index i))
+				 (decf ltrig))
+			(incr i)
+			))
+		(set i 0)
+		(loop (< i h2)
+		 (let ((item (th map i)))
+			(when (or (not item) (equals? item value))
+			  (return-from linear-probing i))
+			(if (eq item hash2-tombstone i)
+				 (when (null? tombstone-index )
+					(set tombstone-index i))
+				 (decf ltrig))
+			(incf i)))
+		-1)))
+
+	
+
 (defun hash2-insert(map0 value )
   "Returns the element if it was added otherwise nil."
   (let ((h (deep-hash value))
@@ -688,31 +724,7 @@
 		  (i h2)
 		  (tombstone-index nil)
 		  )
-	 (let ((idx
-			  ;; do linear probing to find an empty spot.
-			  (block linear-probing
-				 (loop (< i l)
-				  (let ((item (th map i)))
-					 (when (or (not item) (equals? item value))
-						(return-from linear-probing i))
-					 (if (eq item hash2-tombstone i)
-						(when (null? tombstone-index )
-						  (set tombstone-index i))
-						(decf ltrig))
-					 (incr i)
-				  ))
-				 (set i 0)
-				 (loop (< i h2)
-				  (let ((item (th map i)))
-					 (when (or (not item) (equals? item value))
-						(return-from linear-probing i))
-					 (if (eq item hash2-tombstone i)
-						(when (null? tombstone-index )
-						  (set tombstone-index i))
-						(decf ltrig))
-					 (incf i)))
-				 -1)))
-		
+	 (let ((idx (hash2::linear-probe map0 value h)))		
 		(if (or (eq idx -1) (< ltrig 0))
 		  (let ((a2 (list (array-with-length (* 2 l)))))
 			 (dotimes (i l)
@@ -742,30 +754,8 @@
 		  (l (length map))
 		  (h2 (logand h (- l 1)))
 		  (i h2))
-	 (let ((idx
-			  
-			  (block linear-probing
-				 (loop (< i l)
-				  (let ((item (th map i)))
-					 (when (not item)
-						(return-from linear-probing -1))
-					 (when (equals? item value)
-						(return-from linear-probing i))
-					 (incr i)
-					 ))
-				 
-				 (set i 0)
-				 (loop (< i h2)
-				  (let ((item (th map i)))
-					 (when (not item)
-						(return-from linear-probing -1))
-					 (when (equals? item value)
-						(return-from linear-probing i))
-				
-					 (incf i)))
-				 -1)))
-	  
-		(unless (eq idx -1)
+	 (let ((idx (hash2::linear-probe map0 value h)))
+	  	(unless (eq idx -1)
 		  (set (th map idx) hash2-tombstone)
 		  t))))
 
@@ -797,3 +787,4 @@
 			(incf i)))
 		nil)))
 	  
+(defvar process:args (or ___process_args '()))

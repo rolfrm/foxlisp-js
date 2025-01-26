@@ -4,8 +4,15 @@ require("./foxlisp-node.js")
 eval("net = require('node:net')"); 
 
 let code = ""
-
+___process_args = []
 for(i = 2; i < process.argv.length; i++){
+	 if(process.argv[i] == "--"){
+		  i++;
+		  for(; i < process.argv.length; i++){
+				___process_args.push(process.argv[i])
+		  }
+		  break;
+	 }
     code += "(loadfile \"" + process.argv[i] + "\")";
 }
 

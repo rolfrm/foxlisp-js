@@ -768,6 +768,9 @@
 	 (list 'wasm magic version sections)
 	 ))
 
+(defun bytes->wasm(bytes)
+  (parse-module (read:from-bytes bytes)))
+
 (defun find-car (lst car-value)
   
   (block iter
@@ -1261,6 +1264,60 @@
 ;  (type (((i32 i32) (i32)) (() (i32)) ((i32) ())))
 ;  (type (((i32 i32) ()))))
 (import-module wasm2 wasm-lib)
+													 ;(require "fs")
+
+(defvar modules (list))
+(set modules.textbuf (list))
+(set modules.textbuf.textbuf_write (lambda (device x y code length)
+												 (println device x y code length)))
+(set modules.textbuf.textbuf_size (lambda (device x y)
+												(println device x y)))
+(set modules.textbuf.textbuf_open (lambda (w h)
+												(println w h)
+												1))
+(set modules.textbuf.textbuf_close (lambda (device)
+												 (println 'close device)))
+
+(println process:args)
+(foreach arg process:args
+			(let ((bytes (node_fs.readFileSync arg)))
+			  (println (bytes->wasm bytes))
+			  (then (WebAssembly.instantiate bytes modules)
+					  (lambda (r)
+						 
+						 (r.instance.exports._start)))
+
+			))
+
+(foreach arg process:args
+			(let ((bytes (node_fs.readFileSync arg))
+					(worker (%js "new Worker(\"./worker.js\")")))
+			  (worker.postMessage (list "app-binary" bytes))
+			  (worker.postMessage (list "app-heap" (list 0 0 0 0)))
+			  (worker.postMessage (list "app-arguments"  (list)))
+			  (worker.postMessage (list "app-environment-variables" (list)))
+			  (worker.postMessage (list "app-start"))
+			  (worker.on "message" (lambda (msg)
+											 (when (eq msg "done")
+												(worker.terminate))
+											 (println msg)))
+			  ;(then (WebAssembly.instantiate bytes modules)
+				;	  (lambda (r)
+						 
+				;		 (r.instance.exports._start)))
+
+			))
+
+
+(when false
+(let ((worker (%js "new Worker(\"./worker.js\")")))
+  (worker.postMessage ">>>")
+  (worker.on "message" (lambda (msg)
+								 (when (eq msg "done")
+									(worker.terminate))
+								 (println msg)))))
+
+
 (when 0
 
   (let ((wasm-bin1 (wasm->bytes wasm2))
