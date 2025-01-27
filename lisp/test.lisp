@@ -1,5 +1,3 @@
-(loadfile "lisp/lisp.lisp")
-
 (println 123)
 (defun asd (a b c) (+ a b c))
 (println (concat (list 1 2 3) (list 4 5 6)))
@@ -641,10 +639,11 @@ asd ")
   )
 
 (defconstant asddddd '(1))
-(println asddddd)
+;(assert-eq 1 asddddd)
+(println 'asddddd asddddd)
 (defun pi-asdd()
-  (println (+ math:pi asddddd)))
-
+  (println math:pi asddddd (+ math:pi asddddd)))
+(pi-asdd)
 ;; todo: Fix quoted primitive types.
 (assert-eq-float 6.14 (println (+ '3.14 3)))
 
@@ -655,14 +654,3 @@ asd ")
   
   ;; -5 -4 -3 -2 -1 0 1 2 3 4 
   (assert-eq -5 sum ))
-
-(let ((m0 (make-hash-map-equal)))
-  (println m0)
-  
-  (println (hash2::linear-probe m0 '(1 2))))
-  
-(when 1
-  (println (>> 10 2))
-  (println (lisp::prime! 3))
-  (println deep-hash))
-

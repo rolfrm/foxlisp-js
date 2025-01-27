@@ -2,8 +2,10 @@ const { LispEvalBlock } = require("./lisp.js")
 require("./foxlisp-node.js")
 
 eval("net = require('node:net')"); 
-
+startup = "lisp/lisp.lisp"
+console.log("argv???",  Bun.argv)
 let code = ""
+let noStartup = false
 ___process_args = []
 for(i = 2; i < process.argv.length; i++){
 	 if(process.argv[i] == "--"){
@@ -13,8 +15,23 @@ for(i = 2; i < process.argv.length; i++){
 		  }
 		  break;
 	 }
+	 if(process.argv[i] == "--no-startup"){
+		  noStartup = true
+		  continue;
+	 }
+	 if(process.argv[i] == "--script") {
+		  code += process.argv[i + 1];
+		  i += 1;
+		  continue;
+	 }
     code += "(loadfile \"" + process.argv[i] + "\")";
 }
+
+if(!noStartup){
+    code = "(loadfile \"" + startup + "\")"+ code 
+}
+
+console.log(code)
 
 async function EvalTopLevel(code){
 	 try{

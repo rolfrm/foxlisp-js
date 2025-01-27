@@ -172,7 +172,4 @@
         (hashmap-set keydown k nil)
 		  (push events-list (list 'key-up k))
         ))
-
-    ;(canvas.addEventListener "mousedown" (lambda (&rest args) (println args)))
-
 ))
