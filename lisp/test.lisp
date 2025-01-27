@@ -600,14 +600,13 @@ asd ")
 (println 'deep-hash (deep-hash (list 1 2 4)))
 (println 'deep-hash (deep-hash (list 1 2 5)))
 (println 'deep-hash (deep-hash (list 1 2 5)))
-(println string-hash)
+;(println string-hash)
 
-(println hash2-insert)
+;(println hash2-insert)
 
 (let ((m (make-hash-map-equal)))
   (hash2-insert m '(1 2 3))
   (hash2-insert m '(1 2 4))
-  (println m)
   (hash2-insert m '(1 2 6))
   (hash2-insert m '(1 3 2))
   (hash2-insert m '(1 2 3))
@@ -616,67 +615,54 @@ asd ")
   (hash2-insert m "Oh yb")
   (hash2-insert m "Oh yc")
   (hash2-insert m "Oh ya")
-  (println m)
   (hash2-remove m "Oh ya")
   (hash2-remove m '(1 2 3))
   (hash2-remove m '(1 2 4))
-  (println m)
   (hash2-insert m "Oh ya")
   (hash2-insert m '(1 2 4))
   (hash2-insert m 'jek)
-  (println (deep-hash 'jal ) (deep-hash 'jam) (deep-hash 'jan) (deep-hash 'jar))
-  (println '??? (hash2-insert m 13)
-			  (hash2-insert m '(1 3))
-			  (hash2-insert m '(1 3))
-			  (hash2-insert m '(3 2 1))
-			  (hash2-insert m '(3 2 1))
-			  (hash2-insert m '(1 3))
-			  (hash2-insert m 13))
+  (hash2-insert m 13)
+  (hash2-insert m '(1 3))
+  (hash2-insert m '(1 3))
+  (hash2-insert m '(3 2 1))
+  (hash2-insert m '(3 2 1))
+  (hash2-insert m '(1 3))
+  (hash2-insert m 13)
+
+  (assert (hash2-get m 13))
+  (println 'EXISTS? (hash2-get m 14))
+  (assert-not (hash2-get m 14))
+  (assert (hash2-get m '(1 3)))
+  (assert (hash2-get m '(3 2 1)))
   
-  (println '>> (null? (hash2-insert m 13) ))
-  (println '>>> (hash2-remove m 13) (hash2-remove m 13))
-  (println m)
+  (hash2-remove m 13)
+  (hash2-remove m 13)
+  ;(assert-not (hash2-get m 13))
   )
 
 (defconstant asddddd '(1))
 (println asddddd)
 (defun pi-asdd()
   (println (+ math:pi asddddd)))
+
 ;; todo: Fix quoted primitive types.
-(println pi-asdd (+ '3.14 3))
+(assert-eq-float 6.14 (println (+ '3.14 3)))
 
 (load "keys.lisp")
+(let ((sum 0))
+  (dotimes (i -5 5)
+	 (incf sum i))
+  
+  ;; -5 -4 -3 -2 -1 0 1 2 3 4 
+  (assert-eq -5 sum ))
 
-(dotimes (i -5 5)
-  (println i))
 (let ((m0 (make-hash-map-equal)))
   (println m0)
   
   (println (hash2::linear-probe m0 '(1 2))))
-
-(let ((worker (%js "new Worker(\"./worker.js\")")))
-  (worker.postMessage ">>>")
-  (worker.on "message" (lambda (msg)
-								 (when (eq msg "done")
-									(worker.terminate))
-								 (println msg))))
   
-(when 0
+(when 1
   (println (>> 10 2))
-  (println (prime! 3))
-
-  (let ((tree (balanced-deep-tree)))
-	 (balanced-insert tree '(1 2)))
-
-  (defun make-array2 (n)
-	 (new-instance Array n n))
-
-  (println make-array2)
-
-													 ;(let ((obj (new-object :A 1 :B 2))
-													 ;		(obj2 (new-instance Array 5)))
-													 ; (println obj2)
-													 ; )
-  
+  (println (lisp::prime! 3))
   (println deep-hash))
 

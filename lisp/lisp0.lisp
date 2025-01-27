@@ -646,7 +646,7 @@
 (defun deep-hash (a)
   (if (list? a)
 		(let ((l (length a))
-				(s (%js `((,(prime! 1) + ,(prime! 2) * a "|" 0)))))
+				(s (%js `((,(lisp::prime! 1) + ,(lisp::prime! 2) * a "|" 0)))))
 		  (dotimes (_i 1)
 			 (dotimes (i l)
 				(let ((sub (deep-hash (th a i))))
@@ -780,7 +780,7 @@
 		(loop (< i h2)
 		 (let ((item (th map i)))
 			(when (not item)
-			  (return-from linear-probing -1))
+			  (return-from linear-probing nil))
 			(when (equals? item value)
 			  (return-from linear-probing item))
 				

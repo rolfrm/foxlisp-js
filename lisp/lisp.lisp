@@ -138,8 +138,3 @@
 
 (defmacro % (x y)
   `(%js "( " ,x " % " ,y " )"))
-
-
-;(load "lisp2.lisp")
-
-
