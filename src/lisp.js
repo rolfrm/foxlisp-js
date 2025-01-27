@@ -9,6 +9,10 @@ function issym(x){
 	 return x && x.type == "symbol";
 }
 
+doEval = function (code){
+	 eval?.(code)
+}
+
 ___sym = lisp.lisp.symbols
 __quotes = []
 const quotes_lookup = new Map()
@@ -469,7 +473,7 @@ function lispCompile2(code) {
 					 }
 
 					 //console.log(code2)
-					 let result = eval?.(code2);
+					 let result = doEval(code2);
 					 if(typeof(result) == "function" && result.assoc_id){
 						  result.lispname = sym
 					 }
@@ -710,7 +714,7 @@ async function LispEvalBlock(code, file) {
 				// there are two ways of doing this, which may be the same
 				const ncode = "function currentEval()" + js;
 				//console.log(ncode, file, " line: " + countNewlinesBeforeIndex(originalCode, offset))
-				eval?.(ncode)
+				doEval(ncode)
 		  		const result = currentEval();
 				
 				if(result != null && typeof(result) == "object" && result.type == "load"){

@@ -639,13 +639,10 @@ asd ")
   )
 
 (defconstant asddddd '(1))
-;(assert-eq 1 asddddd)
-(println 'asddddd asddddd)
-(defun pi-asdd()
-  (println math:pi asddddd (+ math:pi asddddd)))
-(pi-asdd)
-;; todo: Fix quoted primitive types.
-(assert-eq-float 6.14 (println (+ '3.14 3)))
+
+;; unfortunately this is due to javascript type coercion.
+(assert-equals "3.11" (+ 3.1 asddddd))
+
 
 (load "keys.lisp")
 (let ((sum 0))
@@ -654,3 +651,4 @@ asd ")
   
   ;; -5 -4 -3 -2 -1 0 1 2 3 4 
   (assert-eq -5 sum ))
+

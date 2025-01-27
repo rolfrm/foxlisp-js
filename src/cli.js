@@ -6,6 +6,7 @@ startup = "lisp/lisp.lisp"
 console.log("argv???",  Bun.argv)
 let code = ""
 let noStartup = false
+let logEval = false;
 ___process_args = []
 for(i = 2; i < process.argv.length; i++){
 	 if(process.argv[i] == "--"){
@@ -24,14 +25,23 @@ for(i = 2; i < process.argv.length; i++){
 		  i += 1;
 		  continue;
 	 }
+	 if(process.argv[i] == "--log-eval"){
+		  logEval = true;
+		  continue;
+	 }
     code += "(loadfile \"" + process.argv[i] + "\")";
 }
 
 if(!noStartup){
     code = "(loadfile \"" + startup + "\")"+ code 
 }
+if(logEval){
+	 doEval = function (code){
+		  console.log(code)
+		  eval?.(code)
 
-console.log(code)
+	 }
+}
 
 async function EvalTopLevel(code){
 	 try{
