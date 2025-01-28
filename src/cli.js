@@ -3,7 +3,7 @@ require("./foxlisp-node.js")
 
 eval("net = require('node:net')"); 
 startup = "lisp/lisp.lisp"
-console.log("argv???",  Bun.argv)
+
 let code = ""
 let noStartup = false
 let logEval = false;
@@ -35,10 +35,13 @@ for(i = 2; i < process.argv.length; i++){
 if(!noStartup){
     code = "(loadfile \"" + startup + "\")"+ code 
 }
+
 if(logEval){
 	 doEval = function (code){
-		  console.log(code)
+		  console.log(">>", code)
+		  
 		  eval?.(code)
+		  
 
 	 }
 }

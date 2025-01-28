@@ -635,7 +635,7 @@ asd ")
   
   (hash2-remove m 13)
   (hash2-remove m 13)
-  ;(assert-not (hash2-get m 13))
+  (assert-not (hash2-get m 13))
   )
 
 (defconstant asddddd '(1))

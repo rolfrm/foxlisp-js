@@ -477,7 +477,7 @@ function lispCompile2(code) {
 					 if(typeof(result) == "function" && result.assoc_id){
 						  result.lispname = sym
 					 }
-					 return `${sym.jsname}`
+					 return `/*DEFVAR*/${sym.jsname}`
 				}
 		  case defMacroSym:
 				{
@@ -678,7 +678,7 @@ global[onErrorSym.jsname] = on_lisp_error;
 eval2 = evalLisp
 loadFileAsync = null
 loadcontext = ""
-currentEval = null
+__ce = null
 error = null
 
 async function LispEvalBlock(code, file) {
@@ -702,20 +702,25 @@ async function LispEvalBlock(code, file) {
 		  code = next;
 
 		  try{
-				var js = lispCompile(lisp_reader(ast));
+				let ast2 = lisp_reader(ast);
+				
+				var js = lispCompile(ast2);
+				if(js.includes("/*DEFVAR*/"))
+					 continue;
 				if(isScope(js)){
 					 js = js.replaceAll(value_marker, "returnValue =");
 					 js = "{'use strict'; var returnValue;" + js + "return returnValue;}";
 				}else{
 					 js = "{'use strict'; return " + js + "}";
 				}
-		  
+				
 		  
 				// there are two ways of doing this, which may be the same
-				const ncode = "function currentEval()" + js;
+				
+				const ncode = "function __ce()" + js;
 				//console.log(ncode, file, " line: " + countNewlinesBeforeIndex(originalCode, offset))
 				doEval(ncode)
-		  		const result = currentEval();
+		  		const result = __ce();
 				
 				if(result != null && typeof(result) == "object" && result.type == "load"){
 					 
