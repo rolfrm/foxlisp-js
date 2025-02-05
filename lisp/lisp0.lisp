@@ -90,10 +90,10 @@
 		1))
 
 (defmacro unless (test &rest actions)
-  `(if ,test nil (progn ,@actions)))
+  `(if ,test () (progn ,@actions)))
 
 (defmacro when (test &rest actions)
-  `(if ,test (progn ,@actions) nil))
+  `(if ,test (progn ,@actions) ()))
 
 (defun caar (x) (car (car x)))
 (defun cadr (x) (nth x 1))
@@ -209,12 +209,14 @@
 (defmacro decf (sym decr)
   `(set ,sym (- ,sym ,(or decr 1))))
 
-(defmacro assert(condition)
+(defmacro assert(condition error)
+  (unless error
+	 (set error "generic error"))
   `(if ,condition
 		 (progn)
-		 (let ((err '("assertion failed" ,condition)))
+		 (let ((err '("assertion failed" ,condition ,error)))
 			(println 'raising err)
-			(raise err  ))))
+			(raise err))))
 
 (defun assert-not(condition error)
   (assert (not condition) error))
@@ -489,6 +491,7 @@
 
 
 (defmacro for (varsym start stop increment &rest body)
+  (assert (list? increment) `("increment should be an expression. Was:" ,increment))
   `(let ((,varsym ,start))
 	  (loop ,stop
 		,@body
@@ -788,3 +791,7 @@
 		nil)))
 	  
 (defvar process:args (or ___process_args '()))
+
+(defmacro await (promise &rest body)
+
+  )

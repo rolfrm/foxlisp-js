@@ -121,7 +121,7 @@
 
 (defun sub-builder (args2)
   (if (> (length args2) 1)
-		(concat (list "(" (car args2) " - ") (sub-builder (cdr args2)) (list ")"))
+		(concat (list "(" (car args2) " - ") (add-builder (cdr args2)) (list ")"))
 		(if (eq 0 (length args2))
 			 (list 0)
 			 args2)))

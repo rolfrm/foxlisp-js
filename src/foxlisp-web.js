@@ -1,3 +1,5 @@
+___process_args = []
+
 require("./lisp")
 
 let load_file = (filePath) => {

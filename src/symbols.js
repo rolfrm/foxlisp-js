@@ -2,7 +2,7 @@
 lisp = { symbolName: {}, symbols: [] }
 const reserved = {
 	"true": true, "false": true, "null": true, "case": true,
-	 "tmp": true, "undefined": true, "new": true, "eval": true, "typeof" : true, "delete": true, "function": true, "continue": true, "break":true, "try" : true, "catch": true, "finally": true, "throw": true, "new": true, "var": true, "import":true, "module" : true
+	 "tmp": true, "undefined": true, "new": true, "eval": true, "typeof" : true, "delete": true, "function": true, "continue": true, "break":true, "try" : true, "catch": true, "finally": true, "throw": true, "new": true, "var": true, "import":true, "module" : true, "await" : true
 }
 
 const sanitizedLookup = {}

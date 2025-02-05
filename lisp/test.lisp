@@ -38,6 +38,8 @@ world")))
 (assert-eq 3 (/ (* 3 6) (* 2 3)))
 (assert-eq 2 (/ (* 4 6) (* 4 3) ))
 (assert-eq 2 (/ (* 4 6) (* 12 1) ))
+(assert-eq 4 (- 10 3 2 1))
+(assert-eq 12 (- 15 3))
 (assert-eq 255 #xFF)
 (assert-eq 9 #o11)
 (assert-eq 15 #b1111)
@@ -652,3 +654,38 @@ asd ")
   ;; -5 -4 -3 -2 -1 0 1 2 3 4 
   (assert-eq -5 sum ))
 
+(defun test-block ()
+  (block a
+	 (for i 0 4 (incf i)
+			 (block b
+				(if (eq i 4)
+					 (return-from a 10)
+					 (return-from b 5)
+					 )))))
+
+
+;; this function was found to contain bugs related to 
+(defun find-shuffle-index(index lst shuffle)
+  (let ((l (floor (/ (length lst) 2))))
+  (block not-looping
+	 (for i index (< i 10000) (incf i)
+			(println i index)
+			(block next-it
+			  (dotimes (i2 l)
+				 (let ((j (- index i2)))
+					(when (> j -1)
+					  (when (eq (th j shuffle)
+									(th i shuffle))
+						 (println 'next-iteration)
+						 (return-from next-it 0)))))
+			  (return-from not-looping i)
+			  )))))
+
+(let ((l (list 4 3 2 3 4 5 6 7 6 5 4 3 2 1 0))
+		(s (list 1 9 7 9 8 7 5 4 3 5)))
+  (find-shuffle-index 2 l s)
+  )
+
+									 ;(println find-shuffle-index)
+;(test-block)
+;(println find-shuffle-index)
