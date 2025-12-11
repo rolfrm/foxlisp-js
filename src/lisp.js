@@ -1,5 +1,37 @@
 const parser = require("./lispy_parser")
 const lisp = require("./symbols")
+const debug = require("./debug")
+
+// Debug configuration
+const compilerConfig = {
+    debugMode: false,
+    traceMode: false,
+    breakpointsEnabled: false,
+    sourceComments: false,
+    verboseErrors: true
+};
+
+// Set debug compilation mode
+function setDebugMode(enabled) {
+    compilerConfig.debugMode = enabled;
+    debug.setDebugMode(enabled);
+}
+
+// Set function tracing
+function setTraceMode(enabled) {
+    compilerConfig.traceMode = enabled;
+    debug.setTraceMode(enabled);
+}
+
+// Enable source location comments in generated code
+function setSourceComments(enabled) {
+    compilerConfig.sourceComments = enabled;
+}
+
+// Enable breakpoint checks in generated code
+function setBreakpointsEnabled(enabled) {
+    compilerConfig.breakpointsEnabled = enabled;
+}
 
 function sym(x, jsname){
     return lisp.sym(x, jsname)
@@ -166,6 +198,42 @@ concat = (...lst)=> len(lst) == 0 ? [] : lst[0].concat(...lst.slice(1))
 __makesym = (a) => sym(a)
 _typeof = (a) => typeof a
 
+// Debug runtime functions (exposed as globals)
+__debug_enter = debug.traceEnter
+__debug_exit = debug.traceExit
+__debug_break = debug.debugBreak
+__debug_inspect = debug.inspect
+__debug_stack = debug.getCallStack
+__debug_print_stack = debug.printCallStack
+__debug_error = debug.createLispError
+__debug_enhance_error = debug.enhanceError
+__debug_format = debug.formatValue
+// Expose the debug module for Lisp-side access
+__foxlisp_debug = debug
+
+// Helper to generate source location comment
+function sourceLocationComment(code) {
+    if (!compilerConfig.sourceComments) return '';
+    if (!code || !code._sourceLocation) return '';
+    const loc = code._sourceLocation;
+    return `/*${loc.file}:${loc.startLine}:${loc.startColumn}*/`;
+}
+
+// Helper to generate breakpoint check
+function generateBreakpointCheck(code) {
+    if (!compilerConfig.breakpointsEnabled) return '';
+    if (!code || !code._sourceLocation) return '';
+    const loc = code._sourceLocation;
+    return `__debug_break("${loc.file}",${loc.startLine},${loc.startColumn},{});`;
+}
+
+// Get source location from AST node
+function getSourceLocation(code) {
+    if (code && code._sourceLocation) {
+        return code._sourceLocation;
+    }
+    return null;
+}
 
 const loopSym = sym("loop");
 const notSym = sym("not");
@@ -317,6 +385,9 @@ let assoc = {}
 const markRegex = /\/\*lmb#(\d+)\*\/\(/g;
 let codeStack = []
 
+// Track the name of the currently defining function (for tracing)
+let currentDefiningName = null;
+
 function lispCompile(code, assignto){
 	 const result = lispCompile2(code);
 
@@ -412,7 +483,7 @@ function lispCompile2(code) {
 				{
 
 					 const [args, ...body] = operands;
-					 // find invalid args    
+					 // find invalid args
 					 for(let arg of args){
 						  if(arg.type != "symbol"){
 								throw new Error("Invalid argument in lambda: " + arg + " in " + println_impl(code));
@@ -421,19 +492,32 @@ function lispCompile2(code) {
 
 					 const restIndex = args.indexOf(restSym)
 					 let argstr = args.map(arg => arg.jsname).join(",")
+					 let argNames = args.filter(a => a !== restSym).map(a => a.jsname);
 					 if(restIndex != -1){
 						  argstr = args.slice(0, restIndex).map(arg => arg.jsname).concat(["..." + args[restIndex + 1].jsname]).join(",");
 					 }
-					 
+
 					 assoc[associd] = operands
-					 
+
+					 // Get source location for debugging
+					 const loc = getSourceLocation(code);
+					 const srcComment = sourceLocationComment(code);
 
 					 let bodyCode = lispCompileLet([], body)
 					 if(isScope(bodyCode)){
 						  bodyCode = "{ var lambdaResult;"+ bodyCode.replaceAll(value_marker, "lambdaResult=") + "return lambdaResult}"
 					 }
-					 let lmb = `(${argstr}) => ${bodyCode}`;
-					 
+
+					 // Add tracing wrapper if in trace mode
+					 if(compilerConfig.traceMode && loc){
+						  const funcName = currentDefiningName || '<lambda>';
+						  const argsArray = `[${argNames.join(',')}]`;
+						  let lmb = `${srcComment}(${argstr}) => { __debug_enter("${funcName}", ${argsArray}, "${loc.file}", ${loc.startLine}); try { const __result = (()=>${bodyCode})(); return __debug_exit("${funcName}", __result); } catch(__e) { __debug_exit("${funcName}", __e); throw __e; } }`;
+						  return lmb;
+					 }
+
+					 let lmb = `${srcComment}(${argstr}) => ${bodyCode}`;
+
 					 return lmb
 				}
 		  case prognSym:
@@ -460,13 +544,21 @@ function lispCompile2(code) {
 				}
 		  case defvarSym:
 				{
-					 
+
 					 const [sym, code] = operands;
+					 // Track the name for function tracing
+					 const prevDefiningName = currentDefiningName;
+					 currentDefiningName = sym.value;
+
 					 let valueCode = lispCompile(code);
+
+					 // Restore previous defining name
+					 currentDefiningName = prevDefiningName;
+
 					 if (typeof(valueCode) == "string"){
 						  valueCode = valueCode.replace(markRegex, 'lmbmark($1,');
 					 }
-					 
+
 					 let code2 = `${sym.jsname} = ${valueCode}`;
 					 if(isScope(valueCode)){
 						  code2 = `${sym.jsname} = null;${valueCode.replaceAll(value_marker, sym.jsname + "=")}`
@@ -477,6 +569,15 @@ function lispCompile2(code) {
 					 if(typeof(result) == "function" && result.assoc_id){
 						  result.lispname = sym
 					 }
+
+					 // Register function for debug info
+					 if(typeof(result) == "function" && compilerConfig.debugMode){
+						  const loc = getSourceLocation(code);
+						  if(loc){
+								debug.registerFunction(result, sym.value, loc.file, loc.startLine);
+						  }
+					 }
+
 					 return `/*DEFVAR*/${sym.jsname}`
 				}
 		  case defMacroSym:
@@ -683,27 +784,30 @@ error = null
 
 async function LispEvalBlock(code, file) {
 	 let len1 = code.length
-	 
+
 	 const originalCode = code
+	 // Set file for source location tracking
+	 parser.setCurrentFile(file || '<eval>');
+
 	 for(;;){
 		  let offset = len1 - code.length
 		  parser.fileOffset = len1 - code.length
 		  parser.codeBase = originalCode
 		  parser.setCodeBase(originalCode)
 		  const [ast, next] = parser.ParseLisp(code)
-		  if (ast == parser.UnexpectedEOF){	
+		  if (ast == parser.UnexpectedEOF){
 				throw new Error(`Unexpected EOF in file ${file}`)
 		  }
-		  
+
 		  if (next == null){
-				
+
 				return;
 		  }
 		  code = next;
 
 		  try{
 				let ast2 = lisp_reader(ast);
-				
+
 				var js = lispCompile(ast2);
 				if(js.includes("/*DEFVAR*/"))
 					 continue;
@@ -713,17 +817,17 @@ async function LispEvalBlock(code, file) {
 				}else{
 					 js = "{'use strict'; return " + js + "}";
 				}
-				
-		  
+
+
 				// there are two ways of doing this, which may be the same
-				
+
 				const ncode = "function __ce()" + js;
 				//console.log(ncode, file, " line: " + countNewlinesBeforeIndex(originalCode, offset))
 				doEval(ncode)
 		  		const result = __ce();
-				
+
 				if(result != null && typeof(result) == "object" && result.type == "load"){
-					 
+
 					 const data = await loadFileAsync(result.value)
 					 const prevContext = loadcontext
 					 loadcontext = result.value
@@ -731,11 +835,20 @@ async function LispEvalBlock(code, file) {
 					 loadcontext = prevContext
 				}
 		  }catch(e){
-				
+				const lineNum = 1 + countNewlinesBeforeIndex(originalCode, offset);
+
 				if(!e._at){
-					 e._at = file + " line: " + (1 + countNewlinesBeforeIndex(originalCode, offset))
+					 e._at = file + " line: " + lineNum
 				}
-				
+
+				// Enhance error with debug info if debug mode is enabled
+				if(compilerConfig.verboseErrors && !e._lispEnhanced){
+					 debug.enhanceError(e, file, lineNum, 0);
+				}
+
+				// Clear call stack on error to prevent stale data
+				debug.clearCallStack();
+
 				throw e
 		  }
 	 }
@@ -756,5 +869,15 @@ lisp.lisp.LispEvalBlock = LispEvalBlock
 module.exports = {
 	 EvalLisp: evalLisp,
 	 LispEvalBlock: LispEvalBlock,
-	 lispCompile: lispCompile
+	 lispCompile: lispCompile,
+
+	 // Debug configuration
+	 setDebugMode: setDebugMode,
+	 setTraceMode: setTraceMode,
+	 setSourceComments: setSourceComments,
+	 setBreakpointsEnabled: setBreakpointsEnabled,
+	 compilerConfig: compilerConfig,
+
+	 // Debug utilities
+	 debug: debug
 };
