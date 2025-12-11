@@ -1,9 +1,54 @@
 const lisp = require("./symbols")
 
 codeBase = null
+currentFile = '<eval>'
 
 function setCodeBase(code){
 	 codeBase = code
+}
+
+function setCurrentFile(file){
+	 currentFile = file
+}
+
+// Calculate line and column from offset in codeBase
+function getLineAndColumn(offset) {
+	if (!codeBase || offset < 0) {
+		return { line: 0, column: 0 };
+	}
+
+	let line = 1;
+	let column = 1;
+	let lastNewline = -1;
+
+	for (let i = 0; i < offset && i < codeBase.length; i++) {
+		if (codeBase[i] === '\n') {
+			line++;
+			lastNewline = i;
+		}
+	}
+
+	column = offset - lastNewline;
+	return { line, column };
+}
+
+// Attach source location to an AST node
+function attachSourceLocation(node, startOffset, endOffset) {
+	if (Array.isArray(node)) {
+		const { line: startLine, column: startColumn } = getLineAndColumn(startOffset);
+		const { line: endLine, column: endColumn } = getLineAndColumn(endOffset);
+
+		node._sourceLocation = {
+			file: currentFile,
+			startLine,
+			startColumn,
+			endLine,
+			endColumn,
+			startOffset,
+			endOffset
+		};
+	}
+	return node;
 }
 
 class ParserCondition {
@@ -162,15 +207,18 @@ function ParseLisp0(input) {
         switch (input[0]) {
 				
         case '(':
-				let offset = codeBase.length - input.lengt
+				let startOffset = codeBase ? codeBase.length - input.length : 0;
 				let input0 = input
 				input = skipCommentAndWhitespace(input.slice(1));
-				
-				if(input[0] == ')'){  
-					 return [[], input.slice(1)];
+
+				if(input[0] == ')'){
+					 let endOffset = codeBase ? codeBase.length - input.length + 1 : 0;
+					 let emptyList = [];
+					 attachSourceLocation(emptyList, startOffset, endOffset);
+					 return [emptyList, input.slice(1)];
 				}
 				let out = []
-				
+
 				for(;;){
 					 const [result,next] = ParseLisp0(input)
 					 if(next){
@@ -178,12 +226,14 @@ function ParseLisp0(input) {
 						  out.push(result)
 						  input = skipCommentAndWhitespace(input);
 						  if(input[0] == ')'){
+								let endOffset = codeBase ? codeBase.length - input.length + 1 : 0;
 								out.codeBase = codeBase
-								out.offset = offset
-								
+								out.offset = startOffset
+								attachSourceLocation(out, startOffset, endOffset);
+
 								Object.freeze(out)
 								return [out, input.slice(1)];
-								
+
 						  }
 					 }else{
 						  return [UnexpectedEOF, null]
@@ -257,5 +307,8 @@ function ParseLisp (codestring){
 module.exports = {
     ParseLisp: ParseLisp,
     UnexpectedEOF: UnexpectedEOF,
-	 setCodeBase: setCodeBase
+    setCodeBase: setCodeBase,
+    setCurrentFile: setCurrentFile,
+    getLineAndColumn: getLineAndColumn,
+    attachSourceLocation: attachSourceLocation
 };
